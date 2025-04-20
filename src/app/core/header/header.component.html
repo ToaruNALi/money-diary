@@ -5,8 +5,15 @@
 </h1>
 <div style="flex: auto"></div>
 <div class="right-content">
+  <!-- TODO: 過去データでも編集できるように設定済 -->
   <!-- 過去データ編集可能フラグ -->
-  <app-form-toggle [data]="formData()" [form]="form()"></app-form-toggle>
+  <!-- <app-form-toggle [data]="formData()" [form]="form()"></app-form-toggle> -->
+  <!-- History Reset -->
+  <app-history-reset
+    class="icon"
+    [history]="history()"
+    (historyReset)="historyReset.emit()"
+  ></app-history-reset>
   <!-- ダウンロードボタン -->
   <app-file-download [data]="data()" />
   <!-- アップロードボタン -->

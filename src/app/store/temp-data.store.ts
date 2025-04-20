@@ -25,7 +25,7 @@ const initialState: TempDataState = {
   mapDisp: false,
   mapDispTimers: [],
   filterInputModel: 'none',
-  editPastData: false,
+  editPastData: true, // false
 };
 
 /** Signal Store */

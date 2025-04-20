@@ -4,10 +4,12 @@ import {
   inject,
   input,
   model,
+  output,
   signal,
 } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
+import { RowDataEditHistory } from 'src/app/domain/row-data-edit-history';
 import { MESSAGE } from 'src/app/shared/constants/messages';
 import { ScreenDispData } from 'src/app/shared/constants/types';
 import { FileDownloadComponent } from 'src/app/shared/file-download/file-download.component';
@@ -16,15 +18,17 @@ import {
   FormToggle,
   FormToggleComponent,
 } from 'src/app/shared/forms/form-toggle/form-toggle.component';
+import { HistoryResetComponent } from 'src/app/shared/history-reset/history-reset.component';
 import { SharedCommonModule } from './../../shared/shared-common.module';
 
 @Component({
   selector: 'app-header',
   imports: [
     SharedCommonModule,
+    FormToggleComponent,
+    HistoryResetComponent,
     FileDownloadComponent,
     FileUploadComponent,
-    FormToggleComponent,
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
@@ -34,8 +38,10 @@ export class HeaderComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly screenDatas = input.required<ScreenDispData>();
+  readonly history = input.required<RowDataEditHistory>();
   readonly data = model.required<MoneyDiaryData>();
   readonly editPastData = model<boolean>(false);
+  protected readonly historyReset = output<void>();
 
   protected readonly formData = signal<Partial<FormToggle>>({
     label: 'Past Edit',
