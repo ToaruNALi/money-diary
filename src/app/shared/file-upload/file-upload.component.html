@@ -1,0 +1,11 @@
+<button mat-icon-button (click)="onBtnUploadClicked()">
+  <mat-icon>upload</mat-icon>
+</button>
+<input
+  #fileUpload
+  type="file"
+  style="display: none"
+  accept=".json"
+  (click)="onFileInputClicked()"
+  (change)="onFileInputChanged()"
+/>

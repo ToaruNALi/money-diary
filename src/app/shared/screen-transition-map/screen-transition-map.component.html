@@ -1,0 +1,13 @@
+<div [class]="display() ? 'display' : 'hidden'" class="transition-map-field">
+  <div class="map">
+    @for (datas of map(); track $index) {
+      <div>
+        @for (data of datas; track $index) {
+          <mat-icon class="icon" [class.select-icon]="data.select">
+            {{ data.icon }}
+          </mat-icon>
+        }
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,14 @@
+<!-- タイトル -->
+<h1 class="title-content">
+  <mat-icon>{{ screenDatas().icon }}</mat-icon>
+  <span style="margin-left: 10px">{{ screenDatas().label }}</span>
+</h1>
+<div style="flex: auto"></div>
+<div class="right-content">
+  <!-- 過去データ編集可能フラグ -->
+  <app-form-toggle [data]="formData()" [form]="form()"></app-form-toggle>
+  <!-- ダウンロードボタン -->
+  <app-file-download [data]="data()" />
+  <!-- アップロードボタン -->
+  <app-file-upload (fileOutput)="data.set($event)" />
+</div>

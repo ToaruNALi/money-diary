@@ -1,0 +1,12 @@
+<section [formGroup]="group()">
+  <div>{{ reqData().label }}</div>
+  <div class="checkbox-group">
+    @for (opt of reqData().options; track opt) {
+      <mat-checkbox
+        [style]="reqData().style"
+        [formControlName]="opt.id.toString()"
+        >{{ opt.label }}
+      </mat-checkbox>
+    }
+  </div>
+</section>

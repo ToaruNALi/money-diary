@@ -1,0 +1,173 @@
+import { Injectable } from '@angular/core';
+import { ColDef, ValueSetterParams } from 'ag-grid-community';
+import { RowData } from 'src/app/domain/row-data';
+import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
+import * as Const from 'src/app/shared/constants/constants';
+import { ValueType } from 'src/app/shared/constants/types';
+import * as Usecase from 'src/app/shared/constants/usecases';
+import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
+
+@Injectable()
+export class RemarkUsecase extends SettingUsecase {
+  /**
+   * 列定義を返却する
+   * @param inputDatas
+   * @returns 列定義
+   */
+  override readonly getColDefs = (
+    inputDatas: RowData[] = [],
+  ): ColDef<RowData, ValueType>[] => [
+    {
+      headerName: 'Id',
+      field: Const.ROW_DATA_COMMON_COL_ID.ID,
+      cellEditor: 'agTextCellEditor',
+      hide: true,
+    },
+    {
+      headerName: 'Remark',
+      field: Const.ROW_DATA_COMMON_COL_ID.LABEL,
+      cellEditor: 'agTextCellEditor',
+      rowDrag: true,
+      pinned: 'left',
+      filter: false,
+      width: 140,
+      valueSetter: (params) => this.amountSetter(params, inputDatas),
+      cellStyle: Usecase.getCellCommonStyle,
+    },
+    {
+      headerName: 'Memo',
+      field: Const.REMARK_COL_ID.MEMO,
+      cellEditor: 'agLargeTextCellEditor',
+      filter: false,
+      width: 220,
+      valueSetter: this.newValueSetter,
+    },
+    {
+      headerName: 'Income',
+      field: Const.REMARK_COL_ID.INCOME,
+      type: 'numericCol',
+      filter: false,
+      width: 110,
+    },
+    {
+      headerName: 'Expenses',
+      field: Const.REMARK_COL_ID.EXPENSES,
+      type: 'numericCol',
+      filter: false,
+      width: 110,
+    },
+    {
+      headerName: 'Inc And Exp',
+      field: Const.REMARK_COL_ID.INC_AND_EXP,
+      type: 'numericCol',
+      filter: false,
+      width: 110,
+    },
+    {
+      headerName: 'Valid',
+      field: Const.ROW_DATA_COMMON_COL_ID.VALID,
+      cellEditor: 'agCheckboxCellEditor',
+      hide: true,
+      valueSetter: this.newValueSetter,
+    },
+    {
+      headerName: 'Upd Date',
+      field: Const.ROW_DATA_COMMON_COL_ID.UPD_DATE,
+      cellEditor: 'agTextCellEditor',
+      hide: true,
+      filter: false,
+      width: 150,
+    },
+    {
+      headerName: 'Update',
+      field: Const.ROW_DATA_COMMON_COL_ID.UPDATE,
+      cellEditor: 'agCheckboxCellEditor',
+      hide: true,
+    },
+  ];
+
+  private readonly amountSetter = (
+    params: ValueSetterParams<RowData, ValueType>,
+    inputDatas: RowData[],
+  ): boolean => {
+    if (!this.newValueSetter(params)) {
+      return false;
+    }
+
+    [
+      params.data[Const.REMARK_COL_ID.INCOME],
+      params.data[Const.REMARK_COL_ID.EXPENSES],
+      params.data[Const.REMARK_COL_ID.INC_AND_EXP],
+    ] = this.getIncAndExp(
+      inputDatas,
+      params.data[Const.ROW_DATA_COMMON_COL_ID.ID],
+    );
+    return true;
+  };
+
+  override readonly getRowDatas = (
+    rowDatas: RowData[],
+    inputDatas: RowData[],
+  ): RowData[] => {
+    const datas = structuredClone(rowDatas);
+
+    for (const data of datas) {
+      [
+        data[Const.REMARK_COL_ID.INCOME],
+        data[Const.REMARK_COL_ID.EXPENSES],
+        data[Const.REMARK_COL_ID.INC_AND_EXP],
+      ] = this.getIncAndExp(inputDatas, data[Const.ROW_DATA_COMMON_COL_ID.ID]);
+    }
+
+    return datas;
+  };
+
+  private readonly getIncAndExp = (
+    rowDatas: RowData[],
+    remarkId: ValueType,
+  ): number[] => {
+    let income = 0;
+    let expenses = 0;
+
+    if (remarkId === Const.MARK.NO_SELECT.ID) {
+      // 未選択項目は計算対象外
+      return [0, 0, 0];
+    }
+
+    for (const data of rowDatas) {
+      const num = data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
+      if (
+        Usecase.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) &&
+        data[Const.MONEY_DIARY_COL_ID.REMARK] === remarkId &&
+        Usecase.isValidInteger(num)
+      ) {
+        if (num > 0) {
+          income += num;
+        } else if (num < 0) {
+          expenses += num;
+        }
+      }
+    }
+
+    return [income, expenses, income + expenses];
+  };
+
+  /**
+   * データの入力を行う
+   * @param rowData
+   * @param initValues
+   * @returns 入力データ
+   */
+  override readonly getDialogInputDataCustom = (
+    rowData: RowData,
+    initValues: RowData,
+  ): DialogInputData[] => [
+    {
+      id: Const.REMARK_COL_ID.MEMO,
+      label: 'Memo',
+      value: rowData[Const.REMARK_COL_ID.MEMO],
+      type: Const.INPUT_TYPE.TEXTAREA,
+      initValue: initValues[Const.REMARK_COL_ID.MEMO],
+    },
+  ];
+}

@@ -1,0 +1,15 @@
+<div class="main-content">
+  <app-grid
+    [style]="{
+      width: '100vw',
+      height: 'calc(100vh - 230px)',
+    }"
+    [rowDataKey]="rowDataKey()"
+    [columnDefs]="colDefs()"
+    [rowDatas]="rowDatas()"
+    [rowStyle]="rowStyle()"
+    [cellClickForbColumns]="cellClickForbColumns"
+    (rowDataEdits)="rowDataEdits.emit($event)"
+    (cellClick)="onClickCell($event)"
+  />
+</div>

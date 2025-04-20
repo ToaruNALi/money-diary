@@ -1,0 +1,27 @@
+{
+  // 適用する環境
+  "env": {
+    "node": true, // Nodejs グローバル変数と Nodejs スコープを検証
+    "es6": true, // モジュールを除くすべての ECMAScript 6 機能を有効
+    "commonjs": true // CommonJS グローバル変数と CommonJS スコープ を検証
+  },
+  // 構文解析（パーサー）
+  "parserOptions": {
+    // モジュール形式のソースコードを用います
+    "sourceType": "module",
+    // JS のバージョンは最新とします
+    "ecmaVersion": "latest"
+  },
+  "parser": "@typescript-eslint/parse",
+  // プラグイン
+  "plugins": ["@typescript-eslint"],
+  /**
+   *  ルールのインポート
+   */
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier" // eslint-config-prettier
+  ]
+}

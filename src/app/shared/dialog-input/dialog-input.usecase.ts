@@ -1,0 +1,240 @@
+import { inject, Injectable } from '@angular/core';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ValidationErrors,
+  ValidatorFn,
+} from '@angular/forms';
+import Fuse from 'fuse.js';
+import * as Const from 'src/app/shared/constants/constants';
+import { FormCtrl, InputType, ValueType } from 'src/app/shared/constants/types';
+import * as Usecase from 'src/app/shared/constants/usecases';
+import {
+  DIALOG_BUTTON,
+  DialogInput,
+  DialogOption,
+  DialogOutputData,
+} from 'src/app/shared/dialog-input/dialog-input.component';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class DialogInputUsecase {
+  private readonly fb = inject(FormBuilder);
+
+  /**
+   * オートコンプリートリストを返却する
+   * @param options 検索対象リスト
+   * @param value 検索文字列
+   * @returns
+   */
+  readonly getFilterOptions = (
+    options: DialogOption[],
+    value: ValueType,
+  ): DialogOption[] => {
+    if (value === null || value === '') {
+      return options;
+    }
+    const fuseOptions = {
+      keys: ['value'],
+      includeScore: true,
+      threshold: 0.4,
+      shouldSort: true,
+    };
+    const fuse = new Fuse(options, fuseOptions);
+    return fuse.search(value.toString()).map((fuse) => fuse.item);
+  };
+
+  /**
+   * チェックボックス項目用カスタムバリデーター
+   * @param control
+   * @returns
+   */
+  readonly validatorFnCheckbox = (
+    control: AbstractControl,
+  ): ValidationErrors => {
+    const value = control.value;
+    let check = false;
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      check = Object.values(value).some((chk) => !!chk);
+    }
+    return check ? {} : { required: true };
+  };
+
+  /**
+   * カスタムバリデーター
+   * @param input
+   * @returns
+   */
+  readonly validatorFn =
+    (input: Required<DialogInput>): ValidatorFn =>
+    (control: AbstractControl): ValidationErrors => {
+      let errors: ValidationErrors = {};
+
+      if (
+        input.datas.some((data) => !data.hide && control.get(data.id)?.invalid)
+      ) {
+        // 表示状態 かつ 入力誤り の項目が１つ以上ある場合
+        errors[DIALOG_BUTTON.OK] = true;
+        errors[DIALOG_BUTTON.ADD] = true;
+      }
+
+      if (
+        !input.option.sameDataOk &&
+        input.datas.every((data) => {
+          let oldVal = data.value;
+          if (Array.isArray(oldVal)) {
+            oldVal = JSON.stringify(oldVal);
+          }
+
+          let newVal = this.cvtFormValueToValue(
+            control.get(data.id)?.value,
+            data.type,
+          );
+          if (Array.isArray(newVal)) {
+            newVal = JSON.stringify(newVal);
+          }
+          return oldVal === newVal;
+        })
+      ) {
+        // 更新前後の全入力内容が一致している場合
+        errors[DIALOG_BUTTON.RESET] = true;
+        errors[DIALOG_BUTTON.OK] = true;
+      }
+
+      if (!!input.validatorFn) {
+        // 画面ごとのカスタムバリデーションと結合
+        errors = {
+          ...errors,
+          ...input.validatorFn(control, input.datas),
+        };
+      }
+
+      return errors;
+    };
+
+  /**
+   * 返却値を作成する
+   * @param form
+   * @param input
+   * @returns
+   */
+  readonly createOutputDatas = (
+    form: FormGroup,
+    input: Required<DialogInput>,
+  ): DialogOutputData[] => {
+    const result: DialogOutputData[] = [];
+
+    for (const data of input.datas) {
+      if (data.notReturn) {
+        // 返却対象外
+        continue;
+      }
+
+      let value = this.cvtFormValueToValue(form.get(data.id)?.value, data.type);
+      if (typeof value === 'string') {
+        // 半角カナと全角英数の禁止
+        value = Usecase.convertToZKAndToHE(value);
+      }
+
+      result.push({ id: data.id, value });
+    }
+
+    return result;
+  };
+
+  /**
+   * ダイアログオープン前の入力値をFormControl用に変換する
+   * @param value
+   * @param type
+   * @param options
+   * @returns
+   */
+  readonly cvtValueToFormCtrl = (
+    value: ValueType = null,
+    type: InputType | undefined,
+    options: DialogOption[] = [],
+  ): FormCtrl => {
+    if (type === Const.INPUT_TYPE.CHECK) {
+      // Checkbox
+      const record = this.fb.record<FormControl<ValueType>>({});
+      for (const opt of options) {
+        record.addControl(
+          opt.id.toString(),
+          this.fb.control<ValueType>(
+            Array.isArray(value) && value.includes(opt.id),
+          ),
+        );
+      }
+      return record;
+    }
+
+    // Checkbox 以外
+    return this.fb.control<ValueType>(Array.isArray(value) ? null : value);
+  };
+
+  /**
+   * 入力値をFormControl用に変換する
+   * @param value
+   * @param type
+   * @param options
+   * @returns
+   */
+  readonly cvtValueToFormValue = (
+    value: ValueType = null,
+    type: InputType | undefined,
+    options: DialogOption[] = [],
+  ): ValueType | Record<string, ValueType> => {
+    if (type === Const.INPUT_TYPE.CHECK) {
+      // Checkbox
+      const record: Record<string, ValueType> = {};
+      for (const opt of options) {
+        record[opt.id.toString()] =
+          Array.isArray(value) && value.includes(opt.id);
+      }
+      return record;
+    }
+
+    // Checkbox 以外
+    return Array.isArray(value) ? null : value;
+  };
+
+  /**
+   * FormControl用の入力値を返却用に変換する
+   * @param value
+   * @param type
+   * @returns
+   */
+  readonly cvtFormValueToValue = (
+    value: ValueType | Record<string, ValueType> = null,
+    type: InputType | undefined,
+  ): ValueType => {
+    if (type === Const.INPUT_TYPE.CHECK) {
+      // Checkbox
+      const ret: ValueType = [];
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        // null・配列以外のObjectを抽出
+        const entries = Object.entries(value);
+        for (const [key, check] of entries) {
+          if (!!check) {
+            ret.push(key);
+          }
+        }
+      }
+      return ret;
+    }
+
+    // Checkbox 以外
+    if (typeof value === 'object') {
+      // Objectを抽出
+      return null;
+    }
+    return value;
+  };
+}

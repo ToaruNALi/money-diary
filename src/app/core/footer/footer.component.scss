@@ -1,0 +1,19 @@
+@use 'variables' as *;
+
+:host {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-right: 10px;
+
+  .menu-icon {
+    width: 5px;
+  }
+
+  .icon {
+    width: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

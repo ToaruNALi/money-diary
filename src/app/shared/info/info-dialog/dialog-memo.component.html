@@ -1,0 +1,13 @@
+<div mat-dialog-content class="dialog-content">
+  <app-grid
+    [style]="{
+      width: 'calc(65vw)',
+      height: 'calc(100vh - 375px)',
+    }"
+    [rowDataKey]="rowDataKey"
+    [columnDefs]="columnDefs()"
+    [rowDatas]="rowDatas()"
+    (rowDatasEdit)="rowDatasEdit.emit($event)"
+    (cellValueChange)="onChangeCellValue($event)"
+  />
+</div>

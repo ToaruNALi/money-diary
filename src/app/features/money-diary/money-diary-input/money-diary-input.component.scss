@@ -1,0 +1,30 @@
+:host ::ng-deep {
+  .mat-mdc-form-field-bottom-align::before {
+    display: none;
+  }
+}
+
+.status-content {
+  width: 100vw;
+  height: 25px;
+  overflow-x: auto;
+  cursor: pointer;
+  user-select: none;
+
+  .overflow {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+}
+
+.grid-menu {
+  display: none;
+  position: fixed;
+  background-color: #505050;
+  padding: 10px;
+}
+.grid-menu-disp {
+  display: flex;
+  flex-direction: column;
+}

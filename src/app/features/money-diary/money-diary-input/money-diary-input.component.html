@@ -1,0 +1,69 @@
+<!-- 収支合計 -->
+<div
+  class="status-content my-scrollbar-hidden"
+  (click)="onClickStatusContent()"
+>
+  <div class="overflow">
+    @for (status of statusList(); track status.label) {
+      <div>{{ status.label + ':' }}</div>
+      <div style="min-width: 5px"></div>
+      <div>{{ status.value }}</div>
+      <div style="min-width: 10px"></div>
+    }
+  </div>
+</div>
+
+<!-- 収支入力グリッド -->
+<div class="main-content">
+  <app-grid
+    [style]="{
+      width: '100vw',
+      height: 'calc(100vh - 200px - 25px - 25px)',
+    }"
+    [rowDataKey]="rowDataKey()"
+    [columnDefs]="colDefs()"
+    [rowDatas]="rowDatas()"
+    [rowStyle]="rowStyle()"
+    [aboveContentOption]="true"
+    [belowContentOption]="belowContentOption"
+    [calcTargetColumns]="calcTargetColumns"
+    [cellClickForbColumns]="cellClickForbColumns"
+    [emptyRowJudgeFn]="emptyRowJudgeFn"
+    (rowDataEdits)="rowDataEdits.emit($event)"
+    (gridReady)="onReadyGrid($event)"
+    (cellClick)="onClickCell($event)"
+    (cellContextMenu)="onCellContextMenu($event)"
+  />
+</div>
+
+<!-- コンテキストメニュー -->
+<div
+  class="grid-menu"
+  [class.grid-menu-disp]="gridMenuDisp()"
+  [style]="gridMenuStyle()"
+>
+  <button
+    mat-menu-item
+    (click)="onDelete()"
+    [disabled]="gridmenuItemDisabled()"
+  >
+    <mat-icon>delete</mat-icon>
+    <span>Delete</span>
+  </button>
+  <button
+    mat-menu-item
+    (click)="onReplace()"
+    [disabled]="gridmenuItemDisabled()"
+  >
+    <mat-icon>find_replace</mat-icon>
+    <span>Replace</span>
+  </button>
+  <button
+    mat-menu-item
+    (click)="onSerialNumber()"
+    [disabled]="gridmenuItemDisabled()"
+  >
+    <mat-icon>123</mat-icon>
+    <span>Serial Number</span>
+  </button>
+</div>

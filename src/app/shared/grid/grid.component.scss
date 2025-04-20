@@ -1,0 +1,43 @@
+.grid-above-content {
+  width: 100vw;
+  height: 25px;
+  overflow-x: auto;
+  user-select: none;
+
+  .overflow {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+}
+
+.grid-below-content {
+  display: flex;
+  width: 100vw;
+  height: 25px;
+  overflow-x: auto;
+  user-select: none;
+
+  .overflow {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  input,
+  mat-icon {
+    margin-right: 8px;
+
+    &.hidden {
+      display: none;
+    }
+  }
+
+  input {
+    min-width: 150px;
+  }
+
+  mat-icon {
+    min-width: 24px;
+  }
+}

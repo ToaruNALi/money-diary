@@ -1,0 +1,14 @@
+<div
+  class="swipe-bar"
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd($event)"
+  (click)="onClick($event)"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointerout)="onPointerUp($event)"
+  (contextmenu)="onContextMenu($event)"
+>
+  <ng-content />
+</div>

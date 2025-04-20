@@ -1,0 +1,32 @@
+/* You can add global styles to this file, and also import other style files */
+// セレクタの先頭に「my」を付けることで、グローバルなスタイル設定であることを明記する
+
+html,
+input,
+select,
+button {
+  // font-family: 游ゴシック, sans-serif;
+  font-family: Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.my-title-font {
+  font-size: 20px;
+}
+
+.my-icon {
+  height: 20px;
+  background-color: #00000000;
+}
+
+/* スクロールバー非表示 */
+.my-scrollbar-hidden {
+  // Google Chrome、Safariへの対応
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  // Microsoft Edgeへの対応
+  -ms-overflow-style: none;
+  // Firefoxへの対応
+  scrollbar-width: none;
+}

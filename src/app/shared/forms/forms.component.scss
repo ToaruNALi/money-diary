@@ -1,0 +1,41 @@
+@use 'variables' as *;
+
+:host {
+  width: 100%;
+
+  .form-field {
+    display: flex;
+
+    // Chrome, Safari で <input type="number">のスピンボタン を非表示にする
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+      -webkit-appearance: none !important;
+      margin: 0 !important;
+    }
+
+    // 読取専用時は色を暗くしポインターイベントを無効化
+    [readonly='true'] {
+      color: darkgray;
+      pointer-events: none;
+    }
+  }
+
+  ::ng-deep {
+    // datepickerの入力欄の幅を狭くし、クリアアイコンとカレンダーアイコンが折り返されないように調整
+    .mat-mdc-form-field-infix {
+      width: 100px;
+    }
+
+    // フォーム同士のスペースを除去(利用する側で個別にスペースを設けるようにする)
+    .mat-mdc-form-field-bottom-align::before {
+      display: none;
+    }
+
+    // チェックボックス・トグルボタンのラベル左に隙間を設定
+    mat-slide-toggle {
+      .mdc-label {
+        margin-left: 5px;
+      }
+    }
+  }
+}

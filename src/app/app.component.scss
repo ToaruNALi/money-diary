@@ -1,0 +1,48 @@
+@use 'variables' as *;
+
+.app-content {
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+.header-content {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  width: 100vw;
+  height: 50px;
+  top: 0;
+  left: 0;
+  z-index: $my-z-index-header;
+  color: $my-font-color-primary;
+  background-color: #0c0c0d;
+  user-select: none;
+}
+
+.main-content {
+  position: relative;
+  margin-top: 50px;
+  color: $my-font-color-primary;
+  user-select: none;
+}
+
+.footer-content {
+  position: fixed;
+  display: flex;
+  align-items: flex-start;
+  width: 100vw;
+  height: 70px;
+  bottom: 0;
+  left: 0;
+  z-index: $my-z-index-footer;
+  color: $my-font-color-primary;
+  background-color: #0c0c0d;
+  user-select: none;
+}
+
+.map-content {
+  position: fixed;
+  z-index: $my-z-index-tran-map;
+  top: 0;
+  left: 0;
+}

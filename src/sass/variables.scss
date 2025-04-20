@@ -1,0 +1,30 @@
+/* You can add global styles to this file, and also import other style files */
+// セレクタの先頭に「my」を付けることで、グローバルなスタイル設定であることを明記する
+
+/********************
+ * z-index
+ ********************/
+/** プログレス画面用 */
+$my-z-index-overlay: 10000;
+/** ダイアログ画面用 */
+$my-z-index-dialog: 1000;
+/** ミニマップ用 */
+$my-z-index-tran-map: 400;
+/** ヘッダ用 */
+$my-z-index-header: 500;
+/** フッタ用 */
+$my-z-index-footer: 500;
+/** 主要ボタン */
+$my-z-index-primary-icon: 1100;
+/** 二次ボタン */
+$my-z-index-secondary-icon: 900;
+/** 三次ボタン */
+$my-z-index-tertiary-icon: 700;
+
+/********************
+ * color
+ ********************/
+/** フォントカラー */
+$my-font-color-primary: #bbbec9;
+/** 読取専用カラー*/
+$my-font-color-readonly: darkgray;

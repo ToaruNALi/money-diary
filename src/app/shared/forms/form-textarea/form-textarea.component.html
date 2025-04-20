@@ -1,0 +1,28 @@
+<mat-form-field class="form-field" appearance="outline">
+  <mat-label>{{ reqData().label }}</mat-label>
+  <textarea
+    matInput
+    [style]="reqData().style"
+    [formControl]="control()"
+    [matAutocomplete]="auto"
+    [readonly]="reqData().readonly"
+    [placeholder]="reqData().placeholder"
+    appInputRestrictions
+    [forbiddenChars]="reqData().forbiddenChars"
+    [invalidReservedWord]="option().invalidReservedWord"
+  ></textarea>
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    (optionSelected)="onSelectAutoComp($event)"
+  >
+    @for (option of reqData().filteredOptions$ | async; track option.id) {
+      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+    }
+  </mat-autocomplete>
+  <app-form-clear-button
+    matSuffix
+    [disabled]="control().disabled || reqData().readonly"
+    [value]="control().value"
+    (clearBtnClick)="onClickClearBtn()"
+  />
+</mat-form-field>

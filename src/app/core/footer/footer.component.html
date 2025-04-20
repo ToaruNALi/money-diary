@@ -1,0 +1,34 @@
+<!-- Menu -->
+<app-menu
+  class="menu-icon"
+  [screenId]="screenInfo().si"
+  (screenIdChange)="screenIdChange.emit($event)"
+/>
+<!-- Info -->
+<!-- <app-info></app-info> -->
+<!-- History Reset -->
+<app-history-reset
+  class="icon"
+  [history]="history()"
+  (historyReset)="historyReset.emit()"
+></app-history-reset>
+<!-- Favorite -->
+<!-- <app-favorite
+  class="icon"
+  [favoriteScreenId]="screenInfo().fi"
+  (screenIdChange)="screenIdChange.emit($event)"
+/> -->
+<!-- Chart -->
+<app-chart [datas]="inputDatas()"></app-chart>
+<!-- Screen Transition -->
+<app-screen-transition
+  class="icon"
+  [(mapDisp)]="mapDisp"
+  [screenId]="screenInfo().si"
+  [screenDatas]="screenInfo().sd"
+  (screenIdChange)="screenIdChange.emit($event)"
+/>
+<!-- Undo -->
+<app-undo class="icon" [history]="history()" (undo)="undoRedo.emit(false)" />
+<!-- Redo -->
+<app-redo class="icon" [history]="history()" (redo)="undoRedo.emit(true)" />

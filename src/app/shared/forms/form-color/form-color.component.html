@@ -1,0 +1,17 @@
+<mat-form-field class="form-field" appearance="outline">
+  <mat-label>{{ reqData().label }}</mat-label>
+  <input
+    matInput
+    type="color"
+    [style]="reqData().style"
+    [formControl]="control()"
+    [readonly]="reqData().readonly"
+    [placeholder]="reqData().placeholder"
+  />
+  <app-form-clear-button
+    matSuffix
+    [disabled]="control().disabled || reqData().readonly"
+    [value]="control().value"
+    (clearBtnClick)="onClickClearBtn()"
+  />
+</mat-form-field>

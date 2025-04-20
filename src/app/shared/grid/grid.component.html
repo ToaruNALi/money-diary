@@ -1,0 +1,110 @@
+<!-- グリッド上共通機能 -->
+@if (!!aboveContentOption()) {
+  <div class="grid-above-content my-scrollbar-hidden">
+    <div class="overflow">
+      @for (status of statusDispList(); track status) {
+        <div>{{ status.label + ':' }}</div>
+        <div style="min-width: 5px"></div>
+        <div>{{ status.value }}</div>
+        <div style="min-width: 10px"></div>
+      }
+    </div>
+  </div>
+}
+
+<!-- グリッド -->
+<div class="main-content">
+  <ag-grid-angular
+    [theme]="myTheme"
+    [gridOptions]="gridOptions()"
+    [getRowId]="rowId()"
+    [style]="style()"
+    [columnDefs]="columnDefs()"
+    [rowData]="rowDatas()"
+    [getRowStyle]="rowStyle()"
+    (selectionChanged)="onSelectCell()"
+    (gridReady)="onReadyGrid($event)"
+    (rowSelected)="rowSelect.emit($event)"
+    (cellClicked)="onClickCell($event)"
+    (cellValueChanged)="cellValueChange.emit($event)"
+    (cellDoubleClicked)="cellDoubleClick.emit($event)"
+    (rowClicked)="rowClick.emit($event)"
+    (rowDoubleClicked)="rowDoubleClick.emit($event)"
+    (firstDataRendered)="onDispFirstData($event)"
+    (rowDragEnd)="onDragEndRow($event)"
+    (rowDragEnter)="onDragEnterRow($event)"
+    (cellContextMenu)="cellContextMenu.emit($event)"
+    (columnHeaderContextMenu)="columnHeaderLongClick.emit($event)"
+    (modelUpdated)="onUpdateModel($event)"
+  />
+</div>
+
+<!-- グリッド下共通機能 -->
+@if (!!belowContentOption()) {
+  <div class="grid-below-content my-scrollbar-hidden">
+    <div style="flex: auto"></div>
+    <div class="overflow">
+      <!-- 行追加 -->
+      <mat-icon [class.hidden]="!belowOpt().addRow" (click)="onAddRow()"
+        >add</mat-icon
+      >
+      <!-- ソート -->
+      <mat-icon [class.hidden]="!belowOpt().sort" (click)="onSort()"
+        >sort</mat-icon
+      >
+      <!-- フィルタ解除 -->
+      <mat-icon [class.hidden]="!belowOpt().filterOff" (click)="onFilterOff()"
+        >filter_list_off
+      </mat-icon>
+      <!-- フィルタ状態切替2 (エラー/正常) -->
+      <mat-icon
+        [class.hidden]="!belowOpt().changeFilter"
+        (click)="onChangeFilter()"
+        >{{ filterChangeState ? 'warning' : 'check_circle' }}
+      </mat-icon>
+      <!-- 選択状態切替 (全選択/選択解除) -->
+      <mat-icon
+        [class.hidden]="!belowOpt().changeSelection"
+        (click)="onChangeSelection()"
+        >{{ selectChangeState ? 'select_all' : 'deselect' }}
+      </mat-icon>
+      <!-- クイックフィルタ欄 -->
+      <input
+        #quickFilterText
+        [class.hidden]="!belowOpt().quickFilter"
+        type="text"
+        (input)="onFilter($event)"
+      />
+      <!-- 検索欄 -->
+      <input
+        [class.hidden]="!belowOpt().search"
+        type="text"
+        (input)="onSearch($event)"
+      />
+      <!-- 最左列ジャンプ -->
+      <mat-icon
+        [class.hidden]="!belowOpt().jumpFirstCol"
+        (click)="onJumpFirstCol()"
+        >arrow_left
+      </mat-icon>
+      <!-- 最右列ジャンプ -->
+      <mat-icon
+        [class.hidden]="!belowOpt().jumpLastCol"
+        (click)="onJumpLastCol()"
+        >arrow_right
+      </mat-icon>
+      <!-- 最上行ジャンプ -->
+      <mat-icon
+        [class.hidden]="!belowOpt().jumpFirstRow"
+        (click)="onJumpFirstRow()"
+        >arrow_drop_up
+      </mat-icon>
+      <!-- 最下行ジャンプ -->
+      <mat-icon
+        [class.hidden]="!belowOpt().jumpLastRow"
+        (click)="onJumpLastRow()"
+        >arrow_drop_down
+      </mat-icon>
+    </div>
+  </div>
+}

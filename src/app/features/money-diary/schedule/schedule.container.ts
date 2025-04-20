@@ -1,0 +1,25 @@
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { MoneyDiaryBaseContainerComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.container';
+import { ScheduleComponent } from 'src/app/features/money-diary/schedule/schedule.component';
+import * as Const from 'src/app/shared/constants/constants';
+
+@Component({
+    selector: 'app-schedule-container',
+    imports: [ScheduleComponent],
+    template: `
+    <app-schedule
+      [style]="displayOpt().beforeStyle"
+      [@display]="displayOpt().afterClass"
+      [rowDataKey]="rowDataKey"
+      [mainRowDatas]="scheduleDatas()"
+      [inputDatas]="inputDatas()"
+      [mainRowDatas]="scheduleDatas()"
+      (rowDataEdits)="onEditRowDatas($event)"
+    ></app-schedule>
+  `,
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ScheduleContainerComponent extends MoneyDiaryBaseContainerComponent {
+  protected override readonly screenId = Const.SCREEN_ID.SCHEDULE;
+  protected override readonly rowDataKey = Const.ROW_DATA_KEY.SCHEDULE;
+}

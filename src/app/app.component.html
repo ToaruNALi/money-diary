@@ -1,0 +1,19 @@
+<div [@.disabled]="isDisabled" class="app-content">
+  <!-- ヘッダ -->
+  <app-header-container class="header-content" />
+  <!-- メイン -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+  <!-- フッタ -->
+  <app-footer-container class="footer-content" />
+  <!-- プログレス画面 -->
+  <app-progress-spinner [loading]="usecase.loadingAll()" />
+  <!-- 画面遷移マップ -->
+  <app-screen-transition-map
+    class="map-content"
+    [display]="usecase.mapDisp()"
+    [screenId]="usecase.storeScreen.screenInfo.si()"
+    [screenDatas]="usecase.storeScreen.screenInfo.sd()"
+  />
+</div>

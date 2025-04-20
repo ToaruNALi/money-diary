@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>{{ inputData.title }}</h2>
+<mat-dialog-content
+  class="dialog-content"
+  [style]="inputData.style"
+  [formGroup]="form"
+>
+  @for (data of inputData.datas; track data.id) {
+    <div
+      class="form-content"
+      [style.display]="data.hide ? 'none' : 'block'"
+      [style.margin]="'10px 0 5px'"
+    >
+      @let formCtrl = form.get(data.id);
+
+      @switch (data.type) {
+        @case ('text') {
+          <app-form-text
+            [data]="data"
+            [form]="formCtrl"
+            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
+            (selectAutoComp)="onInput('select', data, $event)"
+          />
+        }
+        @case ('number') {
+          <app-form-number
+            [data]="data"
+            [form]="formCtrl"
+            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
+            (selectAutoComp)="onInput('select', data, $event)"
+          />
+        }
+        @case ('date') {
+          <app-form-date [data]="data" [form]="formCtrl" />
+        }
+        @case ('textarea') {
+          <app-form-textarea
+            [data]="data"
+            [form]="formCtrl"
+            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
+            (selectAutoComp)="onInput('select', data, $event)"
+          />
+        }
+        @case ('color') {
+          <app-form-color [data]="data" [form]="formCtrl" />
+        }
+        @case ('checkbox') {
+          <app-form-checkbox [data]="data" [form]="formCtrl" />
+        }
+        @case ('radio') {
+          <app-form-radio [data]="data" [form]="formCtrl" />
+        }
+        @case ('select') {
+          <app-form-select [data]="data" [form]="formCtrl" />
+        }
+        @case ('toggle') {
+          <app-form-toggle [data]="data" [form]="formCtrl" />
+        }
+      }
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions class="dialog-actions">
+  @for (button of inputData.buttonOptions; track button.id) {
+    <button
+      mat-icon-button
+      [style.display]="button.hide ? 'none' : 'block'"
+      [disabled]="button.disabled || form.getError(button.id)"
+      [color]="button.color"
+      (click)="button.clickEvent?.(form, inputData, dialogRef)"
+    >
+      <mat-icon>{{ button.icon }}</mat-icon>
+    </button>
+  }
+</mat-dialog-actions>

@@ -1,0 +1,8 @@
+<mat-form-field class="form-field" appearance="outline">
+  <mat-label>{{ reqData().label }}</mat-label>
+  <mat-select [style]="reqData().style" [formControl]="control()">
+    @for (option of reqData().options; track option.id) {
+      <mat-option [value]="option.id">{{ option.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
