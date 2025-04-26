@@ -20,7 +20,7 @@ import {
   RowDataUpd,
   ValueType,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
   DialogInputComponent,
@@ -398,7 +398,7 @@ export abstract class MoneyDiaryBaseUsecase {
     const addDatas = structuredClone(selectNewDatas);
     let newDatas = structuredClone(rowDatas);
     for (const addData of addDatas) {
-      addData[Const.ROW_DATA_COMMON_COL_ID.ID] = Usecase.createRowId(rowDatas);
+      addData[Const.ROW_DATA_COMMON_COL_ID.ID] = Util.createRowId(rowDatas);
       newDatas = [...newDatas, structuredClone(addData)];
     }
     const newEditInfo = [
@@ -490,7 +490,7 @@ export abstract class MoneyDiaryBaseUsecase {
     status?: DialogStatus,
   ): [RowData[], RowDataEdit[]] => {
     return this.procAddStatus(
-      [Usecase.getInitRowData(rowDataKey)],
+      [Util.getInitRowData(rowDataKey)],
       rowDatas,
       rowDataKey,
       editInfo,

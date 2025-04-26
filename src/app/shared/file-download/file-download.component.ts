@@ -8,7 +8,7 @@ import {
 import { format } from 'date-fns';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import * as Const from 'src/app/shared/constants/constants';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
@@ -27,7 +27,7 @@ export class FileDownloadComponent {
     // URL生成
     const saveData = structuredClone(this.data());
     for (const key of Object.values(Const.ROW_DATA_KEY)) {
-      saveData.rm[key] = Usecase.createSaveRowDatas(key, saveData.rm[key]);
+      saveData.rm[key] = Util.createSaveRowDatas(key, saveData.rm[key]);
     }
 
     const downloadData = JSON.stringify(saveData);

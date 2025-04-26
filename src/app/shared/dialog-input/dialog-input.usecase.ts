@@ -10,7 +10,7 @@ import {
 import Fuse from 'fuse.js';
 import * as Const from 'src/app/shared/constants/constants';
 import { FormCtrl, InputType, ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
   DialogInput,
@@ -136,7 +136,7 @@ export class DialogInputUsecase {
       let value = this.cvtFormValueToValue(form.get(data.id)?.value, data.type);
       if (typeof value === 'string') {
         // 半角カナと全角英数の禁止
-        value = Usecase.convertToZKAndToHE(value);
+        value = Util.convertToZKAndToHE(value);
       }
 
       result.push({ id: data.id, value });

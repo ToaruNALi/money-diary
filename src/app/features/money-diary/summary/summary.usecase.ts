@@ -9,7 +9,7 @@ import {
 import { RowData } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 
 @Injectable()
 export class SummaryUsecase {
@@ -43,7 +43,7 @@ export class SummaryUsecase {
           }
           return format(new Date(val), Const.DATE_FORMAT.YYYY_MM);
         },
-        cellStyle: Usecase.getCellCommonStyle,
+        cellStyle: Util.getCellCommonStyle,
       },
       {
         headerName: 'Income',
@@ -119,7 +119,7 @@ export class SummaryUsecase {
       const sumData: RowData = {};
 
       // 必須項目
-      sumData[Const.ROW_DATA_COMMON_COL_ID.ID] = Usecase.createRowId(sumDatas);
+      sumData[Const.ROW_DATA_COMMON_COL_ID.ID] = Util.createRowId(sumDatas);
       sumData[Const.SUMMARY_COL_ID.DATE] = date;
       const keys = [
         Const.SUMMARY_COL_ID.INCOME,
@@ -129,7 +129,7 @@ export class SummaryUsecase {
         Const.SUMMARY_COL_ID.INC_AND_EXP_HIDDEN,
       ];
       for (const key of keys) {
-        sumData[key] = Usecase.getInitValue(Const.ROW_DATA_KEY.SUMMARY, key);
+        sumData[key] = Util.getInitValue(Const.ROW_DATA_KEY.SUMMARY, key);
       }
 
       // 可変項目
@@ -141,7 +141,7 @@ export class SummaryUsecase {
           continue;
         }
 
-        sumData[`${Const.SUMMARY_COL_ID.ITEM}${id}`] = Usecase.getInitValue(
+        sumData[`${Const.SUMMARY_COL_ID.ITEM}${id}`] = Util.getInitValue(
           Const.ROW_DATA_KEY.SUMMARY,
           Const.SUMMARY_COL_ID.ITEM,
         );
@@ -152,7 +152,7 @@ export class SummaryUsecase {
 
     // ２．集計データに収支入力データを反映
     for (const rowData of inputDatas) {
-      if (!Usecase.checkInputMode(rowData, Const.INPUT_MODE.ALL_REQ)) {
+      if (!Util.checkInputMode(rowData, Const.INPUT_MODE.ALL_REQ)) {
         // 必須項目漏れあり
         continue;
       }

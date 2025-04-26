@@ -4,7 +4,7 @@ import { RowData } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 
 @Injectable()
@@ -28,7 +28,7 @@ export class ItemUsecase extends SettingUsecase {
       filter: false,
       flex: 1,
       valueSetter: this.newValueSetter,
-      cellStyle: Usecase.getCellCommonStyle,
+      cellStyle: Util.getCellCommonStyle,
     },
     {
       headerName: 'Summary Count',

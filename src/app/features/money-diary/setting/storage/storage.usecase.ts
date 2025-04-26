@@ -5,7 +5,7 @@ import { RowData } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 
 @Injectable()
@@ -35,7 +35,7 @@ export class StorageUsecase extends SettingUsecase {
       filter: false,
       width: 140,
       valueSetter: (params) => this.amountSetter(params, inputDatas, credit),
-      cellStyle: Usecase.getCellCommonStyle,
+      cellStyle: Util.getCellCommonStyle,
     },
     {
       headerName: 'Bank',
@@ -159,14 +159,14 @@ export class StorageUsecase extends SettingUsecase {
     for (const data of inputDatas) {
       const num = data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
       if (
-        !Usecase.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
+        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
         data[Const.MONEY_DIARY_COL_ID.STORAGE] !== storageId ||
-        !Usecase.isValidInteger(num)
+        !Util.isValidInteger(num)
       ) {
         continue;
       }
 
-      const payDate = Usecase.getPayDate(
+      const payDate = Util.getPayDate(
         data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
           data[Const.MONEY_DIARY_COL_ID.DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],

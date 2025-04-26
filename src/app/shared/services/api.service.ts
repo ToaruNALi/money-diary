@@ -5,7 +5,7 @@ import { RowDataEditHistory } from 'src/app/domain/row-data-edit-history';
 import { ScreenInfo } from 'src/app/domain/screen-info';
 import * as Const from 'src/app/shared/constants/constants';
 import { RowDataKey, StorageKey } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 
 @Injectable({
   providedIn: 'root',
@@ -40,7 +40,7 @@ export class ApiService {
   ): Observable<boolean> => {
     localStorage.setItem(
       key,
-      JSON.stringify(Usecase.createSaveRowDatas(key, datas)),
+      JSON.stringify(Util.createSaveRowDatas(key, datas)),
     );
     return of(true);
   };

@@ -21,7 +21,7 @@ import {
   RowDataKey,
   RowDataUpd,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { ApiService } from 'src/app/shared/services/api.service';
 
 /** State */
@@ -115,7 +115,7 @@ const setRowDataMapOnLoad =
     const result = {} as RowDataMap;
     for (const [rowDataKey, datas] of Object.entries(map)) {
       const key = rowDataKey as RowDataKey;
-      result[key] = Usecase.editRowDataOnLoad(key, datas);
+      result[key] = Util.editRowDataOnLoad(key, datas);
     }
     return { rowDataMap: result };
   };

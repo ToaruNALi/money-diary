@@ -5,7 +5,7 @@ import { RowData } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
 import { RowDataKey, ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
   DialogInputData,
@@ -105,7 +105,7 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
     rowDataKey: RowDataKey,
   ): DialogInput => {
     // 入力データ
-    const initValues = Usecase.getInitRowData(rowDataKey);
+    const initValues = Util.getInitRowData(rowDataKey);
     const rowData = rowDatas[0];
     const datas: DialogInputData[] = [
       {
@@ -126,7 +126,7 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
     ];
 
     return {
-      title: Usecase.getScreenTitle(rowDataKey),
+      title: Util.getScreenTitle(rowDataKey),
       datas,
       option: { sameDataOk: true },
     };

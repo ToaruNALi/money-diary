@@ -20,7 +20,7 @@ import {
   RowDataKey,
   ValueType,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import * as Dialog from 'src/app/shared/dialog-input/dialog-input.component';
 import {
   DialogInput,
@@ -102,7 +102,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       valueSetter: (params) => this.dateSetter(params, credit),
       valueFormatter: this.dateFormatter,
       comparator: (_a, _b, nodeA, nodeB) =>
-        Usecase.sortCommonProc(nodeA.data, nodeB.data, [
+        Util.sortCommonProc(nodeA.data, nodeB.data, [
           { col: Const.MONEY_DIARY_COL_ID.DATE },
           { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
         ]),
@@ -118,14 +118,12 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       valueSetter: this.amountSetter,
       valueFormatter: this.amountFormatter,
       comparator: (_a, _b, nodeA, nodeB) =>
-        Usecase.amountComparator(
+        Util.amountComparator(
           nodeA.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
           nodeB.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
         ),
       cellStyle: (params) =>
-        Usecase.getStylePrice(
-          params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
-        ),
+        Util.getStylePrice(params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]),
     },
     {
       headerName: 'AmountNum',
@@ -223,7 +221,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       valueSetter: (params) => this.dateSetter(params, credit),
       valueFormatter: this.dateFormatter,
       comparator: (_a, _b, nodeA, nodeB) =>
-        Usecase.sortCommonProc(nodeA.data, nodeB.data, [
+        Util.sortCommonProc(nodeA.data, nodeB.data, [
           { col: Const.MONEY_DIARY_COL_ID.USE_DATE },
           { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
         ]),
@@ -235,7 +233,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       width: 100,
       valueFormatter: this.dateFormatter,
       comparator: (_a, _b, nodeA, nodeB) =>
-        Usecase.sortCommonProc(nodeA.data, nodeB.data, [
+        Util.sortCommonProc(nodeA.data, nodeB.data, [
           { col: Const.MONEY_DIARY_COL_ID.PAY_DATE },
           { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
         ]),
@@ -268,7 +266,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     if (!this.newValueSetter(params)) {
       return false;
     }
-    params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Usecase.getPayDate(
+    params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
       params.data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
         params.data[Const.MONEY_DIARY_COL_ID.DATE],
       params.data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -285,9 +283,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
   private readonly colorCellStyle = (
     params: CellClassParams<RowData, ValueType>,
   ): CellStyle => {
-    const cellStyle = Usecase.getCellCommonStyle(params);
+    const cellStyle = Util.getCellCommonStyle(params);
     const color = params.data?.[Const.MONEY_DIARY_COL_ID.COLOR];
-    const defaultColor = Usecase.getInitValue(
+    const defaultColor = Util.getInitValue(
       Const.ROW_DATA_KEY.MONEY_DIARY,
       Const.MONEY_DIARY_COL_ID.COLOR,
     );
@@ -308,13 +306,13 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
   ): boolean => {
     const val =
       params.newValue ||
-      Usecase.getInitValue(
+      Util.getInitValue(
         Const.ROW_DATA_KEY.MONEY_DIARY,
         Const.MONEY_DIARY_COL_ID.AMOUNT,
       );
 
     params.data[Const.MONEY_DIARY_COL_ID.AMOUNT] = val;
-    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Usecase.calcResult(val);
+    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Util.calcResult(val);
     this.commonSetter(params);
     return true;
   };
@@ -327,7 +325,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
   private readonly amountFormatter = (
     params: ValueFormatterParams<RowData, ValueType>,
   ): string => {
-    return Usecase.cvtNumToPrice(
+    return Util.cvtNumToPrice(
       params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
     );
   };
@@ -338,7 +336,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
   private readonly commonSetter = (
     params: ValueSetterParams<RowData, ValueType>,
   ): boolean => {
-    params.data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Usecase.getInputMode(
+    params.data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Util.getInputMode(
       params.data,
     );
     params.data[Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
@@ -358,7 +356,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     const datas = structuredClone(rowDatas);
     for (const data of datas) {
       // 支払日
-      data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Usecase.getPayDate(
+      data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
         data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
           data[Const.MONEY_DIARY_COL_ID.DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -381,7 +379,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     style: RowStyle = {},
     option: Record<string, boolean>,
   ): RowStyle => {
-    const inputMode = Usecase.getInputMode(rowData);
+    const inputMode = Util.getInputMode(rowData);
     if (inputMode === Const.INPUT_MODE.NONE) {
       // Noneデータの場合
       style['backgroundColor'] = Const.GRID_ROW_COLOR.NONE;
@@ -580,7 +578,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
       let val = '';
       if (date !== undefined && useDate !== undefined && credit !== undefined) {
-        val = Usecase.getPayDate(
+        val = Util.getPayDate(
           useDate || date,
           credit,
           otherRowDatas[creditDatasIdx],
@@ -593,7 +591,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     // 計算結果 setter
     const calcResultSetter = (form: FormRecord): void => {
       const amount = form.get(Const.MONEY_DIARY_COL_ID.AMOUNT)?.value;
-      const val = Usecase.cvtNumToPrice(Usecase.calcResult(amount));
+      const val = Util.cvtNumToPrice(Util.calcResult(amount));
 
       form.get(DIALOG_INPUT_ID.CALC_RESULT)?.setValue(val);
     };
@@ -626,7 +624,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         if (
           checkKeys.some(
             (key) =>
-              form.get(key)?.value !== Usecase.getInitValue(rowDataKey, key),
+              form.get(key)?.value !== Util.getInitValue(rowDataKey, key),
           )
         ) {
           // 初期値でない入力値が1箇所でもある場合
@@ -660,14 +658,14 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
     // 日付初期値
     const initDate = (() => {
-      if (Usecase.checkInputMode(rowData, Const.INPUT_MODE.NONE)) {
+      if (Util.checkInputMode(rowData, Const.INPUT_MODE.NONE)) {
         return DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
       }
       return rowData[Const.MONEY_DIARY_COL_ID.DATE];
     })();
 
     // 入力データ
-    const initValues = Usecase.getInitRowData(rowDataKey);
+    const initValues = Util.getInitRowData(rowDataKey);
     const datas: DialogInputData[] = [
       {
         id: Const.MONEY_DIARY_COL_ID.DATE,
@@ -707,8 +705,8 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         // 計算結果表示用
         id: DIALOG_INPUT_ID.CALC_RESULT,
         label: 'Calc Result',
-        value: Usecase.cvtNumToPrice(
-          Usecase.calcResult(rowData[Const.MONEY_DIARY_COL_ID.AMOUNT]),
+        value: Util.cvtNumToPrice(
+          Util.calcResult(rowData[Const.MONEY_DIARY_COL_ID.AMOUNT]),
         ),
         required: true,
         readonly: true,
@@ -853,7 +851,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     }
 
     return {
-      title: Usecase.getScreenTitle2(rowDataKey) + ' Input',
+      title: Util.getScreenTitle2(rowDataKey) + ' Input',
       datas,
       buttonOptions,
       validatorFn,
@@ -967,7 +965,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       // width: '80vw',
     };
     return {
-      title: Usecase.getScreenTitle2(rowDataKey) + ' Replace',
+      title: Util.getScreenTitle2(rowDataKey) + ' Replace',
       datas,
       buttonOptions,
       style,
@@ -1158,7 +1156,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     // 予約語無効
     const invalidReservedWord = true;
     return {
-      title: Usecase.getScreenTitle2(rowDataKey) + ' Serial Number',
+      title: Util.getScreenTitle2(rowDataKey) + ' Serial Number',
       datas,
       buttonOptions,
       style,
@@ -1261,11 +1259,11 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       // デフォルト
       const newDatas = this.reflectRowDatasDefault(selectRowDatas, outputDatas);
       // 金額(数値)設定
-      newDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Usecase.calcResult(
+      newDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Util.calcResult(
         newDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT],
       );
       // 入力モード設定
-      newDatas[0][Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Usecase.getInputMode(
+      newDatas[0][Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Util.getInputMode(
         newDatas[0],
       );
       // 更新フラグ設定
@@ -1359,10 +1357,10 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         [Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]: num,
         [Const.MONEY_DIARY_COL_ID.STORAGE]:
           findData?.[Const.MONEY_DIARY_COL_ID.STORAGE] ??
-          Usecase.getInitValue(rowDataKey, Const.MONEY_DIARY_COL_ID.STORAGE),
+          Util.getInitValue(rowDataKey, Const.MONEY_DIARY_COL_ID.STORAGE),
         [Const.MONEY_DIARY_COL_ID.CREDIT]:
           findData?.[Const.MONEY_DIARY_COL_ID.CREDIT] ??
-          Usecase.getInitValue(rowDataKey, Const.MONEY_DIARY_COL_ID.CREDIT),
+          Util.getInitValue(rowDataKey, Const.MONEY_DIARY_COL_ID.CREDIT),
       };
       // moveの相方データを追加
       [newDatas, newEditInfo] = this.procAddStatus(
@@ -1384,7 +1382,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     newDatas: RowData[],
   ): boolean => {
     return !newDatas.some((data) =>
-      Usecase.checkInputMode(data, Const.INPUT_MODE.NONE),
+      Util.checkInputMode(data, Const.INPUT_MODE.NONE),
     );
   };
 
@@ -1407,13 +1405,13 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
       if (
         !data ||
-        !Usecase.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
-        !Usecase.isValidInteger(num)
+        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
+        !Util.isValidInteger(num)
       ) {
         continue;
       }
 
-      const payDate = Usecase.getPayDate(
+      const payDate = Util.getPayDate(
         data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
           data[Const.MONEY_DIARY_COL_ID.DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -1434,11 +1432,11 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       },
       {
         label: 'Savings',
-        value: Usecase.cvtNumToPrice(savings),
+        value: Util.cvtNumToPrice(savings),
       },
       {
         label: 'Last Savings',
-        value: Usecase.cvtNumToPrice(savingsLast),
+        value: Util.cvtNumToPrice(savingsLast),
       },
     ];
   };

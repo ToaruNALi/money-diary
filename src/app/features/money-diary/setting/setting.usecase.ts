@@ -11,7 +11,7 @@ import {
   RowDataKey,
   ValueType,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
   DialogInput,
@@ -97,7 +97,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     // 初期データ
     const rowData = selectRowDatas[0];
     const rowDataVal = structuredClone(rowData);
-    const rowDataInitVal = Usecase.getInitRowData(rowDataKey);
+    const rowDataInitVal = Util.getInitRowData(rowDataKey);
     const datas: DialogInputData[] = this.getDialogInputData(
       rowDataVal,
       rowDataInitVal,
@@ -144,7 +144,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     };
 
     return {
-      title: Usecase.getScreenTitle2(rowDataKey),
+      title: Util.getScreenTitle2(rowDataKey),
       datas,
       buttonOptions,
       validatorFn,
@@ -266,7 +266,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     if (this.existEnptyData(newDatas)) {
       // 空データ追加
       [newDatas, newEditInfo] = this.procAddStatus(
-        [Usecase.getInitRowData(rowDataKey)],
+        [Util.getInitRowData(rowDataKey)],
         newDatas,
         rowDataKey,
         newEditInfo,
@@ -274,7 +274,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     }
     if (this.existNoSelectData(newDatas)) {
       // 未選択データ追加
-      const addData = Usecase.getInitRowData(rowDataKey);
+      const addData = Util.getInitRowData(rowDataKey);
       addData[Const.ROW_DATA_COMMON_COL_ID.ID] = Const.MARK.NO_SELECT.ID;
       addData[Const.ROW_DATA_COMMON_COL_ID.LABEL] = Const.MARK.NO_SELECT.LABEL;
       newEditInfo = [

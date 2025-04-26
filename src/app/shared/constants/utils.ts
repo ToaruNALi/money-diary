@@ -14,7 +14,7 @@ import {
 } from 'src/app/shared/constants/types';
 
 /***************
- * Usecase
+ * Util
  ***************/
 /** 有効な整数かどうかを判断する */
 export const isValidInteger = (value?: ValueType): value is number =>

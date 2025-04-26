@@ -47,7 +47,7 @@ import {
   SortOption,
   ValueType,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 export type GridAboveContentOption = {};
@@ -210,10 +210,10 @@ export class GridComponent {
         headerClass: 'ag-left-aligned-header',
         cellClass: 'ag-right-aligned-cell',
         cellEditor: 'agNumberCellEditor',
-        valueFormatter: (params) => Usecase.cvtNumToPrice(params.value),
+        valueFormatter: (params) => Util.cvtNumToPrice(params.value),
         filter: 'agNumberColumnFilter',
-        comparator: Usecase.amountComparator,
-        cellStyle: (params) => Usecase.getStylePrice(params.value),
+        comparator: Util.amountComparator,
+        cellStyle: (params) => Util.getStylePrice(params.value),
       },
       amountCol: {
         headerClass: 'ag-left-aligned-header',
@@ -389,7 +389,7 @@ export class GridComponent {
         continue;
       }
       const num = Number(data[this.calcTargetColumns()[0]]);
-      if (!Usecase.isValidInteger(num)) {
+      if (!Util.isValidInteger(num)) {
         continue;
       }
       if (num > 0) {
@@ -402,9 +402,9 @@ export class GridComponent {
 
     // 表示用に編集
     this.statusDisp[0].value = status.cnt.toString();
-    this.statusDisp[1].value = Usecase.cvtNumToPrice(status.sum);
-    this.statusDisp[2].value = Usecase.cvtNumToPrice(status.inc);
-    this.statusDisp[3].value = Usecase.cvtNumToPrice(status.exp);
+    this.statusDisp[1].value = Util.cvtNumToPrice(status.sum);
+    this.statusDisp[2].value = Util.cvtNumToPrice(status.inc);
+    this.statusDisp[3].value = Util.cvtNumToPrice(status.exp);
 
     // 選択切替状態更新
     this.selectChangeState = rowDatas.length === 0;
@@ -453,7 +453,7 @@ export class GridComponent {
     event: RowDragEndEvent<RowData, ValueType>,
   ): void => {
     const rowIdxes = event.nodes.map((node) => node.rowIndex);
-    if (Usecase.equalObject(rowIdxes, this.beforeRowIdxes)) {
+    if (Util.equalObject(rowIdxes, this.beforeRowIdxes)) {
       return;
     }
     const targetIds = event.nodes.map((node) => node.id);
@@ -501,7 +501,7 @@ export class GridComponent {
     event: FirstDataRenderedEvent,
   ): void => {
     // 最終行にスクロール
-    Usecase.jumpRow(event.api);
+    Util.jumpRow(event.api);
   };
 
   /**
@@ -514,9 +514,7 @@ export class GridComponent {
         type: Const.ROW_DATA_EDIT_TYPE.ADD,
         event: {
           key: this.rowDataKey(),
-          datas: [
-            Usecase.getDefaultRowData(this.rowDataKey(), this.rowDatas()),
-          ],
+          datas: [Util.getDefaultRowData(this.rowDataKey(), this.rowDatas())],
           addIds: [null],
         } as RowDataAdd,
       },
@@ -528,11 +526,11 @@ export class GridComponent {
    */
   protected readonly onSort = (): void => {
     const oldRowDatas = this.rowDatas();
-    const newRowDatas = Usecase.sortRowDatas(
+    const newRowDatas = Util.sortRowDatas(
       oldRowDatas,
       this.belowContentOption().sort ?? [],
     );
-    if (Usecase.equalObject(oldRowDatas, newRowDatas)) {
+    if (Util.equalObject(oldRowDatas, newRowDatas)) {
       // ソート前と順番が変わらない場合は、履歴に追加しない
       return;
     }
@@ -666,13 +664,13 @@ export class GridComponent {
    * 最初の列にジャンプする
    */
   protected readonly onJumpFirstCol = (): void => {
-    Usecase.jumpCol(this.gridApi, 0);
+    Util.jumpCol(this.gridApi, 0);
   };
   /**
    * 最後の列にジャンプする
    */
   protected readonly onJumpLastCol = (): void => {
-    Usecase.jumpCol(this.gridApi);
+    Util.jumpCol(this.gridApi);
   };
   /**
    * 最初の行にジャンプする
@@ -682,7 +680,7 @@ export class GridComponent {
       // 検索モードの場合
     } else {
       // 検索モードでない場合
-      Usecase.jumpRow(this.gridApi, 0);
+      Util.jumpRow(this.gridApi, 0);
     }
   };
   /**
@@ -716,7 +714,7 @@ export class GridComponent {
       console.log('test');
     } else {
       // 検索モードでない場合
-      Usecase.jumpRow(this.gridApi);
+      Util.jumpRow(this.gridApi);
     }
   };
 }

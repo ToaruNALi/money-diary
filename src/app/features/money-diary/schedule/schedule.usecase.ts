@@ -14,7 +14,7 @@ import { RowData } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
 import { RowDataKey, ValueType } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
   DialogInputData,
@@ -224,7 +224,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     if (!this.newValueSetter(params)) {
       return false;
     }
-    params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Usecase.getPayDate(
+    params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
       params.data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
         params.data[Const.MONEY_DIARY_COL_ID.DATE],
       params.data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -241,9 +241,9 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   private readonly colorCellStyle = (
     params: CellClassParams<RowData, ValueType>,
   ): CellStyle => {
-    const cellStyle = Usecase.getCellCommonStyle(params);
+    const cellStyle = Util.getCellCommonStyle(params);
     const color = params.data?.[Const.MONEY_DIARY_COL_ID.COLOR];
-    const defaultColor = Usecase.getInitValue(
+    const defaultColor = Util.getInitValue(
       Const.ROW_DATA_KEY.MONEY_DIARY,
       Const.MONEY_DIARY_COL_ID.COLOR,
     );
@@ -264,13 +264,13 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   ): boolean => {
     const val =
       params.newValue ||
-      Usecase.getInitValue(
+      Util.getInitValue(
         Const.ROW_DATA_KEY.MONEY_DIARY,
         Const.MONEY_DIARY_COL_ID.AMOUNT,
       );
 
     params.data[Const.MONEY_DIARY_COL_ID.AMOUNT] = val;
-    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Usecase.calcResult(val);
+    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Util.calcResult(val);
     this.commonSetter(params);
     return true;
   };
@@ -283,7 +283,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   private readonly amountFormatter = (
     params: ValueFormatterParams<RowData, ValueType>,
   ): string => {
-    return Usecase.cvtNumToPrice(
+    return Util.cvtNumToPrice(
       params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
     );
   };
@@ -294,7 +294,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   private readonly commonSetter = (
     params: ValueSetterParams<RowData, ValueType>,
   ): boolean => {
-    params.data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Usecase.getInputMode(
+    params.data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Util.getInputMode(
       params.data,
     );
     params.data[Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
@@ -314,7 +314,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     const datas = structuredClone(rowDatas);
     for (const data of datas) {
       // 支払日
-      data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Usecase.getPayDate(
+      data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
         data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
           data[Const.MONEY_DIARY_COL_ID.DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -475,7 +475,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     }));
 
     // 入力データ
-    const initValues = Usecase.getInitRowData(rowDataKey);
+    const initValues = Util.getInitRowData(rowDataKey);
     const datas: DialogInputData[] = [
       {
         id: Const.SCHEDULE_COL_ID.LABEL,
@@ -527,7 +527,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       // },
     ];
 
-    return { title: Usecase.getScreenTitle2(rowDataKey), datas };
+    return { title: Util.getScreenTitle2(rowDataKey), datas };
   };
 
   /**
@@ -582,13 +582,13 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
       if (
         !data ||
-        !Usecase.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
-        !Usecase.isValidInteger(num)
+        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
+        !Util.isValidInteger(num)
       ) {
         continue;
       }
 
-      const payDate = Usecase.getPayDate(
+      const payDate = Util.getPayDate(
         data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
           data[Const.MONEY_DIARY_COL_ID.DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
@@ -609,11 +609,11 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       },
       {
         label: 'Savings',
-        value: Usecase.cvtNumToPrice(savings),
+        value: Util.cvtNumToPrice(savings),
       },
       {
         label: 'Last Savings',
-        value: Usecase.cvtNumToPrice(savingsLast),
+        value: Util.cvtNumToPrice(savingsLast),
       },
     ];
   };

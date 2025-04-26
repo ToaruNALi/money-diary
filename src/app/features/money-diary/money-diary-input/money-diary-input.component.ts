@@ -33,7 +33,7 @@ import {
   RowDataUpd,
   ValueType,
 } from 'src/app/shared/constants/types';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import {
   GridBelowContentOption,
@@ -214,9 +214,9 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       (this.cellClickForbColumns as string[]).includes(event.column.getId())
     ) {
       // セルクリック禁止列の場合
-      if (Usecase.checkInputMode(event.data, Const.INPUT_MODE.NONE)) {
+      if (Util.checkInputMode(event.data, Const.INPUT_MODE.NONE)) {
         // 空行の場合
-        if (!Usecase.equalObject(this.copyData(), {})) {
+        if (!Util.equalObject(this.copyData(), {})) {
           // コピー情報が存在する場合、ペースト
           this.rowDataEdits.emit([
             {
@@ -238,7 +238,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
               event: {
                 key: this.rowDataKey(),
                 datas: [
-                  Usecase.getDefaultRowData(
+                  Util.getDefaultRowData(
                     this.rowDataKey(),
                     this.mainRowDatas(),
                   ),

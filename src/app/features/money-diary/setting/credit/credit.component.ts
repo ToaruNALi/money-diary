@@ -3,7 +3,7 @@ import { CellContextMenuEvent } from 'ag-grid-community';
 import { CreditUsecase } from 'src/app/features/money-diary/setting/credit/credit.usecase';
 import { SettingComponent } from 'src/app/features/money-diary/setting/setting.component';
 import * as Const from 'src/app/shared/constants/constants';
-import * as Usecase from 'src/app/shared/constants/usecases';
+import * as Util from 'src/app/shared/constants/utils';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
 
 @Component({
@@ -36,7 +36,7 @@ export class CreditComponent extends SettingComponent {
     const payDay = event.data[Const.CREDIT_COL_ID.PAY_DAY];
     const date = `${event.colDef.headerName}-${payDay}`;
     const businessDays = event.data[Const.CREDIT_COL_ID.BUSINESS_DAYS];
-    const payDate = Usecase.calcPayDateConsiderHoliday(date, businessDays);
+    const payDate = Util.calcPayDateConsiderHoliday(date, businessDays);
 
     // フィルターモデル設定
     this.filterInputModelSet.emit({
