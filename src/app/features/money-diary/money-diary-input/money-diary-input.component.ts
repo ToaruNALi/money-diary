@@ -108,7 +108,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     const rowStyleOption = this.rowStyleOption();
     setTimeout(() => {
       // スタイル描画
-      this.gridApi.redrawRows();
+      this.gridApi?.redrawRows();
     });
     return (param: RowClassParams): RowStyle =>
       this.usecase.getRowStyle(param, rowStyleOption);
