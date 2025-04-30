@@ -104,8 +104,8 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       valueFormatter: this.dateFormatter,
       comparator: (_a, _b, nodeA, nodeB) =>
         Util.sortCommonProc(nodeA.data, nodeB.data, [
-          { col: Const.MONEY_DIARY_COL_ID.DATE },
           { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+          { col: Const.MONEY_DIARY_COL_ID.DATE },
         ]),
       cellStyle: this.colorCellStyle,
     },
@@ -268,8 +268,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       return false;
     }
     params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-      params.data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-        params.data[Const.MONEY_DIARY_COL_ID.DATE],
+      params.data[Const.MONEY_DIARY_COL_ID.USE_DATE],
       params.data[Const.MONEY_DIARY_COL_ID.CREDIT],
       credit,
     );
@@ -358,8 +357,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     for (const data of datas) {
       // 支払日
       data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
         creditDatas,
       );
@@ -428,8 +426,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       }
 
       const payDate = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
         creditDatas,
       );
@@ -655,17 +652,12 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
     // 支払日 setter
     const payDateSetter = (form: FormRecord): void => {
-      const date = form.get(Const.MONEY_DIARY_COL_ID.DATE)?.value;
       const useDate = form.get(Const.MONEY_DIARY_COL_ID.USE_DATE)?.value;
       const credit = form.get(Const.MONEY_DIARY_COL_ID.CREDIT)?.value;
 
       let val = '';
-      if (date !== undefined && useDate !== undefined && credit !== undefined) {
-        val = Util.getPayDate(
-          useDate || date,
-          credit,
-          otherRowDatas[creditDatasIdx],
-        );
+      if (useDate !== undefined && credit !== undefined) {
+        val = Util.getPayDate(useDate, credit, otherRowDatas[creditDatasIdx]);
       }
 
       form.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.setValue(val);
@@ -716,6 +708,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
         const keys = [
           Const.MONEY_DIARY_COL_ID.DATE,
+          Const.MONEY_DIARY_COL_ID.USE_DATE,
           Const.MONEY_DIARY_COL_ID.AMOUNT,
           Const.MONEY_DIARY_COL_ID.STORAGE,
           Const.MONEY_DIARY_COL_ID.CREDIT,
@@ -727,10 +720,11 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         for (const key of keys) {
           if (
             key === Const.MONEY_DIARY_COL_ID.DATE ||
+            key === Const.MONEY_DIARY_COL_ID.USE_DATE ||
             key === Const.MONEY_DIARY_COL_ID.AMOUNT
           ) {
             if (!!form.get(key)?.value) {
-              // 日付or金額の入力値が既にある場合
+              // 日付/利用日/金額の入力値が既にある場合
               continue;
             }
           }
@@ -740,12 +734,12 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     };
 
     // 日付初期値
-    const initDate = (() => {
+    const initDate = (id: string) => {
       if (Util.checkInputMode(rowData, Const.INPUT_MODE.NONE)) {
         return DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
       }
-      return rowData[Const.MONEY_DIARY_COL_ID.DATE];
-    })();
+      return rowData[id];
+    };
 
     // 入力データ
     const initValues = Util.getInitRowData(rowDataKey);
@@ -753,15 +747,14 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       {
         id: Const.MONEY_DIARY_COL_ID.DATE,
         label: 'Date',
-        value: initDate,
+        value: initDate(Const.MONEY_DIARY_COL_ID.DATE),
         type: Const.INPUT_TYPE.DATE,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.DATE],
-        setter: payDateSetter,
       },
       {
         id: Const.MONEY_DIARY_COL_ID.USE_DATE,
         label: 'Use Date',
-        value: rowData[Const.MONEY_DIARY_COL_ID.USE_DATE],
+        value: initDate(Const.MONEY_DIARY_COL_ID.USE_DATE),
         type: Const.INPUT_TYPE.DATE,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.USE_DATE],
         setter: payDateSetter,
@@ -1351,6 +1344,11 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       );
       // 更新フラグ設定
       newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
+      // 日付を設定
+      if (!newDatas[0][Const.MONEY_DIARY_COL_ID.DATE]) {
+        newDatas[0][Const.MONEY_DIARY_COL_ID.DATE] =
+          newDatas[0][Const.MONEY_DIARY_COL_ID.USE_DATE];
+      }
       return newDatas;
     } else if (option === INPUT_OPTION_TYPE.REPLACE) {
       // 置換時

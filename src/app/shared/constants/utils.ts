@@ -301,7 +301,7 @@ export const sortCommonProc = (
 
 /** 入力モードを返却する */
 export const getInputMode = (rowData: RowData): InputMode => {
-  const dateEmpty = !rowData[Const.MONEY_DIARY_COL_ID.DATE];
+  const dateEmpty = !rowData[Const.MONEY_DIARY_COL_ID.USE_DATE];
   const amountEmpty = !rowData[Const.MONEY_DIARY_COL_ID.AMOUNT];
   const memoEmpty = !rowData[Const.MONEY_DIARY_COL_ID.MEMO];
   const storageNoSelect =
@@ -424,6 +424,17 @@ export const createSaveRowDatas = (
         continue;
       }
 
+      if (key === Const.ROW_DATA_KEY.MONEY_DIARY) {
+        // 入力データ限定処理
+        if (
+          col === Const.MONEY_DIARY_COL_ID.DATE &&
+          data[col] === data[Const.MONEY_DIARY_COL_ID.USE_DATE]
+        ) {
+          // 日付が利用日と同じ場合、日付を保存しない
+          continue;
+        }
+      }
+
       saveData[col] = data[col];
     }
     saveDatas.push(structuredClone(saveData));
@@ -465,6 +476,11 @@ export const editInputDatasOnLoad = (datas: RowData[] = []): RowData[] => {
     );
     // 入力モードを算出
     data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = getInputMode(data);
+    // 日付が空の場合利用日を設定
+    if (!data[Const.MONEY_DIARY_COL_ID.DATE]) {
+      data[Const.MONEY_DIARY_COL_ID.DATE] =
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE];
+    }
     // // ID未採番の場合IDを採番
     // if (!data[Const.MONEY_DIARY_COL_ID.ID]) {
     //   data[Const.MONEY_DIARY_COL_ID.ID] = createRowId(datas);

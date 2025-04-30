@@ -226,8 +226,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       return false;
     }
     params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-      params.data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-        params.data[Const.MONEY_DIARY_COL_ID.DATE],
+      params.data[Const.MONEY_DIARY_COL_ID.USE_DATE],
       params.data[Const.MONEY_DIARY_COL_ID.CREDIT],
       credit,
     );
@@ -316,8 +315,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     for (const data of datas) {
       // 支払日
       data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
         creditDatas,
       );
@@ -590,8 +588,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       }
 
       const payDate = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
         creditDatas,
       );

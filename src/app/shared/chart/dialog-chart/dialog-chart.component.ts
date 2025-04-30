@@ -71,7 +71,12 @@ export class DialogChartComponent {
         continue;
       }
 
-      const dateStr = rowData[Const.MONEY_DIARY_COL_ID.DATE]?.toString() ?? '';
+      const dateStr = Util.getPayDate(
+        rowData[Const.MONEY_DIARY_COL_ID.USE_DATE],
+        rowData[Const.MONEY_DIARY_COL_ID.CREDIT],
+        this.data.creditDatas,
+      );
+      rowData[Const.MONEY_DIARY_COL_ID.DATE]?.toString() ?? '';
       const startDateStr = DateUtil.format(
         DateUtil.startOfMonth(dateStr),
         Const.DATE_FORMAT.YYYY_MM_DD,

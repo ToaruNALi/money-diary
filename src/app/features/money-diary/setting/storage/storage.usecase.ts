@@ -168,8 +168,7 @@ export class StorageUsecase extends SettingUsecase {
       }
 
       const payDate = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
         data[Const.MONEY_DIARY_COL_ID.CREDIT],
         credit,
       );

@@ -132,8 +132,8 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     () => ({
       addRow: () => this.mainRowDatas().length === 0,
       sort: [
-        { col: Const.MONEY_DIARY_COL_ID.DATE },
         { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+        { col: Const.MONEY_DIARY_COL_ID.DATE },
       ],
       filterOff: true,
       changeFilter: true,
