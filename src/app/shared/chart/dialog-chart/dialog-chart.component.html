@@ -1,4 +1,6 @@
+<!-- <h2 mat-dialog-title>{{ 'Summary' }}</h2> -->
 <ag-charts
-  [style]="{ width: '90vw', height: '90vh' }"
+  style="height: 100%; width: 500%"
   [options]="options()"
+  (click)="dialogRef.close()"
 ></ag-charts>
