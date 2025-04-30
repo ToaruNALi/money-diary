@@ -33,6 +33,7 @@ import {
   SetType,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
+import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 export const INPUT_OPTION_TYPE = {
   REPLACE: 'replace',
@@ -399,6 +400,88 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     }
 
     return style;
+  };
+
+  /**
+   * ステータスリストを返却する
+   * @param rowDatas
+   * @param creditDatas
+   * @returns
+   */
+  readonly calcStatusList = (
+    rowDatas: RowData[],
+    creditDatas: RowData[],
+  ): MoneyStatus[] => {
+    let cnt = 0;
+    let savings = 0;
+    let savingsLast = 0;
+    const today = DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+
+    for (const data of rowDatas) {
+      const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
+      if (
+        !data ||
+        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
+        !Util.isValidInteger(num)
+      ) {
+        continue;
+      }
+
+      const payDate = Util.getPayDate(
+        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
+          data[Const.MONEY_DIARY_COL_ID.DATE],
+        data[Const.MONEY_DIARY_COL_ID.CREDIT],
+        creditDatas,
+      );
+      if (payDate <= today) {
+        savings += num;
+      }
+
+      cnt++;
+      savingsLast += num;
+    }
+
+    return [
+      {
+        label: 'Cnt All',
+        value: cnt.toString(),
+      },
+      {
+        label: 'Savings',
+        value: Util.cvtNumToPrice(savings),
+      },
+      {
+        label: 'Last Savings',
+        value: Util.cvtNumToPrice(savingsLast),
+      },
+    ];
+  };
+
+  /**
+   * 選択行の金額を計算して返却する
+   * @param rowDatas
+   * @returns
+   */
+  override readonly calcSelectStatus = (rowDatas: RowData[]): MoneyStatus[] => {
+    const labels = ['Cnt', 'Sum', 'Inc', 'Exp'];
+    const status = labels.map((label) => ({ label, amount: 0 }));
+    // 収支計算
+    for (const data of rowDatas) {
+      const num = Number(data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]);
+      if (!Util.isValidInteger(num)) {
+        continue;
+      }
+      if (num > 0) {
+        status[2].amount += num;
+      } else if (num < 0) {
+        status[3].amount += num;
+      }
+      status[1].amount += num;
+    }
+    return status.map((st, idx) => ({
+      label: st.label,
+      value: !idx ? rowDatas.length.toString() : Util.cvtNumToPrice(st.amount),
+    }));
   };
 
   /**
@@ -1384,60 +1467,5 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     return !newDatas.some((data) =>
       Util.checkInputMode(data, Const.INPUT_MODE.NONE),
     );
-  };
-
-  /**
-   * ステータスリストを返却する
-   * @param rowDatas
-   * @param creditDatas
-   * @returns
-   */
-  readonly calcStatusList = (
-    rowDatas: RowData[],
-    creditDatas: RowData[],
-  ): { label: string; value: string }[] => {
-    let cnt = 0;
-    let savings = 0;
-    let savingsLast = 0;
-    const today = DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
-
-    for (const data of rowDatas) {
-      const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
-      if (
-        !data ||
-        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
-        !Util.isValidInteger(num)
-      ) {
-        continue;
-      }
-
-      const payDate = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE] ||
-          data[Const.MONEY_DIARY_COL_ID.DATE],
-        data[Const.MONEY_DIARY_COL_ID.CREDIT],
-        creditDatas,
-      );
-      if (payDate <= today) {
-        savings += num;
-      }
-
-      cnt++;
-      savingsLast += num;
-    }
-
-    return [
-      {
-        label: 'Cnt All',
-        value: cnt.toString(),
-      },
-      {
-        label: 'Savings',
-        value: Util.cvtNumToPrice(savings),
-      },
-      {
-        label: 'Last Savings',
-        value: Util.cvtNumToPrice(savingsLast),
-      },
-    ];
   };
 }

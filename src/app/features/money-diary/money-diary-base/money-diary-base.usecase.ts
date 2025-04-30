@@ -3,6 +3,7 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import {
   CellClickedEvent,
   ColDef,
+  ColGroupDef,
   RowClassParams,
   RowStyle,
   ValueFormatterParams,
@@ -31,6 +32,7 @@ import {
   DIALOG_STATUS,
   DialogStatus,
 } from './../../../shared/dialog-input/dialog-input.component';
+import { MoneyStatus } from './../../../shared/money-status/money-status.component';
 
 @Injectable()
 export abstract class MoneyDiaryBaseUsecase {
@@ -122,6 +124,19 @@ export abstract class MoneyDiaryBaseUsecase {
    * @returns 行データ
    */
   abstract readonly getRowDatas: (...rowDatas: RowData[][]) => RowData[];
+
+  /**
+   * 選択行の金額を計算して返却する
+   * @param rowDatas
+   * @param colDefs
+   * @returns 行データ
+   */
+  readonly calcSelectStatus = (
+    rowDatas: RowData[],
+    colDefs: (ColDef<RowData, any> | ColGroupDef<RowData>)[],
+  ): MoneyStatus[] => {
+    return [];
+  };
 
   /**
    * 行スタイルを返却する

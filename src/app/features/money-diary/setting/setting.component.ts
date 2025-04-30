@@ -17,6 +17,7 @@ import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.use
 import * as Const from 'src/app/shared/constants/constants';
 import { MoneyDiaryColId, ValueType } from 'src/app/shared/constants/types';
 import {
+  GridAboveContentOption,
   GridBelowContentOption,
   GridComponent,
 } from 'src/app/shared/grid/grid.component';
@@ -48,13 +49,24 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   protected readonly rowStyle = signal<{ (params: RowClassParams): RowStyle }>(
     this.usecase.getRowStyle,
   );
+  /** グリッド上ボタンオプション */
+  protected readonly aboveContentOption = computed<GridAboveContentOption>(
+    () => ({
+      calcSelectStatus: this.usecase.calcSelectStatus,
+    }),
+  );
   /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = {
-    addRow: (rowDatas) =>
-      rowDatas.every((dt) => !!dt[Const.ROW_DATA_COMMON_COL_ID.LABEL]),
-    jumpFirstRow: true,
-    jumpLastRow: true,
-  } as const satisfies GridBelowContentOption;
+  protected readonly belowContentOption = computed<GridBelowContentOption>(
+    () => ({
+      addRow: () =>
+        this.mainRowDatas().every(
+          (dt) => !!dt[Const.ROW_DATA_COMMON_COL_ID.LABEL],
+        ),
+      changeSelection: true,
+      jumpFirstRow: true,
+      jumpLastRow: true,
+    }),
+  );
   /** セルクリック禁止列 */
   protected readonly cellClickForbColumns = [
     Const.ROW_DATA_COMMON_COL_ID.LABEL,

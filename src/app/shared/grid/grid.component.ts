@@ -15,6 +15,7 @@ import {
   CellDoubleClickedEvent,
   CellValueChangedEvent,
   ColDef,
+  ColGroupDef,
   ColumnHeaderContextMenuEvent,
   FilterModel,
   FirstDataRenderedEvent,
@@ -48,11 +49,20 @@ import {
   ValueType,
 } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
+import {
+  MoneyStatus,
+  MoneyStatusComponent,
+} from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
-export type GridAboveContentOption = {};
+export type GridAboveContentOption = {
+  calcSelectStatus?: (
+    rowDatas: RowData[],
+    colDefs: (ColDef<RowData, any> | ColGroupDef<RowData>)[],
+  ) => MoneyStatus[];
+};
 export type GridBelowContentOption = {
-  addRow?: boolean | ((rowDatas: RowData[]) => boolean);
+  addRow?: boolean | (() => boolean);
   sort?: SortOption[];
   filterOff?: boolean;
   changeFilter?: boolean;
@@ -68,7 +78,7 @@ type BelowOpt = Record<keyof GridBelowContentOption, boolean>;
 
 @Component({
   selector: 'app-grid',
-  imports: [SharedCommonModule, AgGridAngular],
+  imports: [SharedCommonModule, AgGridAngular, MoneyStatusComponent],
   templateUrl: './grid.component.html',
   styleUrl: './grid.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,11 +104,9 @@ export class GridComponent {
     (params: RowClassParams): RowStyle;
   }>(() => ({}));
   /** Grid上ボタンオプション */
-  readonly aboveContentOption = input<boolean | GridAboveContentOption>(false);
+  readonly aboveContentOption = input<GridAboveContentOption>(); // HTMLが!!で判定しているため初期値不要
   /** Grid下ボタンオプション */
-  readonly belowContentOption = input<GridBelowContentOption>({});
-  /** 計算に使用する列 */
-  readonly calcTargetColumns = input<string[]>([]);
+  readonly belowContentOption = input<GridBelowContentOption>(); // HTMLが!!で判定しているため初期値不要
   /** セルクリック禁止列 */
   readonly cellClickForbColumns = input<string[]>([]);
   /** 空行判定方法 */
@@ -291,10 +299,31 @@ export class GridComponent {
       return id;
     },
   );
+  /** Grid上ボタンオプション */
+  protected readonly aboveOpt = computed(() => {
+    const inputOpt = this.aboveContentOption();
+    const defOpt: Required<GridAboveContentOption> = {
+      calcSelectStatus: inputOpt?.calcSelectStatus ?? (() => []),
+    };
+    return defOpt;
+  });
+  private readonly changeStatus = signal(false);
+  /** ステータスリスト(表示用) */
+  protected readonly statusDispList = computed(() => {
+    // 行データ増減時にもステータスを更新
+    this.rowDatas();
+    this.changeStatus();
+    // 選択行の取得
+    const rowDatas = this.gridApi?.getSelectedRows() ?? [];
+    // 列情報の取得
+    const colDefs = this.gridApi?.getColumnDefs() ?? [];
+    // 選択切替状態更新
+    this.selectChangeState = rowDatas.length === 0;
+    return this.aboveOpt().calcSelectStatus(rowDatas, colDefs);
+  });
   /** Grid下ボタンオプション */
   protected readonly belowOpt = computed(() => {
-    const rowDatas = this.rowDatas();
-    const inputOpt = this.belowContentOption();
+    const inputOpt = this.belowContentOption() ?? {};
     const defOpt: BelowOpt = {
       addRow: false,
       sort: false,
@@ -312,40 +341,13 @@ export class GridComponent {
       ...defOpt,
       ...inputOpt,
       addRow:
-        !!inputOpt.addRow &&
-        (inputOpt.addRow === true || !!inputOpt.addRow(rowDatas)),
+        !!inputOpt.addRow && (inputOpt.addRow === true || !!inputOpt.addRow()),
       sort: !!inputOpt.sort && inputOpt.sort.length > 0,
       changeFilter:
         !!inputOpt.changeFilter &&
         this.rowDataKey() === Const.ROW_DATA_KEY.MONEY_DIARY,
     };
     return retOpt;
-  });
-  /** ステータスリスト(計算用) */
-  private readonly statusDisp: { label: string; value: string }[] = [
-    {
-      label: 'Cnt',
-      value: '0',
-    },
-    {
-      label: 'Sum',
-      value: '¥0',
-    },
-    {
-      label: 'Inc',
-      value: '¥0',
-    },
-    {
-      label: 'Exp',
-      value: '¥0',
-    },
-  ];
-  /** ステータスリスト(表示用) */
-  protected readonly statusDispList = computed(() => {
-    // 行データ増減時にもステータスを更新
-    this.rowDatas();
-    this.onSelectCell();
-    return this.statusDisp;
   });
   /** 選択切替状態 */
   protected selectChangeState = true;
@@ -370,44 +372,7 @@ export class GridComponent {
    * @param event
    */
   protected readonly onSelectCell = (): void => {
-    if (!this.gridApi) {
-      return;
-    }
-
-    // 選択行の取得
-    const rowDatas = this.gridApi.getSelectedRows();
-    // ステータス一式
-    const status = {
-      cnt: rowDatas.length,
-      sum: 0,
-      inc: 0,
-      exp: 0,
-    };
-    // 収支計算
-    for (const data of rowDatas) {
-      if (!data || this.calcTargetColumns().length === 0) {
-        continue;
-      }
-      const num = Number(data[this.calcTargetColumns()[0]]);
-      if (!Util.isValidInteger(num)) {
-        continue;
-      }
-      if (num > 0) {
-        status.inc += num;
-      } else if (num < 0) {
-        status.exp += num;
-      }
-      status.sum += num;
-    }
-
-    // 表示用に編集
-    this.statusDisp[0].value = status.cnt.toString();
-    this.statusDisp[1].value = Util.cvtNumToPrice(status.sum);
-    this.statusDisp[2].value = Util.cvtNumToPrice(status.inc);
-    this.statusDisp[3].value = Util.cvtNumToPrice(status.exp);
-
-    // 選択切替状態更新
-    this.selectChangeState = rowDatas.length === 0;
+    this.changeStatus.update((st) => !st);
   };
   /**
    * 行選択状態を切り替える
@@ -528,7 +493,7 @@ export class GridComponent {
     const oldRowDatas = this.rowDatas();
     const newRowDatas = Util.sortRowDatas(
       oldRowDatas,
-      this.belowContentOption().sort ?? [],
+      this.belowContentOption()?.sort ?? [],
     );
     if (Util.equalObject(oldRowDatas, newRowDatas)) {
       // ソート前と順番が変わらない場合は、履歴に追加しない

@@ -7,6 +7,7 @@ import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
+import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 @Injectable()
 export class StorageUsecase extends SettingUsecase {
@@ -180,6 +181,37 @@ export class StorageUsecase extends SettingUsecase {
     }
 
     return savingsList;
+  };
+
+  /**
+   * 選択行の金額を計算して返却する
+   * @param rowDatas
+   * @returns
+   */
+  override readonly calcSelectStatus = (rowDatas: RowData[]): MoneyStatus[] => {
+    const statusInfo = [
+      { label: 'Cnt', id: '' },
+      { label: 'Savings', id: Const.STORAGE_COL_ID.SAVINGS },
+      { label: 'Last Savings', id: Const.STORAGE_COL_ID.LAST_SAVINGS },
+    ];
+    const status = statusInfo.map((info) => ({ ...info, amount: 0 }));
+    // 収支計算
+    for (const data of rowDatas) {
+      for (const [idx, st] of status.entries()) {
+        if (!idx) {
+          continue;
+        }
+        const num = Number(data[st.id]);
+        if (!Util.isValidInteger(num)) {
+          continue;
+        }
+        st.amount += num;
+      }
+    }
+    return status.map((st, idx) => ({
+      label: st.label,
+      value: !idx ? rowDatas.length.toString() : Util.cvtNumToPrice(st.amount),
+    }));
   };
 
   /**

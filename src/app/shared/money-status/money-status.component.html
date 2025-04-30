@@ -1,0 +1,10 @@
+<div class="status-content my-scrollbar-hidden" (click)="click.emit()">
+  <div class="overflow">
+    @for (status of list(); track status.label) {
+      <div>{{ status.label + ':' }}</div>
+      <div style="min-width: 5px"></div>
+      <div>{{ status.value }}</div>
+      <div style="min-width: 10px"></div>
+    }
+  </div>
+</div>

@@ -36,9 +36,11 @@ import {
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import {
+  GridAboveContentOption,
   GridBelowContentOption,
   GridComponent,
 } from 'src/app/shared/grid/grid.component';
+import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
@@ -49,6 +51,7 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
     GridComponent,
     MatMenuModule,
     MatSnackBarModule,
+    MoneyStatusComponent,
   ],
   providers: [MoneyDiaryInputUsecase],
   templateUrl: './money-diary-input.component.html',
@@ -114,28 +117,32 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.usecase.getRowStyle(param, rowStyleOption);
   });
 
-  /** 計算に使用する列 */
-  protected readonly calcTargetColumns = [
-    Const.MONEY_DIARY_COL_ID.AMOUNT_NUM,
-  ] as const satisfies string[];
   /** セルクリック禁止列 */
   protected readonly cellClickForbColumns = [
     Const.MONEY_DIARY_COL_ID.DATE,
   ] as const satisfies string[];
+  /** グリッド上ボタンオプション */
+  protected readonly aboveContentOption = computed<GridAboveContentOption>(
+    () => ({
+      calcSelectStatus: this.usecase.calcSelectStatus,
+    }),
+  );
   /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = {
-    addRow: (rowDatas) => rowDatas.length === 0,
-    sort: [
-      { col: Const.MONEY_DIARY_COL_ID.DATE },
-      { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
-    ],
-    filterOff: true,
-    changeFilter: true,
-    changeSelection: true,
-    quickFilter: true,
-    jumpFirstRow: true,
-    jumpLastRow: true,
-  } as const satisfies GridBelowContentOption;
+  protected readonly belowContentOption = computed<GridBelowContentOption>(
+    () => ({
+      addRow: () => this.mainRowDatas().length === 0,
+      sort: [
+        { col: Const.MONEY_DIARY_COL_ID.DATE },
+        { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+      ],
+      filterOff: true,
+      changeFilter: true,
+      changeSelection: true,
+      quickFilter: true,
+      jumpFirstRow: true,
+      jumpLastRow: true,
+    }),
+  );
   /** 空行判定 */
   protected readonly emptyRowJudgeFn = (rowData: RowData): boolean =>
     rowData[Const.MONEY_DIARY_COL_ID.INPUT_MODE] === Const.INPUT_MODE.NONE;

@@ -17,19 +17,16 @@ import { MemoUsecase } from 'src/app/features/money-diary/memo/memo.usecase';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
-import {
-  GridBelowContentOption,
-  GridComponent,
-} from 'src/app/shared/grid/grid.component';
+import { GridComponent } from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
-    selector: 'app-memo',
-    imports: [SharedCommonModule, GridComponent],
-    providers: [MemoUsecase],
-    templateUrl: './memo.component.html',
-    styleUrl: './memo.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-memo',
+  imports: [SharedCommonModule, GridComponent],
+  providers: [MemoUsecase],
+  templateUrl: './memo.component.html',
+  styleUrl: './memo.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MemoComponent extends MoneyDiaryBaseComponent {
   /** usecase */
@@ -45,11 +42,11 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
     this.usecase.getRowStyle,
   );
   /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = {
-    addRow: (rowDatas) => rowDatas.length === 0,
+  protected readonly belowContentOption = computed(() => ({
+    addRow: () => this.mainRowDatas().length === 0,
     jumpFirstRow: true,
     jumpLastRow: true,
-  } as const satisfies GridBelowContentOption;
+  }));
   /** セルクリック禁止列 */
   protected readonly cellClickForbColumns = [
     Const.ROW_DATA_COMMON_COL_ID.LABEL,

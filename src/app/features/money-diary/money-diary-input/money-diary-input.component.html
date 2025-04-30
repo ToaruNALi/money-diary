@@ -1,17 +1,8 @@
 <!-- 収支合計 -->
-<div
-  class="status-content my-scrollbar-hidden"
+<app-money-status
+  [list]="statusList()"
   (click)="onClickStatusContent()"
->
-  <div class="overflow">
-    @for (status of statusList(); track status.label) {
-      <div>{{ status.label + ':' }}</div>
-      <div style="min-width: 5px"></div>
-      <div>{{ status.value }}</div>
-      <div style="min-width: 10px"></div>
-    }
-  </div>
-</div>
+></app-money-status>
 
 <!-- 収支入力グリッド -->
 <div class="main-content">
@@ -24,9 +15,8 @@
     [columnDefs]="colDefs()"
     [rowDatas]="rowDatas()"
     [rowStyle]="rowStyle()"
-    [aboveContentOption]="true"
-    [belowContentOption]="belowContentOption"
-    [calcTargetColumns]="calcTargetColumns"
+    [aboveContentOption]="aboveContentOption()"
+    [belowContentOption]="belowContentOption()"
     [cellClickForbColumns]="cellClickForbColumns"
     [emptyRowJudgeFn]="emptyRowJudgeFn"
     (rowDataEdits)="rowDataEdits.emit($event)"

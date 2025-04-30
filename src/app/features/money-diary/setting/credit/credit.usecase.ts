@@ -10,6 +10,7 @@ import {
   DialogInputData,
   DialogOption,
 } from 'src/app/shared/dialog-input/dialog-input.component';
+import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 @Injectable()
 export class CreditUsecase extends SettingUsecase {
@@ -250,6 +251,54 @@ export class CreditUsecase extends SettingUsecase {
     }
 
     return amountList;
+  };
+
+  /**
+   * 選択行の金額を計算して返却する
+   * @param rowDatas
+   * @param colDefs
+   * @returns
+   */
+  override readonly calcSelectStatus = (
+    rowDatas: RowData[],
+    colDefs: ColDef<RowData, any>[],
+  ): MoneyStatus[] => {
+    if (!colDefs.length) {
+      // 初期表示時は列定義が取得不可のため、ステータス自体表示させない
+      return [];
+    }
+
+    const statusInfo = [
+      { label: 'Cnt', id: '' },
+      { label: '', id: Const.CREDIT_COL_ID.EXPENSES_TWO_MONTHS_AGO },
+      { label: '', id: Const.CREDIT_COL_ID.EXPENSES_LAST_MONTH },
+      { label: '', id: Const.CREDIT_COL_ID.EXPENSES_THIS_MONTH },
+      { label: '', id: Const.CREDIT_COL_ID.EXPENSES_NEXT_MONTH },
+      { label: '', id: Const.CREDIT_COL_ID.EXPENSES_CUSTOM_MONTH },
+    ];
+    const status = statusInfo.map((info) => ({
+      id: info.id,
+      label:
+        colDefs.find((def) => def.field === info.id)?.headerName ?? info.label,
+      amount: 0,
+    }));
+    // 収支計算
+    for (const data of rowDatas) {
+      for (const [idx, st] of status.entries()) {
+        if (!idx) {
+          continue;
+        }
+        const num = Number(data[st.id]);
+        if (!Util.isValidInteger(num)) {
+          continue;
+        }
+        st.amount += num;
+      }
+    }
+    return status.map((st, idx) => ({
+      label: st.label,
+      value: !idx ? rowDatas.length.toString() : Util.cvtNumToPrice(st.amount),
+    }));
   };
 
   /**

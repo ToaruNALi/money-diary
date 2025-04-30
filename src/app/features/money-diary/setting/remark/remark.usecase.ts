@@ -6,6 +6,7 @@ import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
+import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 @Injectable()
 export class RemarkUsecase extends SettingUsecase {
@@ -43,6 +44,13 @@ export class RemarkUsecase extends SettingUsecase {
       valueSetter: this.newValueSetter,
     },
     {
+      headerName: 'Inc And Exp',
+      field: Const.REMARK_COL_ID.INC_AND_EXP,
+      type: 'numericCol',
+      filter: false,
+      width: 110,
+    },
+    {
       headerName: 'Income',
       field: Const.REMARK_COL_ID.INCOME,
       type: 'numericCol',
@@ -52,13 +60,6 @@ export class RemarkUsecase extends SettingUsecase {
     {
       headerName: 'Expenses',
       field: Const.REMARK_COL_ID.EXPENSES,
-      type: 'numericCol',
-      filter: false,
-      width: 110,
-    },
-    {
-      headerName: 'Inc And Exp',
-      field: Const.REMARK_COL_ID.INC_AND_EXP,
       type: 'numericCol',
       filter: false,
       width: 110,
@@ -150,6 +151,38 @@ export class RemarkUsecase extends SettingUsecase {
     }
 
     return [income, expenses, income + expenses];
+  };
+
+  /**
+   * 選択行の金額を計算して返却する
+   * @param rowDatas
+   * @returns
+   */
+  override readonly calcSelectStatus = (rowDatas: RowData[]): MoneyStatus[] => {
+    const statusInfo = [
+      { label: 'Cnt', id: '' },
+      { label: 'Sum', id: Const.REMARK_COL_ID.INC_AND_EXP },
+      { label: 'Inc', id: Const.REMARK_COL_ID.INCOME },
+      { label: 'Exp', id: Const.REMARK_COL_ID.EXPENSES },
+    ];
+    const status = statusInfo.map((info) => ({ ...info, amount: 0 }));
+    // 収支計算
+    for (const data of rowDatas) {
+      for (const [idx, st] of status.entries()) {
+        if (!idx) {
+          continue;
+        }
+        const num = Number(data[st.id]);
+        if (!Util.isValidInteger(num)) {
+          continue;
+        }
+        st.amount += num;
+      }
+    }
+    return status.map((st, idx) => ({
+      label: st.label,
+      value: !idx ? rowDatas.length.toString() : Util.cvtNumToPrice(st.amount),
+    }));
   };
 
   /**

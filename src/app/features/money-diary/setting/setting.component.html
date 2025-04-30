@@ -2,13 +2,14 @@
   <app-grid
     [style]="{
       width: '100vw',
-      height: 'calc(100vh - 200px)',
+      height: 'calc(100vh - 200px - 25px)',
     }"
     [rowDataKey]="rowDataKey()"
     [columnDefs]="colDefs()"
     [rowDatas]="rowDatas()"
     [rowStyle]="rowStyle()"
-    [belowContentOption]="belowContentOption"
+    [aboveContentOption]="aboveContentOption()"
+    [belowContentOption]="belowContentOption()"
     [cellClickForbColumns]="cellClickForbColumns"
     (rowDataEdits)="rowDataEdits.emit($event)"
     (cellClick)="onClickCell($event)"

@@ -20,6 +20,7 @@ import {
   DialogInputData,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
+import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 @Injectable()
 export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
@@ -572,7 +573,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   readonly calcStatusList = (
     rowDatas: RowData[],
     creditDatas: RowData[],
-  ): { label: string; value: string }[] => {
+  ): MoneyStatus[] => {
     let cnt = 0;
     let savings = 0;
     let savingsLast = 0;

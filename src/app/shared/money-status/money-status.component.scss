@@ -1,0 +1,12 @@
+.status-content {
+  width: 100vw;
+  height: 25px;
+  overflow-x: auto;
+  user-select: none;
+
+  .overflow {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+}
