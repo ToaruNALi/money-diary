@@ -11,6 +11,8 @@ import { DialogOption } from 'src/app/shared/dialog-input/dialog-input.component
 /********************
  * Const
  ********************/
+export const HISTORY_MAX_LEN = 30;
+
 /** MoneyDiary共通カラムID */
 export const ROW_DATA_COMMON_COL_ID = {
   ID: 'id',

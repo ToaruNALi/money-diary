@@ -143,21 +143,27 @@ const updHistoryIdx =
 /** 行編集情報 履歴削除 */
 const delRowDataEdit =
   (): PartialStateUpdater<{ history: RowDataEditHistory }> => (state) => {
-    const history = state.history;
-    const ud = structuredClone(history.ud);
-    const rd = structuredClone(history.rd);
+    const history = structuredClone(state.history);
+    history.ud.length = history.ix;
+    history.ud.push([]);
 
-    ud.length = history.ix;
-    ud.push([]);
+    history.rd.length = history.ix;
+    history.rd.push([]);
 
-    rd.length = history.ix;
-    rd.push([]);
+    if (history.ix >= Const.HISTORY_MAX_LEN) {
+      // 履歴保持最大数に達した場合
+      for (history.ix; history.ix > Const.HISTORY_MAX_LEN - 1; history.ix--) {
+        history.ud.shift();
+        history.rd.shift();
+      }
+    }
 
     return {
       history: {
         ...state.history,
-        ud,
-        rd,
+        ix: history.ix,
+        ud: history.ud,
+        rd: history.rd,
       },
     };
   };
