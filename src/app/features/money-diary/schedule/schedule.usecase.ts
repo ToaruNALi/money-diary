@@ -18,6 +18,7 @@ import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
   DialogInputData,
+  DialogInputDatas,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
@@ -450,10 +451,10 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       input: Required<DialogInput>,
     ): void => {
       const val = form.get(Const.SCHEDULE_COL_ID.LABEL)?.value;
-      const search = input.datas.find(
+      const search = (input.datas as DialogInputData[]).find(
         (data) => data.id === Const.SCHEDULE_COL_ID.SEARCH_MEMO,
       );
-      const memo = input.datas.find(
+      const memo = (input.datas as DialogInputData[]).find(
         (data) => data.id === Const.SCHEDULE_COL_ID.MEMO_PLUS_A,
       );
 
@@ -475,7 +476,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
 
     // 入力データ
     const initValues = Util.getInitRowData(rowDataKey);
-    const datas: DialogInputData[] = [
+    const datas: DialogInputDatas = [
       {
         id: Const.SCHEDULE_COL_ID.LABEL,
         label: 'Label',

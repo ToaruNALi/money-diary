@@ -12,11 +12,11 @@ export type FormColor = Pick<
 >;
 
 @Component({
-    selector: 'app-form-color',
-    imports: [SharedCommonModule, FormsCommonModule, FormClearButtonComponent],
-    templateUrl: './form-color.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-color',
+  imports: [SharedCommonModule, FormsCommonModule, FormClearButtonComponent],
+  templateUrl: './form-color.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormColorComponent extends FormsComponent<FormColor> {
   protected override readonly defData: Required<FormColor> = {

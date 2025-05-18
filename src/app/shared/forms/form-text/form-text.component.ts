@@ -21,16 +21,16 @@ export type FormText = Pick<
 >;
 
 @Component({
-    selector: 'app-form-text',
-    imports: [
-        SharedCommonModule,
-        FormsCommonModule,
-        FormClearButtonComponent,
-        InputRestrictionsDirective,
-    ],
-    templateUrl: './form-text.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-text',
+  imports: [
+    SharedCommonModule,
+    FormsCommonModule,
+    FormClearButtonComponent,
+    InputRestrictionsDirective,
+  ],
+  templateUrl: './form-text.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormTextComponent extends FormsComponent<FormText> {
   protected override readonly defData: Required<FormText> = {

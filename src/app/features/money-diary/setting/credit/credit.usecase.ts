@@ -7,7 +7,7 @@ import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
-  DialogInputData,
+  DialogInputDatas,
   DialogOption,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
@@ -309,7 +309,7 @@ export class CreditUsecase extends SettingUsecase {
   override readonly getDialogInputDataCustom = (
     rowData: RowData,
     initValues: RowData,
-  ): DialogInputData[] => [
+  ): DialogInputDatas => [
     {
       id: Const.CREDIT_COL_ID.CLOSE_DAY,
       label: 'Close Day',

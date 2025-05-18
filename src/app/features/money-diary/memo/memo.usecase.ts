@@ -8,7 +8,7 @@ import { RowDataKey, ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
-  DialogInputData,
+  DialogInputDatas,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 
@@ -107,7 +107,7 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
     // 入力データ
     const initValues = Util.getInitRowData(rowDataKey);
     const rowData = rowDatas[0];
-    const datas: DialogInputData[] = [
+    const datas: DialogInputDatas = [
       {
         id: Const.ROW_DATA_COMMON_COL_ID.LABEL,
         label: 'Memo',

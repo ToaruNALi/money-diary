@@ -32,24 +32,26 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 export type DialogInput = {
   title: string;
-  datas: DialogInputData[];
+  datas: DialogInputDatas;
   buttonOptions?: DialogInputButtonOption[];
   validatorFn?:
-    | ((control: AbstractControl, datas: DialogInputData[]) => ValidationErrors)
+    | ((control: AbstractControl, datas: DialogInputDatas) => ValidationErrors)
     | null;
   style?: Record<string, string>;
   option?: DialogInputOption;
   invalidReservedWord?: boolean;
 };
 
+export type DialogInputDatas = (DialogInputData | DialogInputData[])[];
+
 export type DialogInputData = {
   /** ID ※必須 */
   id: string;
   /** ラベル @default '' */
   label?: string;
-  /** 入力値 ※必須 */
+  /** 入力値(リセット時データ) ※必須 */
   value: ValueType;
-  /** 入力欄初期値 @default '' */
+  /** 入力欄初期値(クリア時データ) @default '' */
   initValue?: ValueType;
   /** プレースホルダー @default '' */
   placeholder?: string;
@@ -97,8 +99,10 @@ export type DialogInputData = {
   filteredOptions$?: Observable<DialogOption[]>;
   /** 結果を返却しないフラグ @default false */
   notReturn?: boolean;
-  /** スタイル */
+  /** コンポーネント内スタイル */
   style?: Record<string, string>;
+  /** フォームスタイル */
+  formStyle?: Record<string, string>;
 };
 
 export type DialogInputOption = {
@@ -198,6 +202,7 @@ export class DialogInputComponent {
     filteredOptions$: of([]),
     notReturn: false,
     style: {},
+    formStyle: {},
   } as const;
   private readonly btnOptData: Required<DialogInputButtonOption> = {
     id: '',
@@ -274,10 +279,17 @@ export class DialogInputComponent {
 
     this.inputData = {
       title: this.data.title,
-      datas: this.data.datas.map((data) => ({
-        ...this.dialogData,
-        ...data,
-      })),
+      datas: this.data.datas.map((data) =>
+        Array.isArray(data)
+          ? data.map((child) => ({
+              ...this.dialogData,
+              ...child,
+            }))
+          : {
+              ...this.dialogData,
+              ...data,
+            },
+      ),
       buttonOptions: [...btnOptCustom, ...btnOptNotCustom],
       validatorFn: this.data.validatorFn ?? null,
       style: this.data.style ?? {},
@@ -289,8 +301,7 @@ export class DialogInputComponent {
   }
 
   ngOnInit(): void {
-    // formGroupの作成
-    for (const data of this.inputData.datas) {
+    const setFormData = (data: DialogInputData) => {
       // Control 追加
       this.form.addControl(
         data.id,
@@ -330,13 +341,35 @@ export class DialogInputComponent {
           map((value) => this.usecase.getFilterOptions(data.options!, value)),
         );
       }
-    }
+    };
 
-    for (const data of this.inputData.datas) {
+    const setValue = (data: DialogInputData) => {
       // setter
       this.setValueSetter(data, this.inputData);
       // getter
       this.setValueGetter(data, this.inputData);
+    };
+
+    // formGroupの作成
+    for (const data of this.inputData.datas) {
+      if (Array.isArray(data)) {
+        for (const child of data) {
+          setFormData(child);
+        }
+      } else {
+        setFormData(data);
+      }
+    }
+
+    // Setter/Getterの作成
+    for (const data of this.inputData.datas) {
+      if (Array.isArray(data)) {
+        for (const child of data) {
+          setValue(child);
+        }
+      } else {
+        setValue(data);
+      }
     }
     // バリデーション
     this.form.addValidators(this.usecase.validatorFn(this.inputData));
@@ -460,10 +493,10 @@ export class DialogInputComponent {
    */
   protected readonly onBtnAllClearClick = (): void => {
     const value: Record<string, ValueType | Record<string, ValueType>> = {};
-    for (const data of this.inputData.datas) {
+    const setValue = (data: DialogInputData) => {
       if (this.form.get(data.id)?.disabled || data.readonly) {
         // 非活性 または 読取専用の場合、初期値を設定しない
-        continue;
+        return;
       }
 
       value[data.id] = this.usecase.cvtValueToFormValue(
@@ -473,6 +506,16 @@ export class DialogInputComponent {
         data.type,
         data.options,
       );
+    };
+
+    for (const data of this.inputData.datas) {
+      if (Array.isArray(data)) {
+        for (const child of data) {
+          setValue(child);
+        }
+      } else {
+        setValue(data);
+      }
     }
     this.form.patchValue(value);
   };
@@ -482,10 +525,10 @@ export class DialogInputComponent {
    */
   protected readonly onBtnResetClick = (): void => {
     const value: Record<string, ValueType | Record<string, ValueType>> = {};
-    for (const data of this.inputData.datas) {
+    const setValue = (data: DialogInputData) => {
       if (this.form.get(data.id)?.disabled || data.readonly) {
         // 非活性 または 読取専用の場合、初期値を設定しない
-        continue;
+        return;
       }
 
       value[data.id] = this.usecase.cvtValueToFormValue(
@@ -493,6 +536,16 @@ export class DialogInputComponent {
         data.type,
         data.options,
       );
+    };
+
+    for (const data of this.inputData.datas) {
+      if (Array.isArray(data)) {
+        for (const child of data) {
+          setValue(child);
+        }
+      } else {
+        setValue(data);
+      }
     }
     this.form.patchValue(value);
   };
@@ -507,4 +560,6 @@ export class DialogInputComponent {
     };
     this.dialogRef.close(value);
   };
+
+  protected readonly isArray = (data: any) => Array.isArray(data);
 }

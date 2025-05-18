@@ -21,16 +21,16 @@ export type FormTextarea = Pick<
 >;
 
 @Component({
-    selector: 'app-form-textarea',
-    imports: [
-        SharedCommonModule,
-        FormsCommonModule,
-        FormClearButtonComponent,
-        InputRestrictionsDirective,
-    ],
-    templateUrl: './form-textarea.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-textarea',
+  imports: [
+    SharedCommonModule,
+    FormsCommonModule,
+    FormClearButtonComponent,
+    InputRestrictionsDirective,
+  ],
+  templateUrl: './form-textarea.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormTextareaComponent extends FormsComponent<FormTextarea> {
   protected override readonly defData: Required<FormTextarea> = {

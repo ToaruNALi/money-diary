@@ -56,4 +56,12 @@
     <mat-icon>123</mat-icon>
     <span>Serial Number</span>
   </button>
+  <button
+    mat-menu-item
+    (click)="onUpdate()"
+    [disabled]="gridmenuItemDisabled()"
+  >
+    <mat-icon>edit</mat-icon>
+    <span>Update</span>
+  </button>
 </div>

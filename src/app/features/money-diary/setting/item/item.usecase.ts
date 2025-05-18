@@ -5,7 +5,7 @@ import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.use
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
-import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
+import { DialogInputDatas } from 'src/app/shared/dialog-input/dialog-input.component';
 
 @Injectable()
 export class ItemUsecase extends SettingUsecase {
@@ -67,7 +67,7 @@ export class ItemUsecase extends SettingUsecase {
   override readonly getDialogInputDataCustom = (
     rowData: RowData,
     initValues: RowData,
-  ): DialogInputData[] => [
+  ): DialogInputDatas => [
     {
       id: Const.ITEM_COL_ID.SUMMARY_COUNT_FLG,
       label: 'Summary Count',

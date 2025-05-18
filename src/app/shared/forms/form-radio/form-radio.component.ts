@@ -11,11 +11,11 @@ export type FormRadio = Pick<
 >;
 
 @Component({
-    selector: 'app-form-radio',
-    imports: [SharedCommonModule, FormsCommonModule],
-    templateUrl: './form-radio.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-radio',
+  imports: [SharedCommonModule, FormsCommonModule],
+  templateUrl: './form-radio.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormRadioComponent extends FormsComponent<FormRadio> {
   protected override readonly defData: Required<FormRadio> = {

@@ -374,6 +374,40 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   };
 
   /**
+   * まとめて更新(コンテキストメニュー)
+   */
+  protected readonly onUpdate = async (): Promise<void> => {
+    // ダイアログ入力データ作成
+    const input = this.usecase.createInputData(
+      this.gridApi.getSelectedRows(),
+      this.rowDataKey(),
+      [
+        this.mainRowDatas(),
+        this.storageDatas(),
+        this.creditDatas(),
+        this.itemDatas(),
+        this.remarkDatas(),
+      ],
+      { type: INPUT_OPTION_TYPE.UPDATE, editPastData: this.editPastData() },
+    );
+    // ダイアログオープン
+    const output = await this.usecase.openDialog(input);
+    if (!output) {
+      return;
+    }
+    // 行編集Emitterデータ作成
+    const result = this.usecase.createResultData(
+      output,
+      this.gridApi.getSelectedRows(),
+      this.mainRowDatas(),
+      this.rowDataKey(),
+      INPUT_OPTION_TYPE.UPDATE,
+    );
+    // Emit
+    this.rowDataEdits.emit(result);
+  };
+
+  /**
    * ステータスリスト押下時
    */
   protected readonly onClickStatusContent = (): void => {

@@ -14,6 +14,7 @@ import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
   DialogInput,
+  DialogInputData,
   DialogOption,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
@@ -72,32 +73,31 @@ export class DialogInputUsecase {
     (input: Required<DialogInput>): ValidatorFn =>
     (control: AbstractControl): ValidationErrors => {
       let errors: ValidationErrors = {};
+      const checkInvalid = (data: DialogInputData) =>
+        !data.hide && control.get(data.id)?.invalid;
 
       if (
-        input.datas.some((data) => !data.hide && control.get(data.id)?.invalid)
+        input.datas.some((data) =>
+          Array.isArray(data) ? data.some(checkInvalid) : checkInvalid(data),
+        )
       ) {
         // 表示状態 かつ 入力誤り の項目が１つ以上ある場合
         errors[DIALOG_BUTTON.OK] = true;
         errors[DIALOG_BUTTON.ADD] = true;
       }
 
+      const isSameData = (data: DialogInputData): boolean => {
+        return Util.equalObject(
+          data.value,
+          this.cvtFormValueToValue(control.get(data.id)?.value, data.type),
+        );
+      };
+
       if (
         !input.option.sameDataOk &&
-        input.datas.every((data) => {
-          let oldVal = data.value;
-          if (Array.isArray(oldVal)) {
-            oldVal = JSON.stringify(oldVal);
-          }
-
-          let newVal = this.cvtFormValueToValue(
-            control.get(data.id)?.value,
-            data.type,
-          );
-          if (Array.isArray(newVal)) {
-            newVal = JSON.stringify(newVal);
-          }
-          return oldVal === newVal;
-        })
+        input.datas.every((data) =>
+          Array.isArray(data) ? data.every(isSameData) : isSameData(data),
+        )
       ) {
         // 更新前後の全入力内容が一致している場合
         errors[DIALOG_BUTTON.RESET] = true;
@@ -126,11 +126,10 @@ export class DialogInputUsecase {
     input: Required<DialogInput>,
   ): DialogOutputData[] => {
     const result: DialogOutputData[] = [];
-
-    for (const data of input.datas) {
+    const setResult = (data: DialogInputData) => {
       if (data.notReturn) {
         // 返却対象外
-        continue;
+        return;
       }
 
       let value = this.cvtFormValueToValue(form.get(data.id)?.value, data.type);
@@ -140,6 +139,16 @@ export class DialogInputUsecase {
       }
 
       result.push({ id: data.id, value });
+    };
+
+    for (const data of input.datas) {
+      if (Array.isArray(data)) {
+        for (const child of data) {
+          setResult(child);
+        }
+      } else {
+        setResult(data);
+      }
     }
 
     return result;

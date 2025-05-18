@@ -13,11 +13,11 @@ export type FormCheckbox = Pick<
 >;
 
 @Component({
-    selector: 'app-form-checkbox',
-    imports: [SharedCommonModule, FormsCommonModule],
-    templateUrl: './form-checkbox.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-checkbox',
+  imports: [SharedCommonModule, FormsCommonModule],
+  templateUrl: './form-checkbox.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormCheckboxComponent extends FormsComponent<FormCheckbox> {
   protected override readonly defData: Required<FormCheckbox> = {

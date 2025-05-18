@@ -1,6 +1,11 @@
 .dialog-content {
-  .form-content {
-    margin-bottom: 15px;
+  .parent-content {
+    display: flex;
+
+    .form-content {
+      flex: auto;
+      margin: 10px 0 5px;
+    }
   }
 }
 

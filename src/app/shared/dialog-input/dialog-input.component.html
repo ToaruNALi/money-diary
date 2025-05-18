@@ -4,57 +4,68 @@
   [style]="inputData.style"
   [formGroup]="form"
 >
-  @for (data of inputData.datas; track data.id) {
-    <div
-      class="form-content"
-      [style.display]="data.hide ? 'none' : 'block'"
-      [style.margin]="'10px 0 5px'"
-    >
-      @let formCtrl = form.get(data.id);
+  @for (parentData of inputData.datas; track parentData) {
+    @let datas = isArray(parentData) ? parentData : [parentData];
+    <div class="parent-content">
+      @for (data of datas; track data.id) {
+        <div
+          class="form-content"
+          [style.display]="data.hide ? 'none' : 'flex'"
+          [style]="data.formStyle"
+        >
+          @let formCtrl = form.get(data.id);
 
-      @switch (data.type) {
-        @case ('text') {
-          <app-form-text
-            [data]="data"
-            [form]="formCtrl"
-            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
-            (selectAutoComp)="onInput('select', data, $event)"
-          />
-        }
-        @case ('number') {
-          <app-form-number
-            [data]="data"
-            [form]="formCtrl"
-            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
-            (selectAutoComp)="onInput('select', data, $event)"
-          />
-        }
-        @case ('date') {
-          <app-form-date [data]="data" [form]="formCtrl" />
-        }
-        @case ('textarea') {
-          <app-form-textarea
-            [data]="data"
-            [form]="formCtrl"
-            [option]="{ invalidReservedWord: inputData.invalidReservedWord }"
-            (selectAutoComp)="onInput('select', data, $event)"
-          />
-        }
-        @case ('color') {
-          <app-form-color [data]="data" [form]="formCtrl" />
-        }
-        @case ('checkbox') {
-          <app-form-checkbox [data]="data" [form]="formCtrl" />
-        }
-        @case ('radio') {
-          <app-form-radio [data]="data" [form]="formCtrl" />
-        }
-        @case ('select') {
-          <app-form-select [data]="data" [form]="formCtrl" />
-        }
-        @case ('toggle') {
-          <app-form-toggle [data]="data" [form]="formCtrl" />
-        }
+          @switch (data.type) {
+            @case ('text') {
+              <app-form-text
+                [data]="data"
+                [form]="formCtrl"
+                [option]="{
+                  invalidReservedWord: inputData.invalidReservedWord,
+                }"
+                (selectAutoComp)="onInput('select', data, $event)"
+              />
+            }
+            @case ('number') {
+              <app-form-number
+                [data]="data"
+                [form]="formCtrl"
+                [option]="{
+                  invalidReservedWord: inputData.invalidReservedWord,
+                }"
+                (selectAutoComp)="onInput('select', data, $event)"
+              />
+            }
+            @case ('date') {
+              <app-form-date [data]="data" [form]="formCtrl" />
+            }
+            @case ('textarea') {
+              <app-form-textarea
+                [data]="data"
+                [form]="formCtrl"
+                [option]="{
+                  invalidReservedWord: inputData.invalidReservedWord,
+                }"
+                (selectAutoComp)="onInput('select', data, $event)"
+              />
+            }
+            @case ('color') {
+              <app-form-color [data]="data" [form]="formCtrl" />
+            }
+            @case ('checkbox') {
+              <app-form-checkbox [data]="data" [form]="formCtrl" />
+            }
+            @case ('radio') {
+              <app-form-radio [data]="data" [form]="formCtrl" />
+            }
+            @case ('select') {
+              <app-form-select [data]="data" [form]="formCtrl" />
+            }
+            @case ('toggle') {
+              <app-form-toggle [data]="data" [form]="formCtrl" />
+            }
+          }
+        </div>
       }
     </div>
   }

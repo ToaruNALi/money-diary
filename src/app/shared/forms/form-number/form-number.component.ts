@@ -23,16 +23,16 @@ export type FormNumber = Pick<
 >;
 
 @Component({
-    selector: 'app-form-number',
-    imports: [
-        SharedCommonModule,
-        FormsCommonModule,
-        FormClearButtonComponent,
-        InputRestrictionsDirective,
-    ],
-    templateUrl: './form-number.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-number',
+  imports: [
+    SharedCommonModule,
+    FormsCommonModule,
+    FormClearButtonComponent,
+    InputRestrictionsDirective,
+  ],
+  templateUrl: './form-number.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormNumberComponent extends FormsComponent<FormNumber> {
   protected override readonly defData: Required<FormNumber> = {

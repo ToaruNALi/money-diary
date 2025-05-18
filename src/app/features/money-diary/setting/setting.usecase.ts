@@ -15,7 +15,7 @@ import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
   DialogInput,
-  DialogInputData,
+  DialogInputDatas,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { DialogInputButtonOption } from '../../../shared/dialog-input/dialog-input.component';
@@ -98,7 +98,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     const rowData = selectRowDatas[0];
     const rowDataVal = structuredClone(rowData);
     const rowDataInitVal = Util.getInitRowData(rowDataKey);
-    const datas: DialogInputData[] = this.getDialogInputData(
+    const datas: DialogInputDatas = this.getDialogInputData(
       rowDataVal,
       rowDataInitVal,
     );
@@ -159,7 +159,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
   protected readonly getDialogInputData = (
     rowData: RowData,
     initValues: RowData,
-  ): DialogInputData[] => [
+  ): DialogInputDatas => [
     {
       id: Const.ROW_DATA_COMMON_COL_ID.LABEL,
       label: 'Label',
@@ -192,7 +192,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
   protected abstract readonly getDialogInputDataCustom: (
     rowData: RowData,
     initValues: RowData,
-  ) => DialogInputData[];
+  ) => DialogInputDatas;
 
   /**
    * 入力項目反映(行編集Emitterデータ作成)

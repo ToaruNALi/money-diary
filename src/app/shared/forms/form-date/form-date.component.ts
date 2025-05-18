@@ -12,11 +12,11 @@ export type FormDate = Pick<
 >;
 
 @Component({
-    selector: 'app-form-date',
-    imports: [SharedCommonModule, FormsCommonModule, FormClearButtonComponent],
-    templateUrl: './form-date.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-date',
+  imports: [SharedCommonModule, FormsCommonModule, FormClearButtonComponent],
+  templateUrl: './form-date.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormDateComponent extends FormsComponent<FormDate> {
   protected override readonly defData: Required<FormDate> = {

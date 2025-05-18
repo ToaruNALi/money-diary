@@ -26,6 +26,7 @@ import {
   DialogInput,
   DialogInputButtonOption,
   DialogInputData,
+  DialogInputDatas,
   DialogOption,
   DialogOutput,
   DialogOutputData,
@@ -38,6 +39,7 @@ import { MoneyStatus } from 'src/app/shared/money-status/money-status.component'
 export const INPUT_OPTION_TYPE = {
   REPLACE: 'replace',
   SERIAL_NUM: 'serialNumber',
+  UPDATE: 'update',
 };
 export type InputOptionType =
   (typeof INPUT_OPTION_TYPE)[keyof typeof INPUT_OPTION_TYPE];
@@ -67,6 +69,8 @@ const DIALOG_INPUT_ID = {
   BEFORE_REPLACE: 'beforeReplace',
   AFTER_REPLACE: 'afterReplace',
 } as const;
+
+const CHECK_ID = '-check' as const;
 
 @Injectable()
 export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
@@ -521,11 +525,19 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         option,
       );
     } else if (option.type === INPUT_OPTION_TYPE.REPLACE) {
-      // 置換時
+      // 置換
       return this.createInputDataRep(selectRowDatas, rowDataKey);
     } else if (option.type === INPUT_OPTION_TYPE.SERIAL_NUM) {
       // 連番付与
       return this.createInputDataSerialNum(selectRowDatas, rowDataKey);
+    } else if (option.type === INPUT_OPTION_TYPE.UPDATE) {
+      // まとめて更新
+      return this.createInputDataUpd(
+        selectRowDatas,
+        rowDataKey,
+        [mainRowDatas, ...otherRowDatas],
+        option,
+      );
     }
     return {} as DialogInput;
   };
@@ -545,7 +557,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     [mainRowDatas, ...otherRowDatas]: RowData[][],
     option: InputOption,
   ): DialogInput => {
-    // ボタンオプションの設定
+    /*************************
+     * ボタンオプションの設定
+     *************************/
     const buttonOptions: DialogInputButtonOption[] = [
       {
         id: DIALOG_BUTTON.DEL,
@@ -577,24 +591,31 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       },
     ];
 
-    const rowData = selectRowDatas[0];
-    const disabledList = {} as Record<MoneyDiaryColId, boolean>;
-    const optionsList = {} as Record<MoneyDiaryColId, DialogOption[]>;
+    /*************************
+     * セレクトボックスの設定
+     *************************/
+    const selectRec = {} as Record<
+      MoneyDiaryColId,
+      { disabled: boolean; options: DialogOption[] }
+    >;
     let creditDatasIdx = -1;
     let storageDatasIdx = -1;
     const linkList = Object.entries(Const.ROW_DATA_INFO[rowDataKey].link);
     for (const [idx, [moneyColId, { colId }]] of linkList.entries()) {
       const inCol = moneyColId as MoneyDiaryColId;
+      selectRec[inCol] = { disabled: false, options: [] };
+
       // セレクトボックスの一致項目が無効化されている場合 true を設定
-      disabledList[inCol] = otherRowDatas[idx].some(
+      selectRec[inCol].disabled = otherRowDatas[idx].some(
         (data) =>
-          data[colId] === rowData[inCol] &&
+          data[colId] === selectRowDatas[0][inCol] &&
           !data[Const.ROW_DATA_COMMON_COL_ID.VALID],
       );
+
       // セレクトボックスの中身を設定
-      optionsList[inCol] = otherRowDatas[idx]
+      selectRec[inCol].options = otherRowDatas[idx]
         .filter((data) => {
-          if (disabledList[inCol]) {
+          if (selectRec[inCol].disabled) {
             // 非活性の場合
             return !!data[Const.ROW_DATA_COMMON_COL_ID.LABEL];
           }
@@ -618,14 +639,16 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       }
     }
 
-    // オートコンプリートデータ メモ
+    /*************************
+     * オートコンプリートメモデータの設定
+     *************************/
     const autocompMemoData: DialogOption[] = [];
     const optLabelSet: Set<string> = new Set();
     const reverseMainRowDatas = mainRowDatas.toReversed();
     for (const data of reverseMainRowDatas) {
       if (
         data[Const.ROW_DATA_COMMON_COL_ID.ID] ===
-        rowData[Const.ROW_DATA_COMMON_COL_ID.ID]
+        selectRowDatas[0][Const.ROW_DATA_COMMON_COL_ID.ID]
       ) {
         // 編集対象の場合、オートコンプリートに追加しない
         continue;
@@ -650,6 +673,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       }
     }
 
+    /*************************
+     * 各setterの設定
+     *************************/
     // 支払日 setter
     const payDateSetter = (form: FormRecord): void => {
       const useDate = form.get(Const.MONEY_DIARY_COL_ID.USE_DATE)?.value;
@@ -682,7 +708,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         const data = reverseMainRowDatas.find(
           (dt) => dt[Const.ROW_DATA_COMMON_COL_ID.ID] === options.option.id,
         );
-
         if (!data) {
           // 選択したメモが空の場合
           return;
@@ -695,7 +720,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           Const.MONEY_DIARY_COL_ID.REMARK,
           Const.MONEY_DIARY_COL_ID.COLOR,
         ];
-
         if (
           checkKeys.some(
             (key) =>
@@ -707,8 +731,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         }
 
         const keys = [
-          Const.MONEY_DIARY_COL_ID.DATE,
-          Const.MONEY_DIARY_COL_ID.USE_DATE,
           Const.MONEY_DIARY_COL_ID.AMOUNT,
           Const.MONEY_DIARY_COL_ID.STORAGE,
           Const.MONEY_DIARY_COL_ID.CREDIT,
@@ -716,34 +738,47 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           Const.MONEY_DIARY_COL_ID.REMARK,
           Const.MONEY_DIARY_COL_ID.COLOR,
         ];
-
         for (const key of keys) {
           if (
-            key === Const.MONEY_DIARY_COL_ID.DATE ||
-            key === Const.MONEY_DIARY_COL_ID.USE_DATE ||
-            key === Const.MONEY_DIARY_COL_ID.AMOUNT
+            key === Const.MONEY_DIARY_COL_ID.AMOUNT &&
+            !!form.get(key)?.value
           ) {
-            if (!!form.get(key)?.value) {
-              // 日付/利用日/金額の入力値が既にある場合
-              continue;
-            }
+            // 金額の入力値が既にある場合
+            continue;
           }
+          form.get(key)?.setValue(data[key]);
+        }
+
+        const dateKeys = [
+          Const.MONEY_DIARY_COL_ID.DATE,
+          Const.MONEY_DIARY_COL_ID.USE_DATE,
+        ];
+        if (dateKeys.some((key) => !!form.get(key)?.value)) {
+          // 日付/利用日のどちらかが入力済の場合
+          return;
+        }
+        for (const key of dateKeys) {
           form.get(key)?.setValue(data[key]);
         }
       }
     };
 
-    // 日付初期値
+    /*************************
+     * 初期表示データの設定
+     *************************/
+    // 日付 初期表示
     const initDate = (id: string) => {
-      if (Util.checkInputMode(rowData, Const.INPUT_MODE.NONE)) {
+      if (Util.checkInputMode(selectRowDatas[0], Const.INPUT_MODE.NONE)) {
         return DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
       }
-      return rowData[id];
+      return selectRowDatas[0][id];
     };
 
-    // 入力データ
+    /*************************
+     * 入力データの設定
+     *************************/
     const initValues = Util.getInitRowData(rowDataKey);
-    const datas: DialogInputData[] = [
+    const datas: DialogInputDatas = [
       {
         id: Const.MONEY_DIARY_COL_ID.DATE,
         label: 'Date',
@@ -762,7 +797,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       {
         id: Const.MONEY_DIARY_COL_ID.PAY_DATE,
         label: 'Pay Date',
-        value: rowData[Const.MONEY_DIARY_COL_ID.PAY_DATE],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.PAY_DATE],
         type: Const.INPUT_TYPE.DATE,
         disabled: true,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.PAY_DATE],
@@ -770,7 +805,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       {
         id: Const.MONEY_DIARY_COL_ID.AMOUNT,
         label: 'Amount',
-        value: rowData[Const.MONEY_DIARY_COL_ID.AMOUNT],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT],
         required: true,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
         placeholder: 'Ex. -(200+500)',
@@ -782,7 +817,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         id: DIALOG_INPUT_ID.CALC_RESULT,
         label: 'Calc Result',
         value: Util.cvtNumToPrice(
-          Util.calcResult(rowData[Const.MONEY_DIARY_COL_ID.AMOUNT]),
+          Util.calcResult(selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT]),
         ),
         required: true,
         readonly: true,
@@ -792,7 +827,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       {
         id: Const.MONEY_DIARY_COL_ID.MEMO,
         label: 'Memo',
-        value: rowData[Const.MONEY_DIARY_COL_ID.MEMO],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.MEMO],
         type: Const.INPUT_TYPE.TEXTAREA,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.MEMO],
         placeholder: 'Ex. 夕食代',
@@ -806,55 +841,57 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       {
         id: Const.MONEY_DIARY_COL_ID.STORAGE,
         label: 'Storage',
-        value: rowData[Const.MONEY_DIARY_COL_ID.STORAGE],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.STORAGE],
         type: Const.INPUT_TYPE.SELECT,
-        disabled: disabledList[Const.MONEY_DIARY_COL_ID.STORAGE],
-        options: optionsList[Const.MONEY_DIARY_COL_ID.STORAGE],
+        disabled: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].disabled,
+        options: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].options,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.STORAGE],
       },
       {
         id: Const.MONEY_DIARY_COL_ID.CREDIT,
         label: 'Credit',
-        value: rowData[Const.MONEY_DIARY_COL_ID.CREDIT],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.CREDIT],
         type: Const.INPUT_TYPE.SELECT,
-        disabled: disabledList[Const.MONEY_DIARY_COL_ID.CREDIT],
-        options: optionsList[Const.MONEY_DIARY_COL_ID.CREDIT],
+        disabled: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].disabled,
+        options: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].options,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.CREDIT],
         setter: payDateSetter,
       },
       {
         id: Const.MONEY_DIARY_COL_ID.ITEM,
         label: 'Item',
-        value: rowData[Const.MONEY_DIARY_COL_ID.ITEM],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.ITEM],
         type: Const.INPUT_TYPE.SELECT,
-        disabled: disabledList[Const.MONEY_DIARY_COL_ID.ITEM],
-        options: optionsList[Const.MONEY_DIARY_COL_ID.ITEM],
+        disabled: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].disabled,
+        options: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].options,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.ITEM],
       },
       {
         id: Const.MONEY_DIARY_COL_ID.REMARK,
         label: 'Remark',
-        value: rowData[Const.MONEY_DIARY_COL_ID.REMARK],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.REMARK],
         type: Const.INPUT_TYPE.SELECT,
-        disabled: disabledList[Const.MONEY_DIARY_COL_ID.REMARK],
-        options: optionsList[Const.MONEY_DIARY_COL_ID.REMARK],
+        disabled: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].disabled,
+        options: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].options,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.REMARK],
       },
       {
         id: Const.MONEY_DIARY_COL_ID.COLOR,
         label: 'Color',
-        value: rowData[Const.MONEY_DIARY_COL_ID.COLOR],
+        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.COLOR],
         type: Const.INPUT_TYPE.COLOR,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.COLOR],
         hide: true, // 利用することがないため非表示にする
       },
     ];
 
-    // バリデーションチェック用コールバック関数
+    /*************************
+     * バリデーションチェック用コールバックの設定
+     *************************/
     let validatorFn:
       | ((
           control: AbstractControl,
-          datas: DialogInputData[],
+          datas: DialogInputDatas,
         ) => ValidationErrors)
       | null;
     if (option.editPastData) {
@@ -862,7 +899,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       validatorFn = null;
     } else {
       // 過去データが編集可能でない場合
-      const initPayDate = rowData[Const.MONEY_DIARY_COL_ID.PAY_DATE];
+      const initPayDate = selectRowDatas[0][Const.MONEY_DIARY_COL_ID.PAY_DATE];
       if (
         !!initPayDate &&
         initPayDate < DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD)
@@ -898,7 +935,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         // 支払日が本日以降もしくはnullの場合
         validatorFn = (
           control: AbstractControl,
-          datas: DialogInputData[],
+          datas: DialogInputDatas,
         ): ValidationErrors => {
           const errors: ValidationErrors = {};
           const payDate = control.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.value;
@@ -906,9 +943,15 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
             new Date(),
             Const.DATE_FORMAT.YYYY_MM_DD,
           );
+          const checkInvalid = (data: DialogInputData) =>
+            !data.hide && control.get(data.id)?.invalid;
 
           if (
-            datas.some((data) => !data.hide && control.get(data.id)?.invalid)
+            datas.some((data) =>
+              Array.isArray(data)
+                ? data.some(checkInvalid)
+                : checkInvalid(data),
+            )
           ) {
             // 表示状態 かつ 入力誤り の項目が１つ以上ある場合
             errors[DIALOG_BUTTON.MOVE] = true;
@@ -927,29 +970,11 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     }
 
     return {
-      title: Util.getScreenTitle2(rowDataKey) + ' Input',
+      title: Util.getScreenTitle2(rowDataKey),
       datas,
       buttonOptions,
       validatorFn,
     };
-  };
-
-  /**
-   * ダイアログ入力データ作成(更新時)
-   * @param selectRowDatas
-   * @param rowDataKey
-   * @param mainRowDatas
-   * @param otherRowDatas
-   * @param option
-   * @returns 入力データ
-   */
-  private readonly createInputDataUpd = (
-    selectRowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    [mainRowDatas, ...otherRowDatas]: RowData[][],
-    option: InputOption,
-  ): DialogInput => {
-    return {} as DialogInput;
   };
 
   /**
@@ -997,7 +1022,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       form.get(DIALOG_INPUT_ID.AFTER_REPLACE)?.setValue(val);
     };
     // 入力データ
-    const datas: DialogInputData[] = [
+    const datas: DialogInputDatas = [
       {
         id: DIALOG_INPUT_ID.TARGET_STRING,
         label: 'Target String',
@@ -1106,7 +1131,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         inputSerialDateInit,
         inputSerialDateFreq,
         inputSerialDateFreqNum,
-      ] = input.datas;
+      ] = input.datas as DialogInputData[];
       if (memo.includes(Const.RESERVED_STRING.SERIAL_NUM)) {
         // 連番あり
         inputSerialNumInit.hide = false;
@@ -1143,7 +1168,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       form.get(DIALOG_INPUT_ID.AFTER_REPLACE)?.setValue(val);
     };
     // 入力データ
-    const datas: DialogInputData[] = [
+    const datas: DialogInputDatas = [
       {
         id: Const.MONEY_DIARY_COL_ID.MEMO,
         label: 'Memo',
@@ -1320,6 +1345,359 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
   };
 
   /**
+   * ダイアログ入力データ作成(更新時)
+   * @param selectRowDatas
+   * @param rowDataKey
+   * @param mainRowDatas
+   * @param otherRowDatas
+   * @param option
+   * @returns 入力データ
+   */
+  private readonly createInputDataUpd = (
+    selectRowDatas: RowData[],
+    rowDataKey: RowDataKey,
+    [mainRowDatas, ...otherRowDatas]: RowData[][],
+    option: InputOption,
+  ): DialogInput => {
+    /*************************
+     * ボタンオプションの設定
+     *************************/
+    const buttonOptions: DialogInputButtonOption[] = [
+      {
+        id: DIALOG_BUTTON.DEL,
+        hide: true,
+      },
+      {
+        id: DIALOG_BUTTON.ADD,
+        hide: true,
+      },
+      {
+        id: DIALOG_BUTTON.CLEAR,
+      },
+      {
+        id: DIALOG_BUTTON.RESET,
+      },
+      {
+        id: DIALOG_BUTTON.OK,
+      },
+    ];
+
+    /******************************
+     * 全行データの各項目の一致確認
+     ******************************/
+    const matchInfoRec: Record<string, { match: boolean; val: ValueType }> = {};
+    const firstRowDataEntries = Object.entries(selectRowDatas[0]);
+    for (const [key, val] of firstRowDataEntries) {
+      matchInfoRec[key] = { match: false, val: '' };
+      matchInfoRec[key].match = selectRowDatas.every(
+        (data) => data[key] === val,
+      );
+      matchInfoRec[key].val = matchInfoRec[key].match
+        ? selectRowDatas[0][key]
+        : '';
+    }
+
+    /*************************
+     * セレクトボックスの設定
+     *************************/
+    const selectRec = {} as Record<
+      MoneyDiaryColId,
+      { disabled: boolean; options: DialogOption[] }
+    >;
+    let creditDatasIdx = -1;
+    let storageDatasIdx = -1;
+    const linkList = Object.entries(Const.ROW_DATA_INFO[rowDataKey].link);
+    for (const [idx, [moneyColId, { colId }]] of linkList.entries()) {
+      // セレクトボックスの数(storage, credit, item, remark)でループ
+      const inCol = moneyColId as MoneyDiaryColId;
+      selectRec[inCol] = { disabled: false, options: [] };
+
+      // セレクトボックスの一致項目が無効化されている場合 true を設定
+      if (matchInfoRec[inCol].match) {
+        // 全選択行のセレクトボックスの値が同じ場合
+        selectRec[inCol].disabled = false;
+      } else {
+        // 上記以外
+        selectRec[inCol].disabled = otherRowDatas[idx].some(
+          (data) =>
+            data[colId] === selectRowDatas[0][inCol] &&
+            !data[Const.ROW_DATA_COMMON_COL_ID.VALID],
+        );
+      }
+
+      // セレクトボックスの中身を設定
+      selectRec[inCol].options = otherRowDatas[idx]
+        .filter((data) => {
+          if (selectRec[inCol].disabled) {
+            // 非活性の場合
+            return !!data[Const.ROW_DATA_COMMON_COL_ID.LABEL];
+          }
+          // 上記以外
+          return (
+            !!data[Const.ROW_DATA_COMMON_COL_ID.LABEL] &&
+            !!data[Const.ROW_DATA_COMMON_COL_ID.VALID]
+          );
+        })
+        .map((data) => ({
+          id: data[colId]!.toString(),
+          label: data[Const.ROW_DATA_COMMON_COL_ID.LABEL]!.toString(),
+        }));
+      // ストレージ情報のidxを設定
+      if (inCol === Const.MONEY_DIARY_COL_ID.STORAGE) {
+        storageDatasIdx = idx;
+      }
+      // クレジット情報のidxを設定
+      if (inCol === Const.MONEY_DIARY_COL_ID.CREDIT) {
+        creditDatasIdx = idx;
+      }
+    }
+
+    /*************************
+     * オートコンプリートメモデータの設定
+     *************************/
+    const autocompMemoData: DialogOption[] = [];
+    const optLabelSet: Set<string> = new Set();
+    const reverseMainRowDatas = mainRowDatas.toReversed();
+    for (const data of reverseMainRowDatas) {
+      const storageId =
+        data[Const.MONEY_DIARY_COL_ID.STORAGE]?.toString() ?? '';
+      const storage =
+        otherRowDatas[storageDatasIdx]
+          .find((dt) => dt[Const.ROW_DATA_COMMON_COL_ID.ID] === storageId)
+          ?.[Const.ROW_DATA_COMMON_COL_ID.LABEL]?.toString() ?? '';
+      const value = data[Const.MONEY_DIARY_COL_ID.MEMO]?.toString() ?? '';
+      const label = value + (!!storage ? `　${storage}` : '');
+
+      if (!!label && !optLabelSet.has(label)) {
+        optLabelSet.add(label);
+        autocompMemoData.push({
+          id: data[Const.ROW_DATA_COMMON_COL_ID.ID]?.toString() ?? '',
+          value,
+          label,
+        });
+      }
+    }
+
+    /*************************
+     * 各setterの設定
+     *************************/
+    // 支払日 setter
+    const payDateSetter = (form: FormRecord): void => {
+      const useDate = form.get(Const.MONEY_DIARY_COL_ID.USE_DATE)?.value;
+      const credit = form.get(Const.MONEY_DIARY_COL_ID.CREDIT)?.value;
+
+      let val = '';
+      if (useDate !== undefined && credit !== undefined) {
+        val = Util.getPayDate(useDate, credit, otherRowDatas[creditDatasIdx]);
+      }
+
+      form.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.setValue(val);
+    };
+
+    // 計算結果 setter
+    const calcResultSetter = (form: FormRecord): void => {
+      const amount = form.get(Const.MONEY_DIARY_COL_ID.AMOUNT)?.value;
+      const val = Util.cvtNumToPrice(Util.calcResult(amount));
+
+      form.get(DIALOG_INPUT_ID.CALC_RESULT)?.setValue(val);
+    };
+
+    // チェックボックス setter
+    const checkSetter =
+      (id: string) =>
+      (form: FormRecord): void => {
+        if (!!form.get(id + CHECK_ID)?.get('1')?.value) {
+          form.get(id)?.disable();
+          if (id === Const.MONEY_DIARY_COL_ID.AMOUNT) {
+            // Amountの場合、計算後の値も非活性にする
+            form.get(DIALOG_INPUT_ID.CALC_RESULT)?.disable();
+          }
+        } else {
+          form.get(id)?.enable();
+          if (id === Const.MONEY_DIARY_COL_ID.AMOUNT) {
+            // Amountの場合、計算後の値も活性にする
+            form.get(DIALOG_INPUT_ID.CALC_RESULT)?.enable();
+          }
+        }
+      };
+
+    /*************************
+     * チェックボックス項目の設定
+     *************************/
+    const checkData = (id: string) => ({
+      id: id + CHECK_ID,
+      value: ['1'],
+      type: Const.INPUT_TYPE.CHECK,
+      options: [{ id: '1', label: '' }],
+      setter: checkSetter(id),
+    });
+
+    /*************************
+     * 入力データの設定
+     *************************/
+    const initValues = Util.getInitRowData(rowDataKey);
+    const datas: DialogInputDatas = [
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.DATE,
+          label: 'Date',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.DATE].val,
+          type: Const.INPUT_TYPE.DATE,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.DATE],
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.DATE),
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.USE_DATE,
+          label: 'Use Date',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.USE_DATE].val,
+          type: Const.INPUT_TYPE.DATE,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.USE_DATE],
+          setter: payDateSetter,
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.USE_DATE),
+      ],
+      {
+        id: Const.MONEY_DIARY_COL_ID.PAY_DATE,
+        label: 'Pay Date',
+        value: matchInfoRec[Const.MONEY_DIARY_COL_ID.PAY_DATE].val,
+        type: Const.INPUT_TYPE.DATE,
+        disabled: true,
+        initValue: initValues[Const.MONEY_DIARY_COL_ID.PAY_DATE],
+        formStyle: { flex: 'none', width: 'calc(100% - 45px)' },
+      },
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.AMOUNT,
+          label: 'Amount',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.AMOUNT].val,
+          required: true,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
+          placeholder: 'Ex. -(200+500)',
+          forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
+          setter: calcResultSetter,
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.AMOUNT),
+      ],
+      {
+        // 計算結果表示用
+        id: DIALOG_INPUT_ID.CALC_RESULT,
+        label: 'Calc Result',
+        value: Util.cvtNumToPrice(
+          Util.calcResult(matchInfoRec[Const.MONEY_DIARY_COL_ID.AMOUNT].val),
+        ),
+        required: true,
+        readonly: true,
+        initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
+        notReturn: true,
+        formStyle: { flex: 'none', width: 'calc(100% - 45px)' },
+      },
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.MEMO,
+          label: 'Memo',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.MEMO].val,
+          type: Const.INPUT_TYPE.TEXTAREA,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.MEMO],
+          placeholder: 'Ex. 夕食代',
+          autocomp: true,
+          options: autocompMemoData,
+          style: {
+            height: `${24 * 3}px`,
+          },
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.MEMO),
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.STORAGE,
+          label: 'Storage',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.STORAGE].val,
+          required: true,
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.STORAGE],
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.STORAGE),
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.CREDIT,
+          label: 'Credit',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.CREDIT].val,
+          required: true,
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.CREDIT],
+          setter: payDateSetter,
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.CREDIT),
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.ITEM,
+          label: 'Item',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.ITEM].val,
+          required: true,
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.ITEM],
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.ITEM),
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.REMARK,
+          label: 'Remark',
+          value: matchInfoRec[Const.MONEY_DIARY_COL_ID.REMARK].val,
+          required: true,
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.REMARK],
+          formStyle: { width: 'calc(100% - 45px)' },
+        },
+        checkData(Const.MONEY_DIARY_COL_ID.REMARK),
+      ],
+    ];
+
+    /*************************
+     * バリデーションチェック用コールバックの設定
+     *************************/
+    const validatorFn = (control: AbstractControl): ValidationErrors => {
+      const errors: ValidationErrors = {};
+      const checkKeys = Object.keys(control.value).filter((key) =>
+        key.endsWith(CHECK_ID),
+      );
+
+      if (checkKeys.every((key) => !!control.get(key)?.get('1')?.value)) {
+        // チェックボックスが全て選択されている場合
+        errors[DIALOG_BUTTON.OK] = true;
+      }
+
+      return errors;
+    };
+
+    return {
+      title: Util.getScreenTitle2(rowDataKey),
+      datas,
+      buttonOptions,
+      validatorFn,
+    };
+  };
+
+  /**
    * 入力項目反映(行編集Emitterデータ作成)
    * @param selectRowDatas
    * @param outputDatas
@@ -1389,6 +1767,48 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         serialDateFreq,
         serialDateFreqNum,
       );
+    } else if (option === INPUT_OPTION_TYPE.UPDATE) {
+      // 更新時
+      const checkDatas = outputDatas.filter(({ id }) => id.endsWith(CHECK_ID));
+      const targetDatas = outputDatas.filter(({ id }) => {
+        if (id.endsWith(CHECK_ID)) {
+          // チェックボックスの場合
+          return false;
+        }
+
+        const data = checkDatas.find((check) => check.id === id + CHECK_ID);
+        if (!!data) {
+          // チェックボックスに紐づく入力項目の場合
+          return data.value?.toString().length === 0;
+        } else {
+          // 上記以外の項目の場合
+          return true;
+        }
+      });
+
+      const newDatas = structuredClone(selectRowDatas);
+      for (const newData of newDatas) {
+        for (const { id, value } of targetDatas) {
+          newData[id] = value;
+        }
+
+        // 金額(数値)設定
+        newData[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Util.calcResult(
+          newData[Const.MONEY_DIARY_COL_ID.AMOUNT],
+        );
+        // 入力モード設定
+        newData[Const.MONEY_DIARY_COL_ID.INPUT_MODE] =
+          Util.getInputMode(newData);
+        // 更新フラグ設定
+        newData[Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
+        // 日付を設定
+        if (!newData[Const.MONEY_DIARY_COL_ID.DATE]) {
+          newData[Const.MONEY_DIARY_COL_ID.DATE] =
+            newData[Const.MONEY_DIARY_COL_ID.USE_DATE];
+        }
+      }
+
+      return newDatas;
     }
 
     return selectRowDatas;

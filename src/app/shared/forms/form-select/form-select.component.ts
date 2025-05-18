@@ -11,11 +11,11 @@ export type FormSelect = Pick<
 >;
 
 @Component({
-    selector: 'app-form-select',
-    imports: [SharedCommonModule, FormsCommonModule],
-    templateUrl: './form-select.component.html',
-    styleUrl: '../forms.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-select',
+  imports: [SharedCommonModule, FormsCommonModule],
+  templateUrl: './form-select.component.html',
+  styleUrl: '../forms.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormSelectComponent extends FormsComponent<FormSelect> {
   protected override readonly defData: Required<FormSelect> = {
