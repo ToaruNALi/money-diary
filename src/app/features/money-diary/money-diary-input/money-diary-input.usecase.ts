@@ -779,21 +779,23 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
      *************************/
     const initValues = Util.getInitRowData(rowDataKey);
     const datas: DialogInputDatas = [
-      {
-        id: Const.MONEY_DIARY_COL_ID.DATE,
-        label: 'Date',
-        value: initDate(Const.MONEY_DIARY_COL_ID.DATE),
-        type: Const.INPUT_TYPE.DATE,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.DATE],
-      },
-      {
-        id: Const.MONEY_DIARY_COL_ID.USE_DATE,
-        label: 'Use Date',
-        value: initDate(Const.MONEY_DIARY_COL_ID.USE_DATE),
-        type: Const.INPUT_TYPE.DATE,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.USE_DATE],
-        setter: payDateSetter,
-      },
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.DATE,
+          label: 'Date',
+          value: initDate(Const.MONEY_DIARY_COL_ID.DATE),
+          type: Const.INPUT_TYPE.DATE,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.DATE],
+        },
+        {
+          id: Const.MONEY_DIARY_COL_ID.USE_DATE,
+          label: 'Use Date',
+          value: initDate(Const.MONEY_DIARY_COL_ID.USE_DATE),
+          type: Const.INPUT_TYPE.DATE,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.USE_DATE],
+          setter: payDateSetter,
+        },
+      ],
       {
         id: Const.MONEY_DIARY_COL_ID.PAY_DATE,
         label: 'Pay Date',
@@ -802,28 +804,30 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         disabled: true,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.PAY_DATE],
       },
-      {
-        id: Const.MONEY_DIARY_COL_ID.AMOUNT,
-        label: 'Amount',
-        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT],
-        required: true,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
-        placeholder: 'Ex. -(200+500)',
-        forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
-        setter: calcResultSetter,
-      },
-      {
-        // 計算結果表示用
-        id: DIALOG_INPUT_ID.CALC_RESULT,
-        label: 'Calc Result',
-        value: Util.cvtNumToPrice(
-          Util.calcResult(selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT]),
-        ),
-        required: true,
-        readonly: true,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
-        notReturn: true,
-      },
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.AMOUNT,
+          label: 'Amount',
+          value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT],
+          required: true,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
+          placeholder: 'Ex. -(200+500)',
+          forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
+          setter: calcResultSetter,
+        },
+        {
+          // 計算結果表示用
+          id: DIALOG_INPUT_ID.CALC_RESULT,
+          label: 'Calc Result',
+          value: Util.cvtNumToPrice(
+            Util.calcResult(selectRowDatas[0][Const.MONEY_DIARY_COL_ID.AMOUNT]),
+          ),
+          required: true,
+          readonly: true,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
+          notReturn: true,
+        },
+      ],
       {
         id: Const.MONEY_DIARY_COL_ID.MEMO,
         label: 'Memo',
@@ -838,43 +842,47 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           height: `${24 * 3}px`,
         },
       },
-      {
-        id: Const.MONEY_DIARY_COL_ID.STORAGE,
-        label: 'Storage',
-        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.STORAGE],
-        type: Const.INPUT_TYPE.SELECT,
-        disabled: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].disabled,
-        options: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].options,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.STORAGE],
-      },
-      {
-        id: Const.MONEY_DIARY_COL_ID.CREDIT,
-        label: 'Credit',
-        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.CREDIT],
-        type: Const.INPUT_TYPE.SELECT,
-        disabled: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].disabled,
-        options: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].options,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.CREDIT],
-        setter: payDateSetter,
-      },
-      {
-        id: Const.MONEY_DIARY_COL_ID.ITEM,
-        label: 'Item',
-        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.ITEM],
-        type: Const.INPUT_TYPE.SELECT,
-        disabled: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].disabled,
-        options: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].options,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.ITEM],
-      },
-      {
-        id: Const.MONEY_DIARY_COL_ID.REMARK,
-        label: 'Remark',
-        value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.REMARK],
-        type: Const.INPUT_TYPE.SELECT,
-        disabled: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].disabled,
-        options: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].options,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.REMARK],
-      },
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.STORAGE,
+          label: 'Storage',
+          value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.STORAGE],
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.STORAGE],
+        },
+        {
+          id: Const.MONEY_DIARY_COL_ID.CREDIT,
+          label: 'Credit',
+          value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.CREDIT],
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.CREDIT],
+          setter: payDateSetter,
+        },
+      ],
+      [
+        {
+          id: Const.MONEY_DIARY_COL_ID.ITEM,
+          label: 'Item',
+          value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.ITEM],
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.ITEM],
+        },
+        {
+          id: Const.MONEY_DIARY_COL_ID.REMARK,
+          label: 'Remark',
+          value: selectRowDatas[0][Const.MONEY_DIARY_COL_ID.REMARK],
+          type: Const.INPUT_TYPE.SELECT,
+          disabled: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].disabled,
+          options: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].options,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.REMARK],
+        },
+      ],
       {
         id: Const.MONEY_DIARY_COL_ID.COLOR,
         label: 'Color',
@@ -1107,6 +1115,13 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       form: FormRecord<FormCtrl>,
       input: Required<DialogInput>,
     ): void => {
+      const targetDataIds = [
+        DIALOG_INPUT_ID.SERIAL_NUM_INIT,
+        DIALOG_INPUT_ID.DATE_FORMAT,
+        DIALOG_INPUT_ID.SERIAL_DATE_INIT,
+        DIALOG_INPUT_ID.SERIAL_DATE_FREQ,
+        DIALOG_INPUT_ID.SERIAL_DATE_FREQ_NUM,
+      ];
       const [
         memo,
         serialNumInit,
@@ -1114,24 +1129,39 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         serialDateInit,
         serialDateFreq,
         serialDateFreqNum,
-      ] = [
-        Const.MONEY_DIARY_COL_ID.MEMO,
-        DIALOG_INPUT_ID.SERIAL_NUM_INIT,
-        DIALOG_INPUT_ID.DATE_FORMAT,
-        DIALOG_INPUT_ID.SERIAL_DATE_INIT,
-        DIALOG_INPUT_ID.SERIAL_DATE_FREQ,
-        DIALOG_INPUT_ID.SERIAL_DATE_FREQ_NUM,
-      ].map((id) => form.get(id)?.value?.toString() ?? '');
+      ] = [Const.MONEY_DIARY_COL_ID.MEMO, ...targetDataIds].map(
+        (id) => form.get(id)?.value?.toString() ?? '',
+      );
 
       // 入力内容によって、表示項目を制御
+      const inputDatas: DialogInputData[] = [...new Array(5)].fill({
+        id: '',
+      });
+      for (const data of input.datas) {
+        if (Array.isArray(data)) {
+          for (const child of data) {
+            const targetDataIdx = targetDataIds.findIndex(
+              (id) => id === child.id,
+            );
+            if (targetDataIdx >= 0) {
+              inputDatas[targetDataIdx] = child;
+            }
+          }
+        } else {
+          const targetDataIdx = targetDataIds.findIndex((id) => id === data.id);
+          if (targetDataIdx >= 0) {
+            inputDatas[targetDataIdx] = data;
+          }
+        }
+      }
       const [
-        ,
         inputSerialNumInit,
         inputSerialDateFormat,
         inputSerialDateInit,
         inputSerialDateFreq,
         inputSerialDateFreqNum,
-      ] = input.datas as DialogInputData[];
+      ] = inputDatas;
+
       if (memo.includes(Const.RESERVED_STRING.SERIAL_NUM)) {
         // 連番あり
         inputSerialNumInit.hide = false;
@@ -1187,44 +1217,48 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         hide: true,
         setter: previewSetter,
       },
-      {
-        id: DIALOG_INPUT_ID.DATE_FORMAT,
-        label: 'Serial Date Format',
-        value: Const.DATE_FORMAT.YYYY_MM,
-        initValue: Const.DATE_FORMAT.YYYY_MM,
-        type: Const.INPUT_TYPE.SELECT,
-        options: Const.SERIAL_DATE_FORMAT_SELECT,
-        hide: true,
-        setter: previewSetter,
-      },
-      {
-        id: DIALOG_INPUT_ID.SERIAL_DATE_INIT,
-        label: 'Serial Date Init',
-        value: null,
-        type: Const.INPUT_TYPE.DATE,
-        hide: true,
-        setter: previewSetter,
-      },
-      {
-        id: DIALOG_INPUT_ID.SERIAL_DATE_FREQ,
-        label: 'Serial Date Freq',
-        value: Const.DATE_FORMAT.YYYY_MM,
-        initValue: Const.DATE_FORMAT.YYYY_MM,
-        type: Const.INPUT_TYPE.SELECT,
-        options: Const.SERIAL_DATE_FORMAT_SELECT,
-        hide: true,
-        setter: previewSetter,
-      },
-      {
-        id: DIALOG_INPUT_ID.SERIAL_DATE_FREQ_NUM,
-        label: 'Serial Date Freq Num',
-        value: 1,
-        initValue: 1,
-        type: Const.INPUT_TYPE.NUM,
-        min: 1,
-        hide: true,
-        setter: previewSetter,
-      },
+      [
+        {
+          id: DIALOG_INPUT_ID.DATE_FORMAT,
+          label: 'Serial Date Format',
+          value: Const.DATE_FORMAT.YYYY_MM,
+          initValue: Const.DATE_FORMAT.YYYY_MM,
+          type: Const.INPUT_TYPE.SELECT,
+          options: Const.SERIAL_DATE_FORMAT_SELECT,
+          hide: true,
+          setter: previewSetter,
+        },
+        {
+          id: DIALOG_INPUT_ID.SERIAL_DATE_INIT,
+          label: 'Serial Date Init',
+          value: null,
+          type: Const.INPUT_TYPE.DATE,
+          hide: true,
+          setter: previewSetter,
+        },
+      ],
+      [
+        {
+          id: DIALOG_INPUT_ID.SERIAL_DATE_FREQ,
+          label: 'Serial Date Freq',
+          value: Const.DATE_FORMAT.YYYY_MM,
+          initValue: Const.DATE_FORMAT.YYYY_MM,
+          type: Const.INPUT_TYPE.SELECT,
+          options: Const.SERIAL_DATE_FORMAT_SELECT,
+          hide: true,
+          setter: previewSetter,
+        },
+        {
+          id: DIALOG_INPUT_ID.SERIAL_DATE_FREQ_NUM,
+          label: 'Serial Date Freq Num',
+          value: 1,
+          initValue: 1,
+          type: Const.INPUT_TYPE.NUM,
+          min: 1,
+          hide: true,
+          setter: previewSetter,
+        },
+      ],
       {
         id: DIALOG_INPUT_ID.BEFORE_REPLACE,
         label: 'Before Memo',
@@ -1530,6 +1564,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       type: Const.INPUT_TYPE.CHECK,
       options: [{ id: '1', label: '' }],
       setter: checkSetter(id),
+      formStyle: { width: '40px' },
     });
 
     /*************************
@@ -1567,7 +1602,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         type: Const.INPUT_TYPE.DATE,
         disabled: true,
         initValue: initValues[Const.MONEY_DIARY_COL_ID.PAY_DATE],
-        formStyle: { flex: 'none', width: 'calc(100% - 45px)' },
+        formStyle: { width: 'calc(100% - 45px)' },
       },
       [
         {
@@ -1579,23 +1614,23 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           placeholder: 'Ex. -(200+500)',
           forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
           setter: calcResultSetter,
-          formStyle: { width: 'calc(100% - 45px)' },
+          formStyle: { width: 'calc((100% - 45px) / 2)' },
+        },
+        {
+          // 計算結果表示用
+          id: DIALOG_INPUT_ID.CALC_RESULT,
+          label: 'Calc Result',
+          value: Util.cvtNumToPrice(
+            Util.calcResult(matchInfoRec[Const.MONEY_DIARY_COL_ID.AMOUNT].val),
+          ),
+          required: true,
+          readonly: true,
+          initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
+          notReturn: true,
+          formStyle: { width: 'calc((100% - 45px) / 2)' },
         },
         checkData(Const.MONEY_DIARY_COL_ID.AMOUNT),
       ],
-      {
-        // 計算結果表示用
-        id: DIALOG_INPUT_ID.CALC_RESULT,
-        label: 'Calc Result',
-        value: Util.cvtNumToPrice(
-          Util.calcResult(matchInfoRec[Const.MONEY_DIARY_COL_ID.AMOUNT].val),
-        ),
-        required: true,
-        readonly: true,
-        initValue: initValues[Const.MONEY_DIARY_COL_ID.AMOUNT],
-        notReturn: true,
-        formStyle: { flex: 'none', width: 'calc(100% - 45px)' },
-      },
       [
         {
           id: Const.MONEY_DIARY_COL_ID.MEMO,
@@ -1623,11 +1658,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           disabled: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].disabled,
           options: selectRec[Const.MONEY_DIARY_COL_ID.STORAGE].options,
           initValue: initValues[Const.MONEY_DIARY_COL_ID.STORAGE],
-          formStyle: { width: 'calc(100% - 45px)' },
+          formStyle: { width: 'calc((100% - 90px) / 2)' },
         },
         checkData(Const.MONEY_DIARY_COL_ID.STORAGE),
-      ],
-      [
         {
           id: Const.MONEY_DIARY_COL_ID.CREDIT,
           label: 'Credit',
@@ -1638,7 +1671,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           options: selectRec[Const.MONEY_DIARY_COL_ID.CREDIT].options,
           initValue: initValues[Const.MONEY_DIARY_COL_ID.CREDIT],
           setter: payDateSetter,
-          formStyle: { width: 'calc(100% - 45px)' },
+          formStyle: { width: 'calc((100% - 90px) / 2)' },
         },
         checkData(Const.MONEY_DIARY_COL_ID.CREDIT),
       ],
@@ -1652,11 +1685,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           disabled: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].disabled,
           options: selectRec[Const.MONEY_DIARY_COL_ID.ITEM].options,
           initValue: initValues[Const.MONEY_DIARY_COL_ID.ITEM],
-          formStyle: { width: 'calc(100% - 45px)' },
+          formStyle: { width: 'calc((100% - 90px) / 2)' },
         },
         checkData(Const.MONEY_DIARY_COL_ID.ITEM),
-      ],
-      [
         {
           id: Const.MONEY_DIARY_COL_ID.REMARK,
           label: 'Remark',
@@ -1666,7 +1697,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           disabled: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].disabled,
           options: selectRec[Const.MONEY_DIARY_COL_ID.REMARK].options,
           initValue: initValues[Const.MONEY_DIARY_COL_ID.REMARK],
-          formStyle: { width: 'calc(100% - 45px)' },
+          formStyle: { width: 'calc((100% - 90px) / 2)' },
         },
         checkData(Const.MONEY_DIARY_COL_ID.REMARK),
       ],

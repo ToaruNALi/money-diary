@@ -37,5 +37,11 @@
         margin-left: 5px;
       }
     }
+
+    // form内のアイコンをできるだけコンパクトにする設定
+    .mat-mdc-icon-button.mat-mdc-button-base {
+      --mdc-icon-button-state-layer-size: 30px;
+      padding: 3px;
+    }
   }
 }

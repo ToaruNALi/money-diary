@@ -11,6 +11,10 @@
         <div
           class="form-content"
           [style.display]="data.hide ? 'none' : 'flex'"
+          [style.width]="
+            data.formStyle?.['width'] ?? `calc(100% / ${datas.length})`
+          "
+          [style.margin-left]="$first ? 0 : '5px'"
           [style]="data.formStyle"
         >
           @let formCtrl = form.get(data.id);
