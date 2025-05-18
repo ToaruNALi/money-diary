@@ -24,6 +24,8 @@ export abstract class MoneyDiaryBaseComponent {
   readonly mainRowDatas = input.required<RowData[]>();
   /** 行データKey */
   readonly rowDataKey = input.required<RowDataKey>();
+  /** 表示区分 */
+  readonly display = input<string>();
 
   /** フィルターモデル */
   protected readonly filterInputModelSet = output<FilterInputModel>();
@@ -36,4 +38,7 @@ export abstract class MoneyDiaryBaseComponent {
   protected abstract readonly colDefs: Signal<ColDef<RowData, ValueType>[]>;
   /** 行データ */
   protected abstract readonly rowDatas: Signal<RowData[]>;
+
+  /** 初期表示フラグ */
+  protected firstDisp = false;
 }

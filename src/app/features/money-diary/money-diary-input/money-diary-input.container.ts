@@ -4,12 +4,13 @@ import { MoneyDiaryInputComponent } from 'src/app/features/money-diary/money-dia
 import * as Const from 'src/app/shared/constants/constants';
 
 @Component({
-    selector: 'app-money-diary-input-container',
-    imports: [MoneyDiaryInputComponent],
-    template: `
+  selector: 'app-money-diary-input-container',
+  imports: [MoneyDiaryInputComponent],
+  template: `
     <app-money-diary-input
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
+      [display]="displayOpt().afterClass"
       [rowDataKey]="rowDataKey"
       [mainRowDatas]="inputDatas()"
       [storageDatas]="storageDatas()"
@@ -22,7 +23,7 @@ import * as Const from 'src/app/shared/constants/constants';
       (screenIdSet)="onSetScreenId($event)"
     ></app-money-diary-input>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MoneyDiaryInputContainerComponent extends MoneyDiaryBaseContainerComponent {
   protected override readonly screenId = Const.SCREEN_ID.MONEY_DIARY;

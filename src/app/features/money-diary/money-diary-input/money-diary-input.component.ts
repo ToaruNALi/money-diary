@@ -2,11 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  ElementRef,
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -73,9 +71,6 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** 過去データ編集可能フラグ */
   readonly editPastData = input.required<boolean>();
 
-  private readonly snackMessage =
-    viewChild.required<ElementRef<HTMLInputElement>>('snackMessage');
-
   /** 列定義 */
   protected override readonly colDefs = computed(() =>
     this.usecase.getColDefs(
@@ -88,10 +83,18 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** 行データ */
   protected override readonly rowDatas = computed(() => {
     const filter = this.filterModel();
+    const display = this.display();
 
     if (filter !== 'none') {
       this.gridApi?.setFilterModel(null);
       this.gridApi?.setFilterModel(filter);
+    }
+
+    if (display === 'display' && !this.firstDisp) {
+      setTimeout(() => {
+        this.firstDisp = true;
+        Util.jumpRow(this.gridApi);
+      });
     }
 
     return this.usecase.getRowDatas(this.mainRowDatas(), this.creditDatas());
