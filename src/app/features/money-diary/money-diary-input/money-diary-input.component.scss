@@ -27,4 +27,9 @@
 .grid-menu-disp {
   display: flex;
   flex-direction: column;
+  position: fixed;
+  width: 160px;
+  height: 192px;
+  left: calc(50vw - 80px);
+  top: calc(50vh - 96px);
 }

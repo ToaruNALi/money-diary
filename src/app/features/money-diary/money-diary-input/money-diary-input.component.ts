@@ -296,11 +296,11 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       }
 
       this.gridMenuDisp.set(true);
-      const pointer = event.event as PointerEvent;
-      this.gridMenuStyle.set({
-        left: `${pointer.clientX}px`,
-        top: `${pointer.clientY}px`,
-      });
+      // const pointer = event.event as PointerEvent;
+      // this.gridMenuStyle.set({
+      //   left: `${pointer.clientX}px`,
+      //   top: `${pointer.clientY}px`,
+      // });
     }
   };
 
