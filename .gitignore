@@ -43,3 +43,4 @@ Thumbs.db
 
 # Custom
 /src/app/bk/
+/src/app/features/test/
