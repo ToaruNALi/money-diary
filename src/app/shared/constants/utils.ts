@@ -1,12 +1,15 @@
 import { isHoliday } from '@holiday-jp/holiday_jp';
 import { CellClassParams, CellStyle, GridApi } from 'ag-grid-community';
-import { addDays, format } from 'date-fns';
+import * as DateUtil from 'date-fns';
+import { addDays } from 'date-fns';
 import moji from 'moji';
 import { RowData } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
   InputMode,
   PayDateInfo,
+  RowDataEdit,
+  RowDataEditType,
   RowDataKey,
   ScreenId,
   SortOption,
@@ -126,11 +129,20 @@ export const getCellCommonStyle = (
   return cellStyle;
 };
 
+/** 日付を返却する */
+export const getDate = (
+  date: DateUtil.DateArg<Date> = new Date(),
+  formatStr: string = Const.DATE_FORMAT.YYYY_MM_DD,
+) => {
+  return DateUtil.format(date, formatStr);
+};
+
 /** 支払日を返却する */
 export const getPayDate = (
   date: ValueType,
   credit: ValueType,
   creditList: RowData[],
+  formatStr: string = Const.DATE_FORMAT.YYYY_MM_DD,
 ): string => {
   if (
     !date ||
@@ -160,18 +172,16 @@ export const getPayDate = (
       typeof payMonth === 'number' &&
       typeof businessDays === 'number'
     ) {
-      const payDateInfo: PayDateInfo = {
-        date: new Date(date),
-        closeDay: closeDay,
-        payDay: payDay,
-        payMonth: payMonth,
-        businessDays: businessDays,
-      };
-      const payDate = format(
-        calcPayDate(payDateInfo),
-        Const.DATE_FORMAT.YYYY_MM_DD,
+      return getDate(
+        calcPayDate({
+          date: new Date(date),
+          closeDay: closeDay,
+          payDay: payDay,
+          payMonth: payMonth,
+          businessDays: businessDays,
+        }),
+        formatStr,
       );
-      return payDate;
     }
   }
   return date;
@@ -214,7 +224,7 @@ export const calcPayDateConsiderHoliday = <T extends string | Date>(
     // 支払日が休日・祝日の場合
     const addDate = addDays(payDate, businessDays);
     if (typeof payDate === 'string') {
-      payDate = format(addDate, Const.DATE_FORMAT.YYYY_MM_DD) as T;
+      payDate = getDate(addDate) as T;
     } else {
       payDate = addDate as T;
     }
@@ -546,4 +556,61 @@ export const getScreenTitle = (screenId: ScreenId): string => {
 };
 export const getScreenTitle2 = (rowDataKey: RowDataKey): string => {
   return getScreenTitle(Const.ROW_DATA_INFO[rowDataKey].screenId);
+};
+
+const getCommonEditData = (
+  type: RowDataEditType,
+  key: RowDataKey,
+  datas: RowData[],
+  addIds?: (string | null)[],
+): RowDataEdit => {
+  return {
+    type,
+    event: {
+      key,
+      datas,
+      addIds,
+    },
+  };
+};
+
+export const getAddDefaultEditData = (
+  key: RowDataKey,
+  datas: RowData[],
+): RowDataEdit => {
+  return getCommonEditData(
+    Const.ROW_DATA_EDIT_TYPE.ADD,
+    key,
+    [getDefaultRowData(key, datas)],
+    [null],
+  );
+};
+
+export const getUpdEditData = (
+  key: RowDataKey,
+  datas: RowData[],
+): RowDataEdit => {
+  return getCommonEditData(
+    Const.ROW_DATA_EDIT_TYPE.UPD,
+    key,
+    datas.map((data) => ({
+      ...data,
+      [Const.ROW_DATA_COMMON_COL_ID.UPDATE]: true,
+    })),
+  );
+};
+
+export const getDelEditData = (
+  key: RowDataKey,
+  datas: RowData[],
+): RowDataEdit => {
+  return getCommonEditData(Const.ROW_DATA_EDIT_TYPE.DEL, key, datas);
+};
+
+export const getDragEditData = (
+  key: RowDataKey,
+  datas: RowData[],
+  addIds: (string | null)[],
+): RowDataEdit => {
+  return getCommonEditData(Const.ROW_DATA_EDIT_TYPE.DRAG, key, datas, addIds);
 };

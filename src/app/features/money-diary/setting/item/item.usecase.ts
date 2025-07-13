@@ -34,7 +34,6 @@ export class ItemUsecase extends SettingUsecase {
       headerName: 'Summary Count',
       field: Const.ITEM_COL_ID.SUMMARY_COUNT_FLG,
       cellEditor: 'agCheckboxCellEditor',
-      hide: true,
       valueSetter: this.newValueSetter,
     },
     {

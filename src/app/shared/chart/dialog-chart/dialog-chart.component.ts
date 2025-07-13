@@ -49,14 +49,11 @@ export class DialogChartComponent {
     for (
       let date = startDate;
       DateUtil.differenceInCalendarMonths(endDate, date) >= 0;
-      date = DateUtil.format(
-        DateUtil.addMonths(date, 1),
-        Const.DATE_FORMAT.YYYY_MM_DD,
-      )
+      date = Util.getDate(DateUtil.addMonths(date, 1))
     ) {
       const chartData: RowData = {};
       for (const key of xKeys) {
-        chartData[key] = DateUtil.format(date, Const.DATE_FORMAT.YYYY_MM);
+        chartData[key] = Util.getDate(date, Const.DATE_FORMAT.YYYY_MM);
       }
       for (const key of yKeys) {
         chartData[key] = Util.getInitValue(Const.ROW_DATA_KEY.SUMMARY, key);
@@ -77,10 +74,7 @@ export class DialogChartComponent {
         this.data.creditDatas,
       );
       rowData[Const.MONEY_DIARY_COL_ID.DATE]?.toString() ?? '';
-      const startDateStr = DateUtil.format(
-        DateUtil.startOfMonth(dateStr),
-        Const.DATE_FORMAT.YYYY_MM_DD,
-      );
+      const startDateStr = Util.getDate(DateUtil.startOfMonth(dateStr));
       const chartData = chartDatas.find(
         (data) =>
           DateUtil.differenceInCalendarMonths(

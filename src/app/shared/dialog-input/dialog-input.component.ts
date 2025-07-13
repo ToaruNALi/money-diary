@@ -13,10 +13,10 @@ import {
   Validators,
 } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import * as DateUtil from 'date-fns';
 import { map, Observable, of, startWith } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
 import { FormCtrl, InputType, ValueType } from 'src/app/shared/constants/types';
+import * as Util from 'src/app/shared/constants/utils';
 import { DialogCommonModule } from 'src/app/shared/dialog-common.module';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
 import { FormCheckboxComponent } from 'src/app/shared/forms/form-checkbox/form-checkbox.component';
@@ -402,10 +402,7 @@ export class DialogInputComponent {
           if (!!value && typeof value !== 'string') {
             this.form
               .get(data.id)
-              ?.setValue(
-                DateUtil.format(new Date(value), Const.DATE_FORMAT.YYYY_MM_DD),
-                { emitEvent: false },
-              );
+              ?.setValue(Util.getDate(new Date(value)), { emitEvent: false });
           }
         }
         callSetter();

@@ -40,11 +40,8 @@ import {
 import { RowData } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
-  RowDataAdd,
-  RowDataDrag,
   RowDataEdit,
   RowDataKey,
-  RowDataUpd,
   SortOption,
   ValueType,
 } from 'src/app/shared/constants/types';
@@ -440,21 +437,12 @@ export class GridComponent {
     });
 
     editInfo.push(
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.UPD,
-        event: {
-          key: this.rowDataKey(),
-          datas,
-        } as RowDataUpd,
-      },
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.DRAG,
-        event: {
-          key: this.rowDataKey(),
-          datas,
-          addIds,
-        } as RowDataDrag,
-      },
+      Util.getUpdEditData(this.rowDataKey(), datas),
+      Util.getDragEditData(
+        this.rowDataKey(),
+        datas,
+        addIds as (string | null)[],
+      ),
     );
 
     this.rowDataEdits.emit(editInfo);
@@ -475,14 +463,7 @@ export class GridComponent {
   protected readonly onAddRow = (): void => {
     // TODO: 各画面事に行追加のコールバック関数を実装し、gridにわたす
     this.rowDataEdits.emit([
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.ADD,
-        event: {
-          key: this.rowDataKey(),
-          datas: [Util.getDefaultRowData(this.rowDataKey(), this.rowDatas())],
-          addIds: [null],
-        } as RowDataAdd,
-      },
+      Util.getAddDefaultEditData(this.rowDataKey(), this.rowDatas()),
     ]);
   };
 
@@ -522,21 +503,12 @@ export class GridComponent {
     }
 
     editInfo.push(
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.UPD,
-        event: {
-          key: this.rowDataKey(),
-          datas,
-        } as RowDataUpd,
-      },
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.DRAG,
-        event: {
-          key: this.rowDataKey(),
-          datas,
-          addIds,
-        } as RowDataDrag,
-      },
+      Util.getUpdEditData(this.rowDataKey(), datas),
+      Util.getDragEditData(
+        this.rowDataKey(),
+        datas,
+        addIds as (string | null)[],
+      ),
     );
 
     this.rowDataEdits.emit(editInfo);

@@ -16,7 +16,6 @@ import {
   RowClassParams,
   RowStyle,
 } from 'ag-grid-community';
-import * as DateUtil from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import {
@@ -24,13 +23,7 @@ import {
   MoneyDiaryInputUsecase,
 } from 'src/app/features/money-diary/money-diary-input/money-diary-input.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import {
-  FilterInputModel,
-  RowDataAdd,
-  RowDataDel,
-  RowDataUpd,
-  ValueType,
-} from 'src/app/shared/constants/types';
+import { FilterInputModel, ValueType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import {
@@ -228,37 +221,21 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         // 空行の場合
         if (!Util.equalObject(this.copyData(), {})) {
           // コピー情報が存在する場合、ペースト
+          const date = Util.getDate();
           this.rowDataEdits.emit([
-            {
-              type: Const.ROW_DATA_EDIT_TYPE.UPD,
-              event: {
-                key: this.rowDataKey(),
-                datas: [
-                  {
-                    ...this.copyData(),
-                    [Const.ROW_DATA_COMMON_COL_ID.ID]:
-                      event.data[Const.ROW_DATA_COMMON_COL_ID.ID],
-                    [Const.ROW_DATA_COMMON_COL_ID.UPDATE]: true,
-                  },
-                ],
-              } as RowDataUpd,
-            },
-            {
-              type: Const.ROW_DATA_EDIT_TYPE.ADD,
-              event: {
-                key: this.rowDataKey(),
-                datas: [
-                  Util.getDefaultRowData(
-                    this.rowDataKey(),
-                    this.mainRowDatas(),
-                  ),
-                ],
-                addIds: [null],
-              } as RowDataAdd,
-            },
+            Util.getUpdEditData(this.rowDataKey(), [
+              {
+                ...this.copyData(),
+                [Const.ROW_DATA_COMMON_COL_ID.ID]:
+                  event.data[Const.ROW_DATA_COMMON_COL_ID.ID],
+                [Const.MONEY_DIARY_COL_ID.DATE]: date,
+                [Const.MONEY_DIARY_COL_ID.USE_DATE]: date,
+              },
+            ]),
+            Util.getAddDefaultEditData(this.rowDataKey(), this.mainRowDatas()),
           ]);
-          // コピー情報初期化
-          this.copyData.set({});
+          // // コピー情報初期化
+          // this.copyData.set({});
           // メッセージ表示
           this.snackBar.open('Pasted!');
           setTimeout(() => {
@@ -281,7 +258,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         return;
       }
 
-      const today = DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+      const today = Util.getDate();
       if (
         !this.editPastData() &&
         rowDatas.some((dt) => {
@@ -308,15 +285,8 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    * 削除時(コンテキストメニュー)
    */
   protected readonly onDelete = (): void => {
-    const rowDatas = this.gridApi.getSelectedRows();
     this.rowDataEdits.emit([
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.DEL,
-        event: {
-          key: this.rowDataKey(),
-          datas: rowDatas,
-        } as RowDataDel,
-      },
+      Util.getDelEditData(this.rowDataKey(), this.gridApi.getSelectedRows()),
     ]);
   };
 

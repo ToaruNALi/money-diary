@@ -1,11 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ColDef } from 'ag-grid-community';
-import {
-  addMonths,
-  differenceInCalendarMonths,
-  format,
-  startOfMonth,
-} from 'date-fns';
+import { addMonths, differenceInCalendarMonths, startOfMonth } from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValueType } from 'src/app/shared/constants/types';
@@ -41,7 +36,7 @@ export class SummaryUsecase {
           if (!val || typeof val !== 'string') {
             return '';
           }
-          return format(new Date(val), Const.DATE_FORMAT.YYYY_MM);
+          return Util.getDate(new Date(val), Const.DATE_FORMAT.YYYY_MM);
         },
         cellStyle: Util.getCellCommonStyle,
       },
@@ -114,7 +109,7 @@ export class SummaryUsecase {
     for (
       let date = startDate;
       differenceInCalendarMonths(endDate, date) >= 0;
-      date = format(addMonths(date, 1), Const.DATE_FORMAT.YYYY_MM_DD)
+      date = Util.getDate(addMonths(date, 1))
     ) {
       const sumData: RowData = {};
 
@@ -158,10 +153,7 @@ export class SummaryUsecase {
       }
 
       const dateStr = rowData[Const.MONEY_DIARY_COL_ID.DATE]!.toString();
-      const startDateStr = format(
-        startOfMonth(dateStr),
-        Const.DATE_FORMAT.YYYY_MM_DD,
-      );
+      const startDateStr = Util.getDate(startOfMonth(dateStr));
       const sumData = sumDatas.find(
         (data) =>
           differenceInCalendarMonths(

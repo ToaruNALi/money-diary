@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ColDef, ValueSetterParams } from 'ag-grid-community';
-import { addMonths, format } from 'date-fns';
+import { addMonths } from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
 import * as Const from 'src/app/shared/constants/constants';
@@ -119,28 +119,40 @@ export class CreditUsecase extends SettingUsecase {
       hide: true,
     },
     {
-      headerName: format(addMonths(new Date(), -2), Const.DATE_FORMAT.YYYY_MM),
+      headerName: Util.getDate(
+        addMonths(new Date(), -2),
+        Const.DATE_FORMAT.YYYY_MM,
+      ),
       field: Const.CREDIT_COL_ID.EXPENSES_TWO_MONTHS_AGO,
       type: 'numericCol',
       filter: false,
       width: 110,
     },
     {
-      headerName: format(addMonths(new Date(), -1), Const.DATE_FORMAT.YYYY_MM),
+      headerName: Util.getDate(
+        addMonths(new Date(), -1),
+        Const.DATE_FORMAT.YYYY_MM,
+      ),
       field: Const.CREDIT_COL_ID.EXPENSES_LAST_MONTH,
       type: 'numericCol',
       filter: false,
       width: 110,
     },
     {
-      headerName: format(addMonths(new Date(), 0), Const.DATE_FORMAT.YYYY_MM),
+      headerName: Util.getDate(
+        addMonths(new Date(), 0),
+        Const.DATE_FORMAT.YYYY_MM,
+      ),
       field: Const.CREDIT_COL_ID.EXPENSES_THIS_MONTH,
       type: 'numericCol',
       filter: false,
       width: 110,
     },
     {
-      headerName: format(addMonths(new Date(), 1), Const.DATE_FORMAT.YYYY_MM),
+      headerName: Util.getDate(
+        addMonths(new Date(), 1),
+        Const.DATE_FORMAT.YYYY_MM,
+      ),
       field: Const.CREDIT_COL_ID.EXPENSES_NEXT_MONTH,
       type: 'numericCol',
       filter: false,
@@ -209,10 +221,10 @@ export class CreditUsecase extends SettingUsecase {
   ): number[] => {
     const amountList = [0, 0, 0, 0, 0];
     const monthList = [
-      format(addMonths(new Date(), -2), Const.DATE_FORMAT.YYYY_MM),
-      format(addMonths(new Date(), -1), Const.DATE_FORMAT.YYYY_MM),
-      format(addMonths(new Date(), 0), Const.DATE_FORMAT.YYYY_MM),
-      format(addMonths(new Date(), 1), Const.DATE_FORMAT.YYYY_MM),
+      Util.getDate(addMonths(new Date(), -2), Const.DATE_FORMAT.YYYY_MM),
+      Util.getDate(addMonths(new Date(), -1), Const.DATE_FORMAT.YYYY_MM),
+      Util.getDate(addMonths(new Date(), 0), Const.DATE_FORMAT.YYYY_MM),
+      Util.getDate(addMonths(new Date(), 1), Const.DATE_FORMAT.YYYY_MM),
       '',
     ];
 
@@ -240,7 +252,7 @@ export class CreditUsecase extends SettingUsecase {
         continue;
       }
 
-      const month = format(payDate, Const.DATE_FORMAT.YYYY_MM);
+      const month = Util.getDate(payDate, Const.DATE_FORMAT.YYYY_MM);
       const findIdx = monthList.findIndex((mon) => mon === month);
       if (findIdx === -1) {
         continue;

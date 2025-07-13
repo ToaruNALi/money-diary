@@ -9,7 +9,6 @@ import {
   ValueFormatterParams,
   ValueSetterParams,
 } from 'ag-grid-community';
-import { format } from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
@@ -542,8 +541,8 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   ): RowData[] => {
     const newDatas = this.reflectRowDatasDefault(selectRowDatas, outputDatas);
     // 更新日時設定
-    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPD_DATE] = format(
-      new Date(),
+    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPD_DATE] = Util.getDate(
+      undefined,
       Const.DATE_FORMAT.YY_MM_DD_HH_MM_SS,
     );
     // 更新フラグ設定
@@ -576,7 +575,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     let cnt = 0;
     let savings = 0;
     let savingsLast = 0;
-    const today = format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+    const today = Util.getDate();
 
     for (const data of rowDatas) {
       const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];

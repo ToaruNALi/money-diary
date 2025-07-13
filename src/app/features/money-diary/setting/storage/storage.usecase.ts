@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ColDef, ValueSetterParams } from 'ag-grid-community';
-import { format } from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
 import * as Const from 'src/app/shared/constants/constants';
@@ -155,7 +154,7 @@ export class StorageUsecase extends SettingUsecase {
       return savingsList;
     }
 
-    const today = format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+    const today = Util.getDate();
 
     for (const data of inputDatas) {
       const num = data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];

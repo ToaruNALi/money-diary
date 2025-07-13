@@ -32,17 +32,35 @@ export class ItemComponent extends SettingComponent {
       return;
     }
 
+    const selectDatas = event.api.getSelectedRows();
+    const filterItem = (() => {
+      if (selectDatas.length === 0) {
+        // 未選択
+        return {
+          filter: label,
+          filterType: 'text',
+          type: 'equals',
+        };
+      }
+      // 選択あり
+      return {
+        conditions: selectDatas.map((dt) => ({
+          filter: dt[Const.STORAGE_COL_ID.LABEL],
+          filterType: 'text',
+          type: 'equals',
+        })),
+        filterType: 'text',
+        operator: 'OR',
+      };
+    })();
+
     // フィルターモデル設定
     this.filterInputModelSet.emit({
-      [Const.MONEY_DIARY_COL_ID.ITEM]: {
-        filterType: 'text',
-        type: 'equals',
-        filter: label,
-      },
+      [Const.MONEY_DIARY_COL_ID.ITEM]: filterItem,
       [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+        filter: Const.INPUT_MODE.ALL_REQ,
         filterType: 'number',
         type: 'equal',
-        filter: Const.INPUT_MODE.ALL_REQ,
       },
     });
     // 入力画面に遷移

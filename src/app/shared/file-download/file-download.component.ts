@@ -5,7 +5,6 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import { format } from 'date-fns';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import * as Const from 'src/app/shared/constants/constants';
 import * as Util from 'src/app/shared/constants/utils';
@@ -38,7 +37,7 @@ export class FileDownloadComponent {
     // ファイル名生成
     const fileName = Const.FILE_NAME.DOWNLOAD.replace(
       '{0}',
-      format(new Date(), Const.DATE_FORMAT.YYMMDD_HHMMSS),
+      Util.getDate(undefined, Const.DATE_FORMAT.YYMMDD_HHMMSS),
     );
     this.fileDownload().nativeElement.setAttribute('download', fileName);
 

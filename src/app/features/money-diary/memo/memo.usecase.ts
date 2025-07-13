@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { CellClickedEvent, ColDef, RowStyle } from 'ag-grid-community';
-import { format } from 'date-fns';
 import { RowData } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
@@ -144,8 +143,8 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
   ): RowData[] => {
     const newDatas = this.reflectRowDatasDefault(selectRowDatas, outputDatas);
     // 更新日時設定
-    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPD_DATE] = format(
-      new Date(),
+    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPD_DATE] = Util.getDate(
+      undefined,
       Const.DATE_FORMAT.YY_MM_DD_HH_MM_SS,
     );
     // 更新フラグ設定

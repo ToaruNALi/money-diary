@@ -9,7 +9,6 @@ import {
   ValueFormatterParams,
   ValueSetterParams,
 } from 'ag-grid-community';
-import { format } from 'date-fns';
 import { lastValueFrom } from 'rxjs';
 import { RowData } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
@@ -78,7 +77,7 @@ export abstract class MoneyDiaryBaseUsecase {
       return '';
     }
 
-    return format(new Date(val), Const.DATE_FORMAT.YY_MM_DD);
+    return Util.getDate(new Date(val), Const.DATE_FORMAT.YY_MM_DD);
   };
 
   /**

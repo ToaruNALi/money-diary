@@ -396,7 +396,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
     const payDate =
       rowData[Const.MONEY_DIARY_COL_ID.PAY_DATE]?.toString() ?? '';
-    const today = DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+    const today = Util.getDate();
     if (!option['editPastData'] && !!payDate && payDate < today) {
       style['opacity'] = 0.6;
     }
@@ -417,7 +417,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     let cnt = 0;
     let savings = 0;
     let savingsLast = 0;
-    const today = DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+    const today = Util.getDate();
 
     for (const data of rowDatas) {
       const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
@@ -769,7 +769,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     // 日付 初期表示
     const initDate = (id: string) => {
       if (Util.checkInputMode(selectRowDatas[0], Const.INPUT_MODE.NONE)) {
-        return DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD);
+        return Util.getDate();
       }
       return selectRowDatas[0][id];
     };
@@ -908,18 +908,12 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     } else {
       // 過去データが編集可能でない場合
       const initPayDate = selectRowDatas[0][Const.MONEY_DIARY_COL_ID.PAY_DATE];
-      if (
-        !!initPayDate &&
-        initPayDate < DateUtil.format(new Date(), Const.DATE_FORMAT.YYYY_MM_DD)
-      ) {
+      if (!!initPayDate && initPayDate < Util.getDate()) {
         // 支払日が過去の場合
         validatorFn = (control: AbstractControl): ValidationErrors => {
           const errors: ValidationErrors = {};
           const payDate = control.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.value;
-          const today = DateUtil.format(
-            new Date(),
-            Const.DATE_FORMAT.YYYY_MM_DD,
-          );
+          const today = Util.getDate();
 
           // 削除/更新/移動ボタン押下不可
           errors[DIALOG_BUTTON.DEL] = true;
@@ -947,10 +941,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         ): ValidationErrors => {
           const errors: ValidationErrors = {};
           const payDate = control.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.value;
-          const today = DateUtil.format(
-            new Date(),
-            Const.DATE_FORMAT.YYYY_MM_DD,
-          );
+          const today = Util.getDate();
           const checkInvalid = (data: DialogInputData) =>
             !data.hide && control.get(data.id)?.invalid;
 
@@ -1336,10 +1327,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       // 日付連番
       let serialDateStr = '';
       if (!!serialDate) {
-        serialDateStr = DateUtil.format(
-          serialDate,
-          dateFormat || Const.DATE_FORMAT.YYYY_MM_DD,
-        );
+        serialDateStr = Util.getDate(serialDate, dateFormat || undefined);
       } else {
         serialDateStr = '';
       }
@@ -1352,7 +1340,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         } else if (dateFreq === Const.DATE_FORMAT.YY_MM_DD) {
           date = DateUtil.addDays(serialDate, dateFreqNum);
         }
-        serialDate = DateUtil.format(date, Const.DATE_FORMAT.YYYY_MM_DD);
+        serialDate = Util.getDate(date);
       }
 
       // 連番付与
