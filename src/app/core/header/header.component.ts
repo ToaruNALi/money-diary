@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
-import { RowDataEditHistory } from 'src/app/domain/row-data-edit-history';
+import { Hist } from 'src/app/domain/row-data-edit-history';
 import { MESSAGE } from 'src/app/shared/constants/messages';
-import { ScreenDispData } from 'src/app/shared/constants/types';
+import { ScrDspData } from 'src/app/shared/constants/types';
 import { FileDownloadComponent } from 'src/app/shared/file-download/file-download.component';
 import { FileUploadComponent } from 'src/app/shared/file-upload/file-upload.component';
 import {
@@ -37,17 +37,17 @@ import { SharedCommonModule } from './../../shared/shared-common.module';
 export class HeaderComponent {
   private readonly fb = inject(FormBuilder);
 
-  readonly screenDatas = input.required<ScreenDispData>();
-  readonly history = input.required<RowDataEditHistory>();
+  readonly scrData = input.required<ScrDspData>();
+  readonly hist = input.required<Hist>();
   readonly data = model.required<MoneyDiaryData>();
-  readonly editPastData = model<boolean>(false);
-  protected readonly historyReset = output<void>();
+  readonly edtPastData = model<boolean>(false);
+  protected readonly histReset = output<void>();
 
   protected readonly formData = signal<Partial<FormToggle>>({
     label: 'Past Edit',
   });
   protected readonly form = signal(
-    this.fb.control<boolean>(this.editPastData()),
+    this.fb.control<boolean>(this.edtPastData()),
   );
 
   ngOnInit(): void {
@@ -60,7 +60,7 @@ export class HeaderComponent {
         // 過去データ編集可能 かつ キャンセルを選択した場合
         this.form().setValue(false, { emitEvent: false });
       } else {
-        this.editPastData.set(value);
+        this.edtPastData.set(value);
       }
     });
   }

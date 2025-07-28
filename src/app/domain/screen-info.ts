@@ -1,9 +1,9 @@
-import { ScreenId } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/constants/types';
 
 /** 画面遷移データ */
-export type ScreenData = {
-  /** 画面ID */
-  id: ScreenId;
+export type ScrData = {
+  /** 表示順 */
+  od: number;
   /** 画面マップ表示X位置 */
   px: number;
   /** 画面マップ表示Y位置 */
@@ -11,15 +11,15 @@ export type ScreenData = {
 };
 
 /** 画面情報 */
-export type ScreenInfo = {
+export type ScrInf = {
   /** 画面ID */
-  si: ScreenId;
+  si: Scr;
   /** 前画面ID */
-  oi: ScreenId;
+  oi: Scr;
   /** お気に入り画面ID */
-  fi: ScreenId;
+  fi: Scr;
   /** 画面遷移マップ表示フラグ */
   md: boolean;
   /** 画面遷移データ */
-  sd: ScreenData[];
+  sd: Record<Scr, ScrData>;
 };

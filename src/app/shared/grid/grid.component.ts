@@ -37,14 +37,9 @@ import {
   SelectionChangedEvent,
   themeQuartz,
 } from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
-import {
-  RowDataEdit,
-  RowDataKey,
-  SortOption,
-  ValueType,
-} from 'src/app/shared/constants/types';
+import { RowEdt, SortOpt, Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   MoneyStatus,
@@ -52,15 +47,33 @@ import {
 } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
+/** グリッド */
+
+// TODO: 作成中
+/** グリッド入力クラス */
+export class GridInputComponent {
+  readonly tbl: Tbl;
+  readonly style: Record<string, string>;
+
+  rowStyle?: {
+    (params: RowClassParams): RowStyle;
+  };
+
+  constructor(tbl: Tbl, style: Record<string, string>) {
+    this.tbl = tbl;
+    this.style = style;
+  }
+}
+
 export type GridAboveContentOption = {
   calcSelectStatus?: (
-    rowDatas: RowData[],
-    colDefs: (ColDef<RowData, any> | ColGroupDef<RowData>)[],
+    rows: Row[],
+    colDefs: (ColDef<Row, any> | ColGroupDef<Row>)[],
   ) => MoneyStatus[];
 };
 export type GridBelowContentOption = {
   addRow?: boolean | (() => boolean);
-  sort?: SortOption[];
+  sort?: SortOpt[];
   filterOff?: boolean;
   changeFilter?: boolean;
   changeSelection?: boolean;
@@ -87,35 +100,47 @@ export class GridComponent {
   /** スタイル */
   readonly style = input.required<Record<string, string>>();
   /** 行データKey */
-  readonly rowDataKey = input.required<RowDataKey>();
+  readonly tbl = input.required<Tbl>();
   /** 列定義 */
-  readonly columnDefs = input.required<ColDef<RowData, ValueType>[]>();
+  readonly colDefs = input.required<ColDef<Row, ValType>[]>();
   /** 行データ */
-  readonly rowDatas = input.required<RowData[]>();
+  readonly rows = input.required<Row[]>();
 
   /********************
    * input
    ********************/
   /** 行スタイル */
   readonly rowStyle = input<{
-    (params: RowClassParams): RowStyle;
-  }>(() => ({}));
+    (params: RowClassParams<Row>): RowStyle;
+  }>((params: RowClassParams<Row>) => {
+    const style: RowStyle = {};
+    const mode = params.data?.[Const.CMN_COL.INPUT_MODE];
+
+    if (mode === Const.INPUT_MODE.NONE) {
+      // 空データ
+      style['backgroundColor'] = Const.ROW_CLR.NONE;
+    } else if (mode === Const.INPUT_MODE.SOME_REQ) {
+      // エラーデーア
+      style['backgroundColor'] = Const.ROW_CLR.ERROR;
+    }
+    return style;
+  });
   /** Grid上ボタンオプション */
   readonly aboveContentOption = input<GridAboveContentOption>(); // HTMLが!!で判定しているため初期値不要
   /** Grid下ボタンオプション */
-  readonly belowContentOption = input<GridBelowContentOption>(); // HTMLが!!で判定しているため初期値不要
+  readonly belowContentOpt = input<GridBelowContentOption>(); // HTMLが!!で判定しているため初期値不要
   /** セルクリック禁止列 */
-  readonly cellClickForbColumns = input<string[]>([]);
+  readonly cellClickForbCols = input<string[]>([]);
   /** 空行判定方法 */
-  readonly emptyRowJudgeFn = input<(rowData: RowData) => boolean>(
-    (rowData) => !rowData[Const.ROW_DATA_COMMON_COL_ID.LABEL],
+  readonly emptyRowJudgeFn = input<(row: Row) => boolean>(
+    (row) => !row[Const.CMN_COL.LABEL],
   );
 
   /********************
    * output
    ********************/
   /** 行更新 Emitter */
-  protected readonly rowDataEdits = output<RowDataEdit[]>();
+  protected readonly rowEdt = output<RowEdt[]>();
   /** 初期化処理 */
   protected readonly gridReady = output<GridReadyEvent>();
   /** 選択チェック処理 */
@@ -171,7 +196,7 @@ export class GridComponent {
         googleFont: 'Roboto',
       },
       fontSize: '13px',
-      foregroundColor: Const.COLOR.FOREGROUND_COLOR,
+      foregroundColor: Const.FONT_CLR.DEF,
       headerBackgroundColor: '#182226',
       headerFontFamily: {
         googleFont: 'Roboto',
@@ -189,7 +214,7 @@ export class GridComponent {
       wrapperBorderRadius: 0,
     });
   /** Gridオプション */
-  protected readonly gridOptions = signal<GridOptions<RowData>>({
+  protected readonly gridOptions = signal<GridOptions<Row>>({
     multiSortKey: 'ctrl', // 複数列ソート用キー: ctrl
     tooltipShowDelay: 0,
     rowDragManaged: true, // 行ドラッグ可能
@@ -217,7 +242,7 @@ export class GridComponent {
         cellEditor: 'agNumberCellEditor',
         valueFormatter: (params) => Util.cvtNumToPrice(params.value),
         filter: 'agNumberColumnFilter',
-        comparator: Util.amountComparator,
+        comparator: Util.compAmt,
         cellStyle: (params) => Util.getStylePrice(params.value),
       },
       amountCol: {
@@ -286,9 +311,9 @@ export class GridComponent {
     // },
   });
   /** 行ID */
-  protected readonly rowId = signal<GetRowIdFunc<RowData>>(
-    (params: GetRowIdParams<RowData>) => {
-      const id = params.data[Const.ROW_DATA_COMMON_COL_ID.ID];
+  protected readonly rowId = signal<GetRowIdFunc<Row>>(
+    (params: GetRowIdParams<Row>) => {
+      const id = params.data[Const.CMN_COL.ID];
       if (!id || typeof id !== 'string') {
         return '';
       }
@@ -306,21 +331,21 @@ export class GridComponent {
   });
   private readonly changeStatus = signal(false);
   /** ステータスリスト(表示用) */
-  protected readonly statusDispList = computed(() => {
+  protected readonly statusDspList = computed(() => {
     // 行データ増減時にもステータスを更新
-    this.rowDatas();
+    this.rows();
     this.changeStatus();
     // 選択行の取得
-    const rowDatas = this.gridApi?.getSelectedRows() ?? [];
+    const rows = this.gridApi?.getSelectedRows() ?? [];
     // 列情報の取得
     const colDefs = this.gridApi?.getColumnDefs() ?? [];
     // 選択切替状態更新
-    this.selectChangeState = rowDatas.length === 0;
-    return this.aboveOpt().calcSelectStatus(rowDatas, colDefs);
+    this.selectChangeState = rows.length === 0;
+    return this.aboveOpt().calcSelectStatus(rows, colDefs);
   });
   /** Grid下ボタンオプション */
   protected readonly belowOpt = computed(() => {
-    const inputOpt = this.belowContentOption() ?? {};
+    const inputOpt = this.belowContentOpt() ?? {};
     const defOpt: BelowOpt = {
       addRow: false,
       sort: false,
@@ -340,9 +365,7 @@ export class GridComponent {
       addRow:
         !!inputOpt.addRow && (inputOpt.addRow === true || !!inputOpt.addRow()),
       sort: !!inputOpt.sort && inputOpt.sort.length > 0,
-      changeFilter:
-        !!inputOpt.changeFilter &&
-        this.rowDataKey() === Const.ROW_DATA_KEY.MONEY_DIARY,
+      changeFilter: !!inputOpt.changeFilter && this.tbl() === Const.TBL.MAIN,
     };
     return retOpt;
   });
@@ -351,7 +374,7 @@ export class GridComponent {
   /** フィルタ状態 */
   protected filterChangeState = true;
   /** Grid Api */
-  private gridApi!: GridApi<RowData>;
+  private gridApi!: GridApi<Row>;
 
   /********************
    * イベント処理
@@ -376,7 +399,7 @@ export class GridComponent {
    * @param event
    */
   protected readonly onClickCell = (event: CellClickedEvent): void => {
-    if (this.cellClickForbColumns().includes(event.column.getId())) {
+    if (this.cellClickForbCols().includes(event.column.getId())) {
       // セルクリック禁止列に該当する場合、Emit
       this.cellClick.emit(event);
     } else {
@@ -403,7 +426,7 @@ export class GridComponent {
    * @param event
    */
   protected readonly onDragEnterRow = (
-    event: RowDragEnterEvent<RowData, ValueType>,
+    event: RowDragEnterEvent<Row, ValType>,
   ): void => {
     this.beforeRowIdxes = event.nodes.map((node) => node.rowIndex);
   };
@@ -412,47 +435,45 @@ export class GridComponent {
    * @param event
    */
   protected readonly onDragEndRow = (
-    event: RowDragEndEvent<RowData, ValueType>,
+    event: RowDragEndEvent<Row, ValType>,
   ): void => {
     const rowIdxes = event.nodes.map((node) => node.rowIndex);
     if (Util.equalObject(rowIdxes, this.beforeRowIdxes)) {
       return;
     }
     const targetIds = event.nodes.map((node) => node.id);
-    const datas: RowData[] = [];
-    const addIds: (string | undefined)[] = [];
-    const editInfo: RowDataEdit[] = [];
+    const updRows: Row[] = [];
+    const addIds: (ValType | undefined)[] = [];
+    const edtInf: RowEdt[] = [];
 
     event.api.forEachNode(({ id, data }) => {
       if (targetIds.includes(id)) {
-        datas.push({ ...data, [Const.ROW_DATA_COMMON_COL_ID.UPDATE]: true });
+        updRows.push({ ...data });
         addIds.push(undefined);
       } else {
-        for (const [dragIdx, rowData] of datas.entries()) {
-          if (rowData !== undefined && addIds[dragIdx] === undefined) {
+        for (const [dragIdx, row] of updRows.entries()) {
+          if (row !== undefined && addIds[dragIdx] === undefined) {
             addIds[dragIdx] = id;
           }
         }
       }
     });
 
-    editInfo.push(
-      Util.getUpdEditData(this.rowDataKey(), datas),
-      Util.getDragEditData(
-        this.rowDataKey(),
-        datas,
-        addIds as (string | null)[],
+    edtInf.push(
+      Util.getRowEdtUpd(this.tbl(), updRows),
+      Util.getRowEdtDrg(
+        this.tbl(),
+        Util.getRowIds(updRows),
+        addIds as ValType[],
       ),
     );
 
-    this.rowDataEdits.emit(editInfo);
+    this.rowEdt.emit(edtInf);
   };
   /**
    * 初期描画後
    */
-  protected readonly onDispFirstData = (
-    event: FirstDataRenderedEvent,
-  ): void => {
+  protected readonly onDspFirstData = (event: FirstDataRenderedEvent): void => {
     // 最終行にスクロール
     Util.jumpRow(event.api);
   };
@@ -461,57 +482,51 @@ export class GridComponent {
    * 行追加
    */
   protected readonly onAddRow = (): void => {
-    // TODO: 各画面事に行追加のコールバック関数を実装し、gridにわたす
-    this.rowDataEdits.emit([
-      Util.getAddDefaultEditData(this.rowDataKey(), this.rowDatas()),
-    ]);
+    this.rowEdt.emit([Util.getRowEdtAddNew(this.tbl(), this.rows())]);
   };
 
   /**
    * ソート
    */
   protected readonly onSort = (): void => {
-    const oldRowDatas = this.rowDatas();
-    const newRowDatas = Util.sortRowDatas(
-      oldRowDatas,
-      this.belowContentOption()?.sort ?? [],
-    );
-    if (Util.equalObject(oldRowDatas, newRowDatas)) {
+    const oldRows = this.rows();
+    const newRows = Util.sortRow(oldRows, this.belowContentOpt()?.sort ?? []);
+    if (Util.equalObject(oldRows, newRows)) {
       // ソート前と順番が変わらない場合は、履歴に追加しない
       return;
     }
 
-    const targetIds = oldRowDatas
-      .filter((dt) => !!dt[Const.ROW_DATA_COMMON_COL_ID.UPDATE])
-      .map((dt) => dt[Const.ROW_DATA_COMMON_COL_ID.ID]);
-    const datas: RowData[] = [];
-    const addIds: (string | undefined)[] = [];
-    const editInfo: RowDataEdit[] = [];
+    const targetIds = oldRows
+      .filter((dt) => !!dt[Const.CMN_COL.UPDATE])
+      .map((dt) => dt[Const.CMN_COL.ID]);
+    const updRows: Row[] = [];
+    const addIds: (ValType | undefined)[] = [];
+    const edtInf: RowEdt[] = [];
 
-    for (const data of newRowDatas) {
-      const id = data[Const.ROW_DATA_COMMON_COL_ID.ID];
+    for (const newRow of newRows) {
+      const id = newRow[Const.CMN_COL.ID];
       if (targetIds.includes(id)) {
-        datas.push({ ...data, [Const.ROW_DATA_COMMON_COL_ID.UPDATE]: false });
+        updRows.push({ ...newRow });
         addIds.push(undefined);
       } else {
-        for (const [dragIdx, rowData] of datas.entries()) {
-          if (rowData !== undefined && addIds[dragIdx] === undefined) {
+        for (const [dragIdx, row] of updRows.entries()) {
+          if (row !== undefined && addIds[dragIdx] === undefined) {
             addIds[dragIdx] = id?.toString();
           }
         }
       }
     }
 
-    editInfo.push(
-      Util.getUpdEditData(this.rowDataKey(), datas),
-      Util.getDragEditData(
-        this.rowDataKey(),
-        datas,
-        addIds as (string | null)[],
+    edtInf.push(
+      Util.getRowEdtUpd(this.tbl(), updRows, false),
+      Util.getRowEdtDrg(
+        this.tbl(),
+        Util.getRowIds(updRows),
+        addIds as ValType[],
       ),
     );
 
-    this.rowDataEdits.emit(editInfo);
+    this.rowEdt.emit(edtInf);
   };
 
   /**
@@ -537,7 +552,7 @@ export class GridComponent {
     this.gridApi.setFilterModel(null);
     // フィルタモデル設定
     const hardcodedFilter: FilterModel = {
-      [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+      [Const.MAIN_COL.INPUT_MODE]: {
         filterType: 'number',
         type: this.filterChangeState ? 'notEqual' : 'equal',
         filter: Const.INPUT_MODE.ALL_REQ,

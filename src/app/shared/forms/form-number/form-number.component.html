@@ -19,7 +19,7 @@
     (optionSelected)="onSelectAutoComp($event)"
   >
     @for (option of reqData().filteredOptions$ | async; track option.id) {
-      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+      <mat-option [value]="option.value">{{ option.lb }}</mat-option>
     }
   </mat-autocomplete>
   <app-form-clear-button

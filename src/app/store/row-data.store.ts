@@ -11,83 +11,42 @@ import {
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
-import { RowData, RowDataMap } from 'src/app/domain/row-data';
-import * as Const from 'src/app/shared/constants/constants';
-import {
-  RowDataAdd,
-  RowDataDel,
-  RowDataDrag,
-  RowDataEditEvent,
-  RowDataKey,
-  RowDataUpd,
-} from 'src/app/shared/constants/types';
+import { Row, TblMap } from 'src/app/domain/row-data';
+import { Tbl } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { ApiService } from 'src/app/shared/services/api.service';
 
 /** State */
-type RowDataState = {
+type TblInfState = {
   loading: boolean;
-  rowDataMap: RowDataMap;
-  error?: any;
+  tblMap: TblMap;
+  err?: any;
 };
 
 /** Initial State */
-const initialState: RowDataState = {
+const initState: TblInfState = {
   loading: false,
-  rowDataMap: {} as RowDataMap,
+  tblMap: {} as TblMap,
 };
 
 /** Signal Store */
-export const RowDataStore = signalStore(
+export const TblInfStore = signalStore(
   { providedIn: 'root' },
   // Redux DevTools Enable
-  withDevtools('rowData'),
+  withDevtools('tblInf'),
   // Initial State
-  withState(initialState),
+  withState(initState),
   // Method
   withMethods((store, apiService = inject(ApiService)) => ({
     /*+ 行データMap設定(※Loadのみ利用すること) */
-    setRowDataMapOnLoad: (map: RowDataMap): void => {
-      patchState(store, setRowDataMapOnLoad(map));
-      apiService.saveRowDataMap(store.rowDataMap()).subscribe();
+    setTblMapOnLoad: (map: TblMap): void => {
+      patchState(store, setTblMapOnLoad(map));
+      apiService.saveTblMap(store.tblMap()).subscribe();
     },
-
-    /** 行データMap設定 */
-    setRowDataMap: (rowDataMap: RowDataMap): void => {
-      patchState(store, { rowDataMap });
-      apiService.saveRowDataMap(store.rowDataMap()).subscribe();
-    },
-
-    /** 行データ追加 */
-    addRowData: (event: RowDataEditEvent): void => {
-      patchState(store, addRowData(event as RowDataAdd));
-      apiService
-        .saveRowData(event.key, store.rowDataMap()[event.key])
-        .subscribe();
-    },
-
     /** 行データ更新 */
-    updRowData: (event: RowDataEditEvent): void => {
-      patchState(store, updRowData(event as RowDataUpd));
-      apiService
-        .saveRowData(event.key, store.rowDataMap()[event.key])
-        .subscribe();
-    },
-
-    /** 行データ削除 */
-    delRowData: (event: RowDataEditEvent): void => {
-      patchState(store, delRowData(event as RowDataDel));
-      apiService
-        .saveRowData(event.key, store.rowDataMap()[event.key])
-        .subscribe();
-    },
-
-    /** 行データ移動 */
-    dragRowData: (event: RowDataEditEvent): void => {
-      patchState(store, dragRowData(event as RowDataDrag));
-      apiService
-        .saveRowData(event.key, store.rowDataMap()[event.key])
-        .subscribe();
+    updRows: (tbl: Tbl, rows: Row[]): void => {
+      patchState(store, updRows(tbl, rows));
+      apiService.saveRows(tbl, store.tblMap()[tbl]).subscribe();
     },
   })),
   // Event
@@ -96,10 +55,10 @@ export const RowDataStore = signalStore(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
-          apiService.loadRowDataMap().pipe(
+          apiService.loadTblMap().pipe(
             tapResponse({
-              next: (data) => store.setRowDataMapOnLoad(data),
-              error: (error) => patchState(store, { error }),
+              next: (data) => store.setTblMapOnLoad(data),
+              error: (err) => patchState(store, { err }),
               finalize: () => patchState(store, { loading: false }),
             }),
           ),
@@ -109,121 +68,23 @@ export const RowDataStore = signalStore(
   })),
 );
 
-const setRowDataMapOnLoad =
-  (map: RowDataMap): PartialStateUpdater<{ rowDataMap: RowDataMap }> =>
+const setTblMapOnLoad =
+  (map: TblMap): PartialStateUpdater<{ tblMap: TblMap }> =>
   (_state) => {
-    const result = {} as RowDataMap;
-    for (const [rowDataKey, datas] of Object.entries(map)) {
-      const key = rowDataKey as RowDataKey;
-      result[key] = Util.editRowDataOnLoad(key, datas);
+    const result = {} as TblMap;
+    for (const [key, rows] of Object.entries(map)) {
+      const tbl = key as Tbl;
+      result[tbl] = Util.getLoadRows(tbl, rows);
     }
-    return { rowDataMap: result };
-  };
-
-/** 行データ設定 共通 */
-const setRowDatasCommon = (
-  state: any,
-  key: RowDataKey,
-  datas: RowData[],
-): { rowDataMap: RowDataMap } => ({
-  rowDataMap: {
-    ...state.rowDataMap,
-    [key]: structuredClone(datas),
-  },
-});
-
-/** 行データ追加 Updater */
-const addRowData =
-  (add: RowDataAdd): PartialStateUpdater<{ rowDataMap: RowDataMap }> =>
-  (state) => {
-    const newDatas = structuredClone(state.rowDataMap[add.key]);
-
-    for (const [idx, data] of add.datas.entries()) {
-      const addIdx = newDatas.findIndex(
-        (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID] === add.addIds[idx],
-      );
-
-      if (addIdx >= 0) {
-        newDatas.splice(addIdx, 0, data);
-      } else {
-        newDatas.push(data);
-      }
-    }
-
-    return setRowDatasCommon(state, add.key, newDatas);
+    return { tblMap: result };
   };
 
 /** 行データ更新 Updater */
-const updRowData =
-  (upd: RowDataUpd): PartialStateUpdater<{ rowDataMap: RowDataMap }> =>
-  (state) => {
-    const newDatas = structuredClone(state.rowDataMap[upd.key]);
-
-    for (const data of upd.datas) {
-      for (let idx = 0; idx < newDatas.length; idx++) {
-        if (
-          newDatas[idx][Const.ROW_DATA_COMMON_COL_ID.ID] ===
-          data[Const.ROW_DATA_COMMON_COL_ID.ID]
-        ) {
-          newDatas[idx] = data;
-          break;
-        }
-      }
-    }
-
-    return setRowDatasCommon(state, upd.key, newDatas);
-  };
-
-/** 行データ削除 Updater */
-const delRowData =
-  (del: RowDataDel): PartialStateUpdater<{ rowDataMap: RowDataMap }> =>
-  (state) => {
-    const datas = structuredClone(state.rowDataMap[del.key]);
-    const delIds = del.datas.map(
-      (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID],
-    );
-
-    const newDatas = datas.filter(
-      (data) => !delIds.includes(data[Const.ROW_DATA_COMMON_COL_ID.ID]),
-    );
-
-    return setRowDatasCommon(state, del.key, newDatas);
-  };
-
-/** 行データ移動 Updater */
-const dragRowData =
-  (drag: RowDataDrag): PartialStateUpdater<{ rowDataMap: RowDataMap }> =>
-  (state) => {
-    const datas = structuredClone(state.rowDataMap[drag.key]);
-    const markDel = '_delete';
-
-    for (let idx = 0; idx < drag.datas.length; idx++) {
-      const id = drag.datas[idx][Const.ROW_DATA_COMMON_COL_ID.ID];
-      const dragData = datas.find(
-        (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID] === id,
-      );
-      if (!dragData) {
-        continue;
-      }
-
-      const dragIdx = datas.findIndex(
-        (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID] === drag.addIds[idx],
-      );
-
-      if (dragIdx >= 0) {
-        datas.splice(dragIdx, 0, structuredClone(dragData));
-      } else {
-        datas.push(structuredClone(dragData));
-      }
-      dragData[Const.ROW_DATA_COMMON_COL_ID.ID] += markDel;
-    }
-
-    const newDatas = datas.filter(
-      (data) =>
-        !(data[Const.ROW_DATA_COMMON_COL_ID.ID]?.toString() ?? '').endsWith(
-          markDel,
-        ),
-    );
-
-    return setRowDatasCommon(state, drag.key, newDatas);
-  };
+const updRows =
+  (tbl: Tbl, rows: Row[]): PartialStateUpdater<{ tblMap: TblMap }> =>
+  (state) => ({
+    tblMap: {
+      ...state.tblMap,
+      [tbl]: structuredClone(rows),
+    },
+  });

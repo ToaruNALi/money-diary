@@ -10,5 +10,5 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotificationComponent {
-  protected readonly infoCnt = computed(() => 15);
+  protected readonly infCnt = computed(() => 15);
 }

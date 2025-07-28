@@ -5,7 +5,7 @@ import {
   input,
 } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import {
   DialogChart,
   DialogChartComponent,
@@ -13,21 +13,21 @@ import {
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
-    selector: 'app-chart',
-    imports: [SharedCommonModule],
-    templateUrl: './chart.component.html',
-    styleUrl: './chart.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-chart',
+  imports: [SharedCommonModule],
+  templateUrl: './chart.component.html',
+  styleUrl: './chart.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChartComponent {
   private readonly dialog = inject(MatDialog);
 
-  readonly datas = input.required<RowData[]>();
+  readonly rows = input.required<Row[]>();
 
   protected readonly onClick = (): void => {
     const config: MatDialogConfig<DialogChart> = {
       data: {
-        inputDatas: this.datas(),
+        inputDatas: this.rows(),
         creditDatas: [],
       },
     };

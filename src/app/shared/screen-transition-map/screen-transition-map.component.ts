@@ -5,9 +5,9 @@ import {
   input,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { ScreenData } from 'src/app/domain/screen-info';
+import { ScrData } from 'src/app/domain/screen-info';
 import * as Const from 'src/app/shared/constants/constants';
-import { ScreenId } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/constants/types';
 
 @Component({
   selector: 'app-screen-transition-map',
@@ -18,17 +18,18 @@ import { ScreenId } from 'src/app/shared/constants/types';
 })
 export class ScreenTransitionMapComponent {
   readonly display = input.required<boolean>();
-  readonly screenId = input.required<ScreenId>();
-  readonly screenDatas = input.required<ScreenData[]>();
+  readonly scrId = input.required<Scr>();
+  readonly scrData = input.required<Record<Scr, ScrData>>();
 
   protected readonly map = computed(() => {
-    const id = this.screenId();
+    const id = this.scrId();
+    const datas = this.scrData();
 
     let xSize = 0;
     let ySize = 0;
 
-    const datas = this.screenDatas();
-    for (const data of datas) {
+    // X,Y軸方向の最大サイズを求める
+    for (const data of Object.values(datas)) {
       const x = data.px + 1;
       const y = data.py + 1;
 
@@ -48,12 +49,12 @@ export class ScreenTransitionMapComponent {
       }),
     );
 
-    for (const data of datas) {
-      const info = Const.SCREEN_INFO.find((info) => info.id === data.id)!;
+    for (const [scr, data] of Object.entries(datas)) {
+      const info = Const.SCR_INF[scr as Scr];
       map[data.py][data.px] = {
-        id: info.id,
-        select: data.id === id,
-        icon: info.icon,
+        id: scr,
+        select: scr === id,
+        icon: info.ic,
       };
     }
 

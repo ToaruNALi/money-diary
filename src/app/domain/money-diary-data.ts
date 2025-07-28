@@ -1,13 +1,13 @@
-import { RowDataMap } from 'src/app/domain/row-data';
-import { RowDataEditHistory } from 'src/app/domain/row-data-edit-history';
-import { ScreenInfo } from 'src/app/domain/screen-info';
+import { TblMap } from 'src/app/domain/row-data';
+import { Hist } from 'src/app/domain/row-data-edit-history';
+import { ScrInf } from 'src/app/domain/screen-info';
 
 /** 家計簿データ */
 export type MoneyDiaryData = {
   /** 画面関連情報 */
-  si: ScreenInfo;
+  si: ScrInf;
   /** グリッド関連データ */
-  rm: RowDataMap;
+  rm: TblMap;
   /** 行編集保存情報 */
-  rh: RowDataEditHistory;
+  rh: Hist;
 };

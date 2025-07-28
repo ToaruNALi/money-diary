@@ -9,15 +9,15 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AgChartsModule } from 'ag-charts-angular';
 import { AgChartOptions } from 'ag-charts-community';
 import * as DateUtil from 'date-fns';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import * as Util from 'src/app/shared/constants/utils';
 import { DialogCommonModule } from 'src/app/shared/dialog-common.module';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 export type DialogChart = {
-  inputDatas: RowData[];
-  creditDatas: RowData[];
+  inputDatas: Row[];
+  creditDatas: Row[];
 };
 
 @Component({
@@ -40,45 +40,45 @@ export class DialogChartComponent {
   private readonly date = signal('date');
 
   ngOnInit(): void {
-    const chartDatas: RowData[] = [];
-    const startDate: string = Const.MANAGEMENT_DATE.START;
+    const chartDatas: Row[] = [];
+    const startDate: string = Const.MNG_DATE.START;
     const endDate = new Date();
-    const xKeys = [Const.SUMMARY_COL_ID.DATE];
-    const yKeys = [Const.SUMMARY_COL_ID.INCOME, Const.SUMMARY_COL_ID.EXPENSES];
+    const xKeys = [Const.SMR_COL.DATE];
+    const yKeys = [Const.SMR_COL.INCOME, Const.SMR_COL.EXPENSES];
 
     for (
       let date = startDate;
       DateUtil.differenceInCalendarMonths(endDate, date) >= 0;
       date = Util.getDate(DateUtil.addMonths(date, 1))
     ) {
-      const chartData: RowData = {};
+      const chartData: Row = {};
       for (const key of xKeys) {
-        chartData[key] = Util.getDate(date, Const.DATE_FORMAT.YYYY_MM);
+        chartData[key] = Util.getDate(date, Const.DATE_FMT.YYYY_MM);
       }
       for (const key of yKeys) {
-        chartData[key] = Util.getInitValue(Const.ROW_DATA_KEY.SUMMARY, key);
+        chartData[key] = Util.getTblDefVal(Const.TBL.SUMMARY, key);
       }
       chartDatas.push(chartData);
     }
 
-    for (const rowData of this.data.inputDatas) {
+    for (const row of this.data.inputDatas) {
       // chartDatas.push(data);
-      if (!Util.checkInputMode(rowData, Const.INPUT_MODE.ALL_REQ)) {
+      if (!Util.checkInputMode(row, Const.INPUT_MODE.ALL_REQ)) {
         // 必須項目漏れあり
         continue;
       }
 
       const dateStr = Util.getPayDate(
-        rowData[Const.MONEY_DIARY_COL_ID.USE_DATE],
-        rowData[Const.MONEY_DIARY_COL_ID.CREDIT],
+        row[Const.MAIN_COL.USE_DATE],
+        row[Const.MAIN_COL.CREDIT],
         this.data.creditDatas,
       );
-      rowData[Const.MONEY_DIARY_COL_ID.DATE]?.toString() ?? '';
+      row[Const.MAIN_COL.DATE]?.toString() ?? '';
       const startDateStr = Util.getDate(DateUtil.startOfMonth(dateStr));
       const chartData = chartDatas.find(
         (data) =>
           DateUtil.differenceInCalendarMonths(
-            data[Const.SUMMARY_COL_ID.DATE]?.toString() ?? '',
+            data[Const.SMR_COL.DATE]?.toString() ?? '',
             startDateStr,
           ) === 0,
       );
@@ -88,12 +88,12 @@ export class DialogChartComponent {
         continue;
       }
 
-      const amountNum = Number(rowData[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]);
+      const amountNum = Number(row[Const.MAIN_COL.AMOUNT_NUM]);
 
       if (amountNum > 0) {
-        (chartData[Const.SUMMARY_COL_ID.INCOME] as number) += amountNum;
+        (chartData[Const.SMR_COL.INCOME] as number) += amountNum;
       } else if (amountNum < 0) {
-        (chartData[Const.SUMMARY_COL_ID.EXPENSES] as number) += amountNum;
+        (chartData[Const.SMR_COL.EXPENSES] as number) += amountNum;
       }
     }
 
@@ -126,14 +126,14 @@ export class DialogChartComponent {
       series: [
         {
           type: 'bar',
-          xKey: Const.SUMMARY_COL_ID.DATE,
-          yKey: Const.SUMMARY_COL_ID.INCOME,
+          xKey: Const.SMR_COL.DATE,
+          yKey: Const.SMR_COL.INCOME,
           yName: 'Income',
         },
         {
           type: 'bar',
-          xKey: Const.SUMMARY_COL_ID.DATE,
-          yKey: Const.SUMMARY_COL_ID.EXPENSES,
+          xKey: Const.SMR_COL.DATE,
+          yKey: Const.SMR_COL.EXPENSES,
           yName: 'Expenses',
         },
       ],
@@ -147,11 +147,11 @@ export class DialogChartComponent {
     // 横軸の間隔となるFormatを設定(日/月/年)
     const dateFormat =
       this.unitDate() === 'year'
-        ? Const.DATE_FORMAT.YYYY
+        ? Const.DATE_FMT.YYYY
         : this.unitDate() === 'month'
-          ? Const.DATE_FORMAT.YYYY_MM
+          ? Const.DATE_FMT.YYYY_MM
           : this.unitDate() === 'day'
-            ? Const.DATE_FORMAT.YY_MM_DD
+            ? Const.DATE_FMT.YY_MM_DD
             : '';
     // 横軸の値を設定する内部関数を設定(日付/支払日)
     // const dateFn =

@@ -5,18 +5,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import {
-  CellClickedEvent,
-  ColDef,
-  GridReadyEvent,
-  RowClassParams,
-  RowStyle,
-} from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { CellClickedEvent, ColDef, GridReadyEvent } from 'ag-grid-community';
+import { Row } from 'src/app/domain/row-data';
 import { MemoUsecase } from 'src/app/features/money-diary/memo/memo.usecase';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
@@ -32,24 +26,18 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(MemoUsecase);
   /** 列定義 */
-  protected override readonly colDefs = signal<ColDef<RowData, ValueType>[]>(
-    [],
-  );
+  protected override readonly colDefs = signal<ColDef<Row, ValType>[]>([]);
   /** 行データ */
-  protected override readonly rowDatas = computed(() => this.mainRowDatas());
-  /** 行スタイル */
-  protected readonly rowStyle = signal<{ (params: RowClassParams): RowStyle }>(
-    this.usecase.getRowStyle,
-  );
+  protected override readonly rows = computed(() => this.mainRows());
   /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = computed(() => ({
-    addRow: () => this.mainRowDatas().length === 0,
+  protected readonly belowContentOpt = computed(() => ({
+    addRow: () => this.mainRows().length === 0,
     jumpFirstRow: true,
     jumpLastRow: true,
   }));
   /** セルクリック禁止列 */
-  protected readonly cellClickForbColumns = [
-    Const.ROW_DATA_COMMON_COL_ID.LABEL,
+  protected readonly cellClickForbCols = [
+    Const.MEM_COL.LABEL,
   ] as const satisfies string[];
 
   /**
@@ -65,7 +53,7 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
    * @param event
    */
   protected readonly onClickCell = async (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 入力チェック
     const check = this.usecase.checkInputData(event);
@@ -73,11 +61,8 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
       return;
     }
     // ダイアログ入力データ作成
-    const rowDatas = this.mainRowDatas();
-    const input = this.usecase.createInputData(
-      [event.data!],
-      this.rowDataKey(),
-    );
+    const rows = this.mainRows();
+    const input = this.usecase.createInputData([event.data!], this.tbl());
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
     if (!output) {
@@ -87,10 +72,10 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       [event.data!],
-      rowDatas,
-      this.rowDataKey(),
+      rows,
+      this.tbl(),
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 }

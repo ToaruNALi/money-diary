@@ -5,7 +5,7 @@ import {
   input,
   output,
 } from '@angular/core';
-import { RowDataEditHistory } from 'src/app/domain/row-data-edit-history';
+import { Hist } from 'src/app/domain/row-data-edit-history';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
@@ -16,15 +16,14 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RedoComponent {
-  readonly history = input.required<RowDataEditHistory>();
+  readonly hist = input.required<Hist>();
   protected readonly redo = output<void>();
 
   protected readonly disabled = computed(
-    () => this.history().ix >= this.history().rd.length,
+    () => this.hist().ix >= this.hist().rd.length,
   );
   protected readonly count = computed(
-    () =>
-      // this.history().rd.length - this.history().ix,
-      '',
+    // () => this.hist().rd.length - this.hist().ix,
+    () => '',
   );
 }

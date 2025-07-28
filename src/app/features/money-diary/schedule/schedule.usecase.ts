@@ -5,20 +5,18 @@ import {
   CellClickedEvent,
   CellStyle,
   ColDef,
-  RowStyle,
   ValueFormatterParams,
   ValueSetterParams,
 } from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { RowDataKey, ValueType } from 'src/app/shared/constants/types';
+import { Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
   DialogInputData,
   DialogInputDatas,
-  DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
@@ -28,34 +26,34 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * 列定義を返却する
    * @returns 列定義
    */
-  override readonly getColDefs = (): ColDef<RowData, ValueType>[] => [
+  override readonly getColDefs = (): ColDef<Row, ValType>[] => [
     {
       headerName: 'Id',
-      field: Const.ROW_DATA_COMMON_COL_ID.ID,
+      field: Const.CMN_COL.ID,
       cellEditor: 'agTextCellEditor',
       hide: true,
     },
     {
       headerName: 'Repeat Interval',
-      field: Const.ROW_DATA_COMMON_COL_ID.LABEL,
+      field: Const.CMN_COL.LABEL,
       cellEditor: 'agTextCellEditor',
       hide: false,
     },
     {
       headerName: 'a',
-      field: Const.SCHEDULE_COL_ID.SEARCH_MEMO,
+      field: Const.SCD_COL.SEARCH_MEMO,
       cellEditor: 'agTextCellEditor',
       hide: false,
     },
     {
       headerName: 'b',
-      field: Const.SCHEDULE_COL_ID.MEMO_PLUS_A,
+      field: Const.SCD_COL.MEMO_PLUS_A,
       cellEditor: 'agTextCellEditor',
       hide: false,
     },
     // {
     //   headerName: 'Date',
-    //   field: Const.MONEY_DIARY_COL_ID.DATE,
+    //   field: Const.MAIN_COL.DATE,
     //   type: 'dateCol',
     //   pinned: 'left',
     //   rowDrag: true,
@@ -65,37 +63,37 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   valueFormatter: this.dateFormatter,
     //   comparator: (_a, _b, nodeA, nodeB) =>
     //     Usecase.sortCommonProc(nodeA.data, nodeB.data, [
-    //       { col: Const.MONEY_DIARY_COL_ID.DATE },
-    //       { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+    //       { col: Const.MAIN_COL.DATE },
+    //       { col: Const.MAIN_COL.INPUT_MODE, asc: false },
     //     ]),
     //   cellStyle: this.colorCellStyle,
     // },
     // {
     //   headerName: 'Amount',
-    //   field: Const.MONEY_DIARY_COL_ID.AMOUNT,
+    //   field: Const.MAIN_COL.AMOUNT,
     //   type: 'amountCol',
     //   cellEditor: 'agTextCellEditor',
-    //   filterValueGetter: `data.${Const.MONEY_DIARY_COL_ID.AMOUNT_NUM}`,
+    //   filterValueGetter: `data.${Const.MAIN_COL.AMOUNT_NUM}`,
     //   width: 110,
     //   valueSetter: this.amountSetter,
     //   valueFormatter: this.amountFormatter,
     //   comparator: (_a, _b, nodeA, nodeB) =>
     //     Usecase.amountComparator(
-    //       nodeA.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
-    //       nodeB.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
+    //       nodeA.data?.[Const.MAIN_COL.AMOUNT_NUM],
+    //       nodeB.data?.[Const.MAIN_COL.AMOUNT_NUM],
     //     ),
     //   cellStyle: (params) =>
-    //     Usecase.getStylePrice(params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]),
+    //     Usecase.getStylePrice(params.data?.[Const.MAIN_COL.AMOUNT_NUM]),
     // },
     // {
     //   headerName: 'AmountNum',
-    //   field: Const.MONEY_DIARY_COL_ID.AMOUNT_NUM,
+    //   field: Const.MAIN_COL.AMOUNT_NUM,
     //   cellEditor: 'agNumberCellEditor',
     //   hide: true,
     // },
     // {
     //   headerName: 'Memo',
-    //   field: Const.MONEY_DIARY_COL_ID.MEMO,
+    //   field: Const.MAIN_COL.MEMO,
     //   cellEditor: 'agLargeTextCellEditor',
     //   filter: 'agTextColumnFilter',
     //   width: 220,
@@ -103,7 +101,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     // },
     // {
     //   headerName: 'Storage',
-    //   field: Const.MONEY_DIARY_COL_ID.STORAGE,
+    //   field: Const.MAIN_COL.STORAGE,
     //   cellEditor: 'agSelectCellEditor',
     //   cellEditorParams: {
     //     values: this.getComboboxValue(storage),
@@ -115,12 +113,12 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   filterValueGetter: (params) =>
     //     this.comboboxFormatter(
     //       storage,
-    //       params.getValue(Const.MONEY_DIARY_COL_ID.STORAGE),
+    //       params.getValue(Const.MAIN_COL.STORAGE),
     //     ),
     // },
     // {
     //   headerName: 'Credit',
-    //   field: Const.MONEY_DIARY_COL_ID.CREDIT,
+    //   field: Const.MAIN_COL.CREDIT,
     //   cellEditor: 'agSelectCellEditor',
     //   cellEditorParams: {
     //     values: this.getComboboxValue(credit),
@@ -132,12 +130,12 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   filterValueGetter: (params) =>
     //     this.comboboxFormatter(
     //       credit,
-    //       params.getValue(Const.MONEY_DIARY_COL_ID.CREDIT),
+    //       params.getValue(Const.MAIN_COL.CREDIT),
     //     ),
     // },
     // {
     //   headerName: 'Item',
-    //   field: Const.MONEY_DIARY_COL_ID.ITEM,
+    //   field: Const.MAIN_COL.ITEM,
     //   cellEditor: 'agSelectCellEditor',
     //   cellEditorParams: {
     //     values: this.getComboboxValue(item),
@@ -147,11 +145,11 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   valueSetter: this.newValueSetter,
     //   valueFormatter: (params) => this.comboboxFormatter(item, params.value),
     //   filterValueGetter: (params) =>
-    //     this.comboboxFormatter(item, params.getValue(Const.MONEY_DIARY_COL_ID.ITEM)),
+    //     this.comboboxFormatter(item, params.getValue(Const.MAIN_COL.ITEM)),
     // },
     // {
     //   headerName: 'Remark',
-    //   field: Const.MONEY_DIARY_COL_ID.REMARK,
+    //   field: Const.MAIN_COL.REMARK,
     //   cellEditor: 'agSelectCellEditor',
     //   cellEditorParams: {
     //     values: this.getComboboxValue(remark),
@@ -163,17 +161,17 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   filterValueGetter: (params) =>
     //     this.comboboxFormatter(
     //       remark,
-    //       params.getValue(Const.MONEY_DIARY_COL_ID.REMARK),
+    //       params.getValue(Const.MAIN_COL.REMARK),
     //     ),
     // },
     // {
     //   headerName: 'Color',
-    //   field: Const.MONEY_DIARY_COL_ID.COLOR,
+    //   field: Const.MAIN_COL.COLOR,
     //   hide: true,
     // },
     // {
     //   headerName: 'Use Date',
-    //   field: Const.MONEY_DIARY_COL_ID.USE_DATE,
+    //   field: Const.MAIN_COL.USE_DATE,
     //   type: 'dateCol',
     //   hide: true,
     //   width: 100,
@@ -181,32 +179,32 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
     //   valueFormatter: this.dateFormatter,
     //   comparator: (_a, _b, nodeA, nodeB) =>
     //     Usecase.sortCommonProc(nodeA.data, nodeB.data, [
-    //       { col: Const.MONEY_DIARY_COL_ID.USE_DATE },
-    //       { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+    //       { col: Const.MAIN_COL.USE_DATE },
+    //       { col: Const.MAIN_COL.INPUT_MODE, asc: false },
     //     ]),
     // },
     // {
     //   headerName: 'Pay Date',
-    //   field: Const.MONEY_DIARY_COL_ID.PAY_DATE,
+    //   field: Const.MAIN_COL.PAY_DATE,
     //   type: 'dateCol',
     //   width: 100,
     //   valueFormatter: this.dateFormatter,
     //   comparator: (_a, _b, nodeA, nodeB) =>
     //     Usecase.sortCommonProc(nodeA.data, nodeB.data, [
-    //       { col: Const.MONEY_DIARY_COL_ID.PAY_DATE },
-    //       { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
+    //       { col: Const.MAIN_COL.PAY_DATE },
+    //       { col: Const.MAIN_COL.INPUT_MODE, asc: false },
     //     ]),
     // },
     // {
     //   headerName: 'Input Mode',
-    //   field: Const.MONEY_DIARY_COL_ID.INPUT_MODE,
+    //   field: Const.MAIN_COL.INPUT_MODE,
     //   cellEditor: 'agNumberCellEditor',
     //   hide: true,
     // },
     // {
     //   // ※列定義の最後に配置する
     //   headerName: 'Update',
-    //   field: Const.ROW_DATA_COMMON_COL_ID.UPDATE,
+    //   field: Const.CMN_COL.UPDATE,
     //   cellEditor: 'agCheckboxCellEditor',
     //   hide: true,
     // },
@@ -219,15 +217,15 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * @returns 真偽値
    */
   private readonly dateSetter = (
-    params: ValueSetterParams<RowData, ValueType>,
-    credit: RowData[],
+    params: ValueSetterParams<Row, ValType>,
+    credit: Row[],
   ): boolean => {
-    if (!this.newValueSetter(params)) {
+    if (!this.newValSetter(params)) {
       return false;
     }
-    params.data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-      params.data[Const.MONEY_DIARY_COL_ID.USE_DATE],
-      params.data[Const.MONEY_DIARY_COL_ID.CREDIT],
+    params.data[Const.MAIN_COL.PAY_DATE] = Util.getPayDate(
+      params.data[Const.MAIN_COL.USE_DATE],
+      params.data[Const.MAIN_COL.CREDIT],
       credit,
     );
     return true;
@@ -239,15 +237,12 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * @returns セルスタイル
    */
   private readonly colorCellStyle = (
-    params: CellClassParams<RowData, ValueType>,
+    params: CellClassParams<Row, ValType>,
   ): CellStyle => {
-    const cellStyle = Util.getCellCommonStyle(params);
-    const color = params.data?.[Const.MONEY_DIARY_COL_ID.COLOR];
-    const defaultColor = Util.getInitValue(
-      Const.ROW_DATA_KEY.MONEY_DIARY,
-      Const.MONEY_DIARY_COL_ID.COLOR,
-    );
-    if (!!color && typeof color === 'string' && color !== defaultColor) {
+    const cellStyle = Util.getCellCmnStyle(params);
+    const color = params.data?.[Const.MAIN_COL.COLOR];
+    const defColor = Util.getTblDefVal(Const.TBL.MAIN, Const.MAIN_COL.COLOR);
+    if (!!color && typeof color === 'string' && color !== defColor) {
       cellStyle['background-color'] = color;
     }
 
@@ -260,17 +255,14 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * @returns 金額
    */
   private readonly amountSetter = (
-    params: ValueSetterParams<RowData, ValueType>,
+    params: ValueSetterParams<Row, ValType>,
   ): boolean => {
     const val =
       params.newValue ||
-      Util.getInitValue(
-        Const.ROW_DATA_KEY.MONEY_DIARY,
-        Const.MONEY_DIARY_COL_ID.AMOUNT,
-      );
+      Util.getTblDefVal(Const.TBL.MAIN, Const.MAIN_COL.AMOUNT);
 
-    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT] = val;
-    params.data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = Util.calcResult(val);
+    params.data[Const.MAIN_COL.AMOUNT] = val;
+    params.data[Const.MAIN_COL.AMOUNT_NUM] = Util.calcResult(val);
     this.commonSetter(params);
     return true;
   };
@@ -281,68 +273,39 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * @returns 金額
    */
   private readonly amountFormatter = (
-    params: ValueFormatterParams<RowData, ValueType>,
+    params: ValueFormatterParams<Row, ValType>,
   ): string => {
-    return Util.cvtNumToPrice(
-      params.data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM],
-    );
+    return Util.cvtNumToPrice(params.data?.[Const.MAIN_COL.AMOUNT_NUM]);
   };
 
   /**
    * 共通セッター
    */
   private readonly commonSetter = (
-    params: ValueSetterParams<RowData, ValueType>,
+    params: ValueSetterParams<Row, ValType>,
   ): boolean => {
-    params.data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = Util.getInputMode(
-      params.data,
-    );
-    params.data[Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
+    params.data[Const.MAIN_COL.INPUT_MODE] = Util.getInputMode(params.data);
+    params.data[Const.CMN_COL.UPDATE] = true;
     return true;
   };
 
   /**
    * 行データを初期化する
-   * @param rowDatas
+   * @param rows
    * @param creditDatas
    * @returns 初期化後の行データ
    */
-  override readonly getRowDatas = (
-    rowDatas: RowData[],
-    creditDatas: RowData[],
-  ): RowData[] => {
-    const datas = structuredClone(rowDatas);
+  override readonly getRows = (rows: Row[], creditDatas: Row[]): Row[] => {
+    const datas = structuredClone(rows);
     for (const data of datas) {
       // 支払日
-      data[Const.MONEY_DIARY_COL_ID.PAY_DATE] = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
-        data[Const.MONEY_DIARY_COL_ID.CREDIT],
+      data[Const.MAIN_COL.PAY_DATE] = Util.getPayDate(
+        data[Const.MAIN_COL.USE_DATE],
+        data[Const.MAIN_COL.CREDIT],
         creditDatas,
       );
     }
     return datas;
-  };
-
-  /**
-   * 行スタイル返却(Custom)
-   * @param rowData
-   * @param style
-   * @default style = {}
-   * @returns 行スタイル
-   */
-  protected override readonly getRowStyleCustom = (
-    rowData: RowData,
-    style: RowStyle = {},
-  ): RowStyle => {
-    if (!rowData[Const.ROW_DATA_COMMON_COL_ID.LABEL]) {
-      // 空データの場合
-      style['backgroundColor'] = Const.GRID_ROW_COLOR.NONE;
-    } else if (!!rowData[Const.ROW_DATA_COMMON_COL_ID.UPDATE]) {
-      // // 更新済データの場合
-      // style['backgroundColor'] = Const.GRID_ROW_COLOR.UPDATE;
-    }
-
-    return style;
   };
 
   /**
@@ -351,7 +314,7 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
    * @returns チェック結果
    */
   override readonly checkInputData = (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
   ): boolean => {
     if (!event.node.id || !event.data) {
       // 選択行がない、または、入力データがない場合
@@ -363,62 +326,62 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
 
   /**
    * ダイアログ入力データ作成
-   * @param selectRowDatas
-   * @param rowDataKey
+   * @param selectRows
+   * @param tbl
    * @returns 入力データ
    */
   override readonly createInputData = (
-    selectRowDatas: RowData[],
-    rowDataKey: RowDataKey,
+    selectRows: Row[],
+    tbl: Tbl,
   ): DialogInput => {
-    const rowData = selectRowDatas[0];
+    const row = selectRows[0];
     // コンボボックスリスト (invalid項目を設定している場合は非活性とする)
-    // const rowDataskeyList = [
+    // const tblList = [
     //   Const.ROW_DATA_KEY.STORAGE,
     //   Const.ROW_DATA_KEY.CREDIT,
     //   Const.ROW_DATA_KEY.ITEM,
     //   Const.ROW_DATA_KEY.REMARK,
     // ];
     // const moneyDiaryKeyList = [
-    //   Const.MONEY_DIARY_COL_ID.STORAGE,
-    //   Const.MONEY_DIARY_COL_ID.CREDIT,
-    //   Const.MONEY_DIARY_COL_ID.ITEM,
-    //   Const.MONEY_DIARY_COL_ID.REMARK,
+    //   Const.MAIN_COL.STORAGE,
+    //   Const.MAIN_COL.CREDIT,
+    //   Const.MAIN_COL.ITEM,
+    //   Const.MAIN_COL.REMARK,
     // ];
     // const selectOptionsList: Record<string, DialogOption[]> = {};
-    // const editableList: Record<string, boolean> = {};
-    // for (const [idx, key] of rowDataskeyList.entries()) {
-    //   const value = rowData[moneyDiaryKeyList[idx]];
-    //   editableList[moneyDiaryKeyList[idx]] = !otherRowDatas[idx].some(
+    // const edtableList: Record<string, boolean> = {};
+    // for (const [idx, key] of tblList.entries()) {
+    //   const value = row[moneyDiaryKeyList[idx]];
+    //   edtableList[moneyDiaryKeyList[idx]] = !otherRows[idx].some(
     //     (data) =>
-    //       data[Const.ROW_DATA_COMMON_COL_ID.ID] === value &&
-    //       !data[Const.ROW_DATA_COMMON_COL_ID.VALID],
+    //       data[Const.CMN_COL.ID] === value &&
+    //       !data[Const.CMN_COL.VALID],
     //   );
-    //   selectOptionsList[key] = otherRowDatas[idx]
+    //   selectOptionsList[key] = otherRows[idx]
     //     .filter(
     //       (data) =>
-    //         !editableList[moneyDiaryKeyList[idx]] ||
-    //         (!!data[Const.ROW_DATA_COMMON_COL_ID.VALID] &&
-    //           !!data[Const.ROW_DATA_COMMON_COL_ID.LABEL]),
+    //         !edtableList[moneyDiaryKeyList[idx]] ||
+    //         (!!data[Const.CMN_COL.VALID] &&
+    //           !!data[Const.CMN_COL.LABEL]),
     //     )
     //     .map<DialogOption>((data) => ({
-    //       id: data[Const.ROW_DATA_COMMON_COL_ID.ID]?.toString() ?? '',
-    //       label: data[Const.ROW_DATA_COMMON_COL_ID.LABEL]?.toString() ?? '',
+    //       id: data[Const.CMN_COL.ID]?.toString() ?? '',
+    //       label: data[Const.CMN_COL.LABEL]?.toString() ?? '',
     //     }));
     // }
 
     // // オートコンプリートデータ メモ
     // const autocompMemoData: DialogOption[] = [];
     // const optLabelSet: Set<string> = new Set();
-    // for (const data of rowDatas) {
+    // for (const data of rows) {
     //   if (
-    //     data[Const.ROW_DATA_COMMON_COL_ID.ID] === rowData[Const.ROW_DATA_COMMON_COL_ID.ID]
+    //     data[Const.CMN_COL.ID] === row[Const.CMN_COL.ID]
     //   ) {
     //     // 編集対象の場合、オートコンプリートに追加しない
     //     continue;
     //   }
 
-    //   const val = data[Const.MONEY_DIARY_COL_ID.MEMO]?.toString() ?? '';
+    //   const val = data[Const.MAIN_COL.MEMO]?.toString() ?? '';
     //   if (!!val && !optLabelSet.has(val)) {
     //     optLabelSet.add(val);
     //     autocompMemoData.push({ id: val, label: val });
@@ -429,19 +392,19 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
 
     // // 支払日 setter
     // const payDateSetter = (form: FormGroup): void => {
-    //   const date = form.get(Const.MONEY_DIARY_COL_ID.DATE)?.value;
-    //   const useDate = form.get(Const.MONEY_DIARY_COL_ID.USE_DATE)?.value;
-    //   const credit = form.get(Const.MONEY_DIARY_COL_ID.CREDIT)?.value;
+    //   const date = form.get(Const.MAIN_COL.DATE)?.value;
+    //   const useDate = form.get(Const.MAIN_COL.USE_DATE)?.value;
+    //   const credit = form.get(Const.MAIN_COL.CREDIT)?.value;
 
     //   let val = '';
     //   if (date !== undefined && useDate !== undefined && credit !== undefined) {
-    //     const idx = rowDataskeyList.findIndex(
+    //     const idx = tblList.findIndex(
     //       (key) => key === Const.ROW_DATA_KEY.CREDIT,
     //     );
-    //     val = Usecase.getPayDate(useDate || date, credit, otherRowDatas[idx]);
+    //     val = Usecase.getPayDate(useDate || date, credit, otherRows[idx]);
     //   }
 
-    //   form.get(Const.MONEY_DIARY_COL_ID.PAY_DATE)?.setValue(val);
+    //   form.get(Const.MAIN_COL.PAY_DATE)?.setValue(val);
     // };
 
     // setter
@@ -449,12 +412,12 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       form: FormGroup,
       input: Required<DialogInput>,
     ): void => {
-      const val = form.get(Const.SCHEDULE_COL_ID.LABEL)?.value;
+      const val = form.get(Const.SCD_COL.LABEL)?.value;
       const search = (input.datas as DialogInputData[]).find(
-        (data) => data.id === Const.SCHEDULE_COL_ID.SEARCH_MEMO,
+        (data) => data.id === Const.SCD_COL.SEARCH_MEMO,
       );
       const memo = (input.datas as DialogInputData[]).find(
-        (data) => data.id === Const.SCHEDULE_COL_ID.MEMO_PLUS_A,
+        (data) => data.id === Const.SCD_COL.MEMO_PLUS_A,
       );
 
       if (!!search && !!memo) {
@@ -468,128 +431,95 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
       }
     };
 
-    const selectTest = Const.FREQ_DWMY_SELECT.map((select) => ({
+    const selectTest = Const.FREQ_DWMY_LIST.map((select) => ({
       id: select.id,
-      label: select.label,
+      lb: select.lb,
     }));
 
     // 入力データ
-    const initValues = Util.getInitRowData(rowDataKey);
+    const initValues = Util.getTblDefRow(tbl);
     const datas: DialogInputDatas = [
       {
-        id: Const.SCHEDULE_COL_ID.LABEL,
+        id: Const.SCD_COL.LABEL,
         label: 'Label',
-        value: rowData[Const.SCHEDULE_COL_ID.LABEL],
+        value: row[Const.SCD_COL.LABEL],
         type: Const.INPUT_TYPE.TEXT,
-        initValue: initValues[Const.SCHEDULE_COL_ID.LABEL],
+        initValue: initValues[Const.SCD_COL.LABEL],
         required: true,
         setter: labelSetter,
       },
       // {
-      //   id: Const.SCHEDULE_COL_ID.UPDATE,
+      //   id: Const.SCD_COL.UPDATE,
       //   label: 'Number',
       //   value: null,
       //   type: Const.INPUT_TYPE.NUM,
       //   hide: true,
       // },
       // {
-      //   id: Const.SCHEDULE_COL_ID.UPD_DATE,
+      //   id: Const.SCD_COL.UPD_DATE,
       //   label: 'Date',
       //   value: null,
       //   type: Const.INPUT_TYPE.DATE,
       //   hide: true,
       // },
       {
-        id: Const.SCHEDULE_COL_ID.SEARCH_MEMO,
+        id: Const.SCD_COL.SEARCH_MEMO,
         label: 'radio',
-        value: rowData[Const.SCHEDULE_COL_ID.SEARCH_MEMO],
+        value: row[Const.SCD_COL.SEARCH_MEMO],
         type: Const.INPUT_TYPE.RADIO,
-        initValue: initValues[Const.SCHEDULE_COL_ID.SEARCH_MEMO],
+        initValue: initValues[Const.SCD_COL.SEARCH_MEMO],
         options: selectTest,
         required: true,
       },
       {
-        id: Const.SCHEDULE_COL_ID.MEMO_PLUS_A,
+        id: Const.SCD_COL.MEMO_PLUS_A,
         label: 'checkbox',
-        value: rowData[Const.SCHEDULE_COL_ID.MEMO_PLUS_A],
+        value: row[Const.SCD_COL.MEMO_PLUS_A],
         type: Const.INPUT_TYPE.CHECK,
-        initValue: initValues[Const.SCHEDULE_COL_ID.MEMO_PLUS_A],
-        options: Const.DAY_OF_WEEK_SELECT,
+        initValue: initValues[Const.SCD_COL.MEMO_PLUS_A],
+        options: Const.DAY_OF_WEEK_LIST,
         required: true,
       },
       // {
-      //   id: Const.SCHEDULE_COL_ID.MEMO_PLUS_A,
+      //   id: Const.SCD_COL.MEMO_PLUS_A,
       //   label: 'Memo Plus A',
-      //   value: rowData[Const.SCHEDULE_COL_ID.MEMO_PLUS_A],
+      //   value: row[Const.SCD_COL.MEMO_PLUS_A],
       //   type: Const.INPUT_TYPE.TEXT,
-      //   initValue: initValues[Const.SCHEDULE_COL_ID.MEMO_PLUS_A],
+      //   initValue: initValues[Const.SCD_COL.MEMO_PLUS_A],
       // },
     ];
 
-    return { title: Util.getScreenTitle2(rowDataKey), datas };
-  };
-
-  /**
-   * 入力項目反映(行編集Emitterデータ作成)
-   * @param selectRowDatas
-   * @param outputDatas
-   * @returns 行データ項目追加後データ
-   */
-  protected override readonly reflectRowDatas = (
-    selectRowDatas: RowData[],
-    outputDatas: DialogOutputData[],
-  ): RowData[] => {
-    const newDatas = this.reflectRowDatasDefault(selectRowDatas, outputDatas);
-    // 更新日時設定
-    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPD_DATE] = Util.getDate(
-      undefined,
-      Const.DATE_FORMAT.YY_MM_DD_HH_MM_SS,
-    );
-    // 更新フラグ設定
-    newDatas[0][Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
-
-    return newDatas;
-  };
-
-  /**
-   * 空データ追加チェック(行編集Emitterデータ作成)
-   * @param newDatas
-   * @returns チェック結果
-   */
-  protected override readonly checkAddEmptyData = (
-    newDatas: RowData[],
-  ): boolean => {
-    return !newDatas.some((data) => !data[Const.ROW_DATA_COMMON_COL_ID.LABEL]);
+    return { title: Util.getTblName(tbl), datas };
   };
 
   /**
    * ステータスリストを返却する
-   * @param rowDatas
+   * @param rows
    * @param creditDatas
    * @returns
    */
   readonly calcStatusList = (
-    rowDatas: RowData[],
-    creditDatas: RowData[],
+    rows: Row[],
+    creditDatas: Row[],
   ): MoneyStatus[] => {
     let cnt = 0;
     let savings = 0;
     let savingsLast = 0;
     const today = Util.getDate();
 
-    for (const data of rowDatas) {
-      const num = data?.[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM];
+    for (const data of rows) {
+      const num = data?.[Const.MAIN_COL.AMOUNT_NUM];
       if (
         !data ||
         !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
-        !Util.isValidInteger(num)
+        !Util.isValidInt(num)
       ) {
         continue;
       }
 
       const payDate = Util.getPayDate(
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE],
-        data[Const.MONEY_DIARY_COL_ID.CREDIT],
+        data[Const.MAIN_COL.USE_DATE],
+        data[Const.MAIN_COL.CREDIT],
         creditDatas,
       );
       if (payDate <= today) {

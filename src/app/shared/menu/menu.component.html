@@ -16,13 +16,13 @@
           [matMenuTriggerFor]="menu2"
           [matMenuTriggerData]="{ list: menu.children }"
         >
-          <mat-icon>{{ menu.icon }}</mat-icon>
-          <span>{{ menu.label }}</span>
+          <mat-icon>{{ menu.ic }}</mat-icon>
+          <span>{{ menu.lb }}</span>
         </button>
       } @else {
         <button mat-menu-item (click)="onClickMenu(menu.id)">
-          <mat-icon>{{ menu.icon }}</mat-icon>
-          <span>{{ menu.label }}</span>
+          <mat-icon>{{ menu.ic }}</mat-icon>
+          <span>{{ menu.lb }}</span>
         </button>
       }
     }
@@ -39,13 +39,13 @@
           [matMenuTriggerFor]="menu3"
           [matMenuTriggerData]="{ list: menu.children }"
         >
-          <mat-icon>{{ menu.icon }}</mat-icon>
-          <span>{{ menu.label }}</span>
+          <mat-icon>{{ menu.ic }}</mat-icon>
+          <span>{{ menu.lb }}</span>
         </button>
       } @else {
         <button mat-menu-item (click)="onClickMenu(menu.id)">
-          <mat-icon>{{ menu.icon }}</mat-icon>
-          <span>{{ menu.label }}</span>
+          <mat-icon>{{ menu.ic }}</mat-icon>
+          <span>{{ menu.lb }}</span>
         </button>
       }
     }
@@ -57,8 +57,8 @@
   <ng-template matMenuContent let-menuList="list">
     @for (menu of menuList; track menu.id) {
       <button mat-menu-item (click)="onClickMenu(menu.id)">
-        <mat-icon>{{ menu.icon }}</mat-icon>
-        <span>{{ menu.label }}</span>
+        <mat-icon>{{ menu.ic }}</mat-icon>
+        <span>{{ menu.lb }}</span>
       </button>
     }
   </ng-template>

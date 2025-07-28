@@ -4,12 +4,11 @@
       width: '100vw',
       height: 'calc(100vh - 230px)',
     }"
-    [rowDataKey]="rowDataKey()"
-    [columnDefs]="colDefs()"
-    [rowDatas]="rowDatas()"
-    [rowStyle]="rowStyle()"
-    [cellClickForbColumns]="cellClickForbColumns"
-    (rowDataEdits)="rowDataEdits.emit($event)"
+    [tbl]="tbl()"
+    [colDefs]="colDefs()"
+    [rows]="rows()"
+    [cellClickForbCols]="cellClickForbCols"
+    (rowEdt)="rowEdt.emit($event)"
     (cellClick)="onClickCell($event)"
   />
 </div>

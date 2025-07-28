@@ -11,65 +11,59 @@ import {
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
-import { ScreenData, ScreenInfo } from 'src/app/domain/screen-info';
+import { ScrData, ScrInf } from 'src/app/domain/screen-info';
 import * as Const from 'src/app/shared/constants/constants';
-import { ScreenId } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/constants/types';
 import { ApiService } from 'src/app/shared/services/api.service';
 
 /** State */
-type ScreenInfoState = {
+type ScrInfState = {
   loading: boolean;
-  screenInfo: ScreenInfo;
-  error?: any;
+  scrInf: ScrInf;
+  err?: any;
 };
 
 /** Initial State */
-const initialState: ScreenInfoState = {
+const initState: ScrInfState = {
   loading: false,
-  screenInfo: {
-    si: Const.SCREEN_ID.MONEY_DIARY,
-    oi: Const.SCREEN_ID.SUMMARY,
-    fi: Const.SCREEN_ID.MONEY_DIARY,
+  scrInf: {
+    si: Const.SCR.MAIN,
+    oi: Const.SCR.SUMMARY,
+    fi: Const.SCR.MAIN,
     md: true,
-    sd: Const.SCREEN_INFO.map((info) => ({
-      id: info.id,
-      px: info.px,
-      py: info.py,
-    })),
+    sd: (() => {
+      const rec = {} as Record<Scr, ScrData>;
+      for (const [key, inf] of Object.entries(Const.SCR_INF)) {
+        const scr = key as Scr;
+        rec[scr] = {
+          od: inf.od,
+          px: inf.px,
+          py: inf.py,
+        };
+      }
+      return rec;
+    })(),
   },
 };
 
 /** Signal Store */
-export const ScreenInfoStore = signalStore(
+export const ScrInfStore = signalStore(
   { providedIn: 'root' },
   // Redux DevTools Enable
-  withDevtools('screenInfo'),
+  withDevtools('scrInf'),
   // Initial State
-  withState(initialState),
+  withState(initState),
   // Method
   withMethods((store, apiService = inject(ApiService)) => ({
     /** 画面情報設定 */
-    setScreenInfo: (screenInfo: ScreenInfo): void => {
-      patchState(store, setScreenInfo(screenInfo));
-      apiService.saveScreenInfo(store.screenInfo());
+    setScrInf: (scrInf: ScrInf): void => {
+      patchState(store, setScrInf(scrInf));
+      apiService.saveScrInf(store.scrInf());
     },
-
-    /** 画面遷移マップ表示フラグ設定 */
-    setMapDisp: (mapDisp: boolean): void => {
-      patchState(store, setMapDisp(mapDisp));
-      apiService.saveScreenInfo(store.screenInfo());
-    },
-
-    /** 画面遷移データ設定 */
-    setScreenDatas: (datas: ScreenData[]): void => {
-      patchState(store, setScreenDatas(datas));
-      apiService.saveScreenInfo(store.screenInfo());
-    },
-
     /** 画面ID更新 */
-    updScreenId: (screenId?: ScreenId): void => {
-      patchState(store, updScreenId(screenId));
-      apiService.saveScreenInfo(store.screenInfo());
+    updScrId: (scrId?: Scr): void => {
+      patchState(store, updScrId(scrId));
+      apiService.saveScrInf(store.scrInf());
     },
   })),
   // Event
@@ -78,10 +72,10 @@ export const ScreenInfoStore = signalStore(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
-          apiService.loadScreenInfo().pipe(
+          apiService.loadScrInf().pipe(
             tapResponse({
-              next: (data) => store.setScreenInfo(data),
-              error: (error) => patchState(store, { error }),
+              next: (data) => store.setScrInf(data),
+              error: (err) => patchState(store, { err: err }),
               finalize: () => patchState(store, { loading: false }),
             }),
           ),
@@ -92,60 +86,33 @@ export const ScreenInfoStore = signalStore(
 );
 
 /** 画面情報設定 Updater */
-const setScreenInfo =
-  (screenInfo: ScreenInfo): PartialStateUpdater<{ screenInfo: ScreenInfo }> =>
+const setScrInf =
+  (scrInf: ScrInf): PartialStateUpdater<{ scrInf: ScrInf }> =>
   (state) => {
-    const info: ScreenInfo = {
-      si: screenInfo.si ?? state.screenInfo.si,
-      oi: screenInfo.oi ?? state.screenInfo.oi,
-      fi: screenInfo.fi ?? state.screenInfo.fi,
-      md: screenInfo.md ?? state.screenInfo.md,
-      sd: structuredClone(state.screenInfo.sd),
+    const inf: ScrInf = {
+      si: scrInf.si ?? state.scrInf.si,
+      oi: scrInf.oi ?? state.scrInf.oi,
+      fi: scrInf.fi ?? state.scrInf.fi,
+      md: scrInf.md ?? state.scrInf.md,
+      sd: structuredClone(state.scrInf.sd),
     };
-    for (let idx = 0; idx < info.sd.length; idx++) {
-      const data = info.sd[idx];
-      const sd = screenInfo.sd.find((sd) => sd.id === data.id);
-      if (!sd) {
-        continue;
-      }
-      info.sd[idx] = structuredClone(sd);
+    for (const [key, sd] of Object.entries(scrInf.sd)) {
+      const scr = key as Scr;
+      inf.sd[scr] = structuredClone(sd);
     }
 
     return {
-      screenInfo: info,
+      scrInf: inf,
     };
   };
 
-/** 画面遷移マップ表示フラグ設定 Updater */
-const setMapDisp =
-  (md: boolean): PartialStateUpdater<{ screenInfo: ScreenInfo }> =>
-  (state) => ({
-    screenInfo: {
-      ...state.screenInfo,
-      md,
-    },
-  });
-
-/** 画面遷移データ設定 */
-const setScreenDatas =
-  (sd: ScreenData[]): PartialStateUpdater<{ screenInfo: ScreenInfo }> =>
-  (state) => ({
-    screenInfo: {
-      ...state.screenInfo,
-      sd,
-    },
-  });
-
 /** 画面ID更新 Updater */
-const updScreenId =
-  (screenId?: ScreenId): PartialStateUpdater<{ screenInfo: ScreenInfo }> =>
+const updScrId =
+  (scrId?: Scr): PartialStateUpdater<{ scrInf: ScrInf }> =>
   (state) => ({
-    screenInfo: {
-      ...state.screenInfo,
-      si: !!screenId ? screenId : state.screenInfo.oi,
-      oi:
-        screenId === state.screenInfo.si
-          ? state.screenInfo.oi
-          : state.screenInfo.si,
+    scrInf: {
+      ...state.scrInf,
+      si: !!scrId ? scrId : state.scrInf.oi,
+      oi: scrId === state.scrInf.si ? state.scrInf.oi : state.scrInf.si,
     },
   });

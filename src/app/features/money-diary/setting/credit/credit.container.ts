@@ -4,24 +4,24 @@ import { SettingContainerComponent } from 'src/app/features/money-diary/setting/
 import * as Const from 'src/app/shared/constants/constants';
 
 @Component({
-    selector: 'app-credit-container',
-    imports: [CreditComponent],
-    template: `
+  selector: 'app-credit-container',
+  imports: [CreditComponent],
+  template: `
     <app-credit
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
-      [rowDataKey]="rowDataKey"
-      [mainRowDatas]="creditDatas()"
-      [inputDatas]="inputDatas()"
-      [creditDatas]="creditDatas()"
-      (rowDataEdits)="onEditRowDatas($event)"
+      [tbl]="tbl"
+      [mainRows]="crdRows()"
+      [inputRows]="mainRows()"
+      [crdRows]="crdRows()"
+      (rowEdt)="onEdtRows($event)"
       (filterInputModelSet)="onSetFilterInputModel($event)"
-      (screenIdSet)="onSetScreenId($event)"
+      (scrIdSet)="onSetScrId($event)"
     ></app-credit>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreditContainerComponent extends SettingContainerComponent {
-  protected override readonly screenId = Const.SCREEN_ID.CREDIT;
-  protected override readonly rowDataKey = Const.ROW_DATA_KEY.CREDIT;
+  protected override readonly scrId = Const.SCR.CREDIT;
+  protected override readonly tbl = Const.TBL.CREDIT;
 }

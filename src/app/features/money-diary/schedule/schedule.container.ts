@@ -4,22 +4,21 @@ import { ScheduleComponent } from 'src/app/features/money-diary/schedule/schedul
 import * as Const from 'src/app/shared/constants/constants';
 
 @Component({
-    selector: 'app-schedule-container',
-    imports: [ScheduleComponent],
-    template: `
+  selector: 'app-schedule-container',
+  imports: [ScheduleComponent],
+  template: `
     <app-schedule
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
-      [rowDataKey]="rowDataKey"
-      [mainRowDatas]="scheduleDatas()"
-      [inputDatas]="inputDatas()"
-      [mainRowDatas]="scheduleDatas()"
-      (rowDataEdits)="onEditRowDatas($event)"
+      [tbl]="tbl"
+      [mainRows]="scdRows()"
+      [inputRows]="mainRows()"
+      (rowEdt)="onEdtRows($event)"
     ></app-schedule>
   `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScheduleContainerComponent extends MoneyDiaryBaseContainerComponent {
-  protected override readonly screenId = Const.SCREEN_ID.SCHEDULE;
-  protected override readonly rowDataKey = Const.ROW_DATA_KEY.SCHEDULE;
+  protected override readonly scrId = Const.SCR.SCHEDULE;
+  protected override readonly tbl = Const.TBL.SCHEDULE;
 }

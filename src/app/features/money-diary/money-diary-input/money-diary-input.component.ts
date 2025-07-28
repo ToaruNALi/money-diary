@@ -13,17 +13,15 @@ import {
   CellContextMenuEvent,
   GridApi,
   GridReadyEvent,
-  RowClassParams,
-  RowStyle,
 } from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import {
   INPUT_OPTION_TYPE,
   MoneyDiaryInputUsecase,
 } from 'src/app/features/money-diary/money-diary-input/money-diary-input.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { FilterInputModel, ValueType } from 'src/app/shared/constants/types';
+import { FilterInputModel, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import {
@@ -55,26 +53,25 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   /** Other Row Datas */
-  readonly storageDatas = input.required<RowData[]>();
-  readonly creditDatas = input.required<RowData[]>();
-  readonly itemDatas = input.required<RowData[]>();
-  readonly remarkDatas = input.required<RowData[]>();
+  readonly stgRows = input.required<Row[]>();
+  readonly crdRows = input.required<Row[]>();
+  readonly itmRows = input.required<Row[]>();
+  readonly rmkRows = input.required<Row[]>();
   /** フィルターモデル */
   readonly filterModel = input.required<FilterInputModel>();
   /** 過去データ編集可能フラグ */
-  readonly editPastData = input.required<boolean>();
-
+  readonly edtPastData = input.required<boolean>();
   /** 列定義 */
   protected override readonly colDefs = computed(() =>
     this.usecase.getColDefs(
-      this.storageDatas(),
-      this.creditDatas(),
-      this.itemDatas(),
-      this.remarkDatas(),
+      this.stgRows(),
+      this.crdRows(),
+      this.itmRows(),
+      this.rmkRows(),
     ),
   );
   /** 行データ */
-  protected override readonly rowDatas = computed(() => {
+  protected override readonly rows = computed(() => {
     const filter = this.filterModel();
     const display = this.display();
 
@@ -83,53 +80,43 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.gridApi?.setFilterModel(filter);
     }
 
-    if (display === 'display' && !this.firstDisp) {
+    if (display === 'display' && !this.firstDsp) {
       setTimeout(() => {
-        this.firstDisp = true;
+        this.firstDsp = true;
         Util.jumpRow(this.gridApi);
       });
     }
 
-    return this.usecase.getRowDatas(this.mainRowDatas(), this.creditDatas());
+    return this.usecase.getRows(this.mainRows(), this.crdRows());
   });
   /** ステータスリスト */
   protected readonly statusList = computed(() =>
-    this.usecase.calcStatusList(this.mainRowDatas(), this.creditDatas()),
+    this.usecase.calcStatusList(this.mainRows(), this.crdRows()),
   );
   /** 行スタイル */
   protected readonly rowStyleOption = computed(() => {
-    const editPastData = this.editPastData();
+    const edtPastData = this.edtPastData();
     return {
-      editPastData,
+      edtPastData,
     };
   });
-  protected readonly rowStyle = computed(() => {
-    const rowStyleOption = this.rowStyleOption();
-    setTimeout(() => {
-      // スタイル描画
-      this.gridApi?.redrawRows();
-    });
-    return (param: RowClassParams): RowStyle =>
-      this.usecase.getRowStyle(param, rowStyleOption);
-  });
-
   /** セルクリック禁止列 */
   protected readonly cellClickForbColumns = [
-    Const.MONEY_DIARY_COL_ID.DATE,
+    Const.MAIN_COL.DATE,
   ] as const satisfies string[];
   /** グリッド上ボタンオプション */
   protected readonly aboveContentOption = computed<GridAboveContentOption>(
     () => ({
-      calcSelectStatus: this.usecase.calcSelectStatus,
+      calcSelectStatus: this.usecase.calcSelStatus,
     }),
   );
   /** グリッド下ボタンオプション */
   protected readonly belowContentOption = computed<GridBelowContentOption>(
     () => ({
-      addRow: () => this.mainRowDatas().length === 0,
+      addRow: () => this.mainRows().length === 0,
       sort: [
-        { col: Const.MONEY_DIARY_COL_ID.INPUT_MODE, asc: false },
-        { col: Const.MONEY_DIARY_COL_ID.DATE },
+        { col: Const.MAIN_COL.INPUT_MODE, asc: false },
+        { col: Const.MAIN_COL.DATE },
       ],
       filterOff: true,
       changeFilter: true,
@@ -140,12 +127,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     }),
   );
   /** 空行判定 */
-  protected readonly emptyRowJudgeFn = (rowData: RowData): boolean =>
-    rowData[Const.MONEY_DIARY_COL_ID.INPUT_MODE] === Const.INPUT_MODE.NONE;
+  protected readonly emptyRowJudgeFn = (row: Row): boolean =>
+    row[Const.MAIN_COL.INPUT_MODE] === Const.INPUT_MODE.NONE;
   /** Grid Api */
-  private gridApi!: GridApi<RowData>;
+  private gridApi!: GridApi<Row>;
   /** コピー情報 */
-  private readonly copyData = signal<RowData>({});
+  private readonly copyData = signal<Row>({});
 
   /**
    * グリッド初期化処理
@@ -156,7 +143,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
 
     // コンテキストメニューの削除
     document.body.addEventListener('click', () => {
-      this.gridMenuDisp.set(false);
+      this.gridMenuDsp.set(false);
       this.gridMenuStyle.set({});
     });
   };
@@ -166,7 +153,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    * @param event
    */
   protected readonly onClickCell = async (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 入力チェック
     const check = this.usecase.checkInputData(event);
@@ -176,15 +163,15 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     // ダイアログ入力データ作成
     const input = this.usecase.createInputData(
       [event.data!],
-      this.rowDataKey(),
+      this.tbl(),
       [
-        this.mainRowDatas(),
-        this.storageDatas(),
-        this.creditDatas(),
-        this.itemDatas(),
-        this.remarkDatas(),
+        this.mainRows(),
+        this.stgRows(),
+        this.crdRows(),
+        this.itmRows(),
+        this.rmkRows(),
       ],
-      { editPastData: this.editPastData() },
+      { edtPastData: this.edtPastData() },
     );
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
@@ -195,14 +182,14 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       [event.data!],
-      this.mainRowDatas(),
-      this.rowDataKey(),
+      this.mainRows(),
+      this.tbl(),
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 
-  protected readonly gridMenuDisp = signal(false);
+  protected readonly gridMenuDsp = signal(false);
   protected readonly gridMenuStyle = signal({});
   protected readonly gridmenuItemDisabled = signal(false);
 
@@ -222,17 +209,20 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         if (!Util.equalObject(this.copyData(), {})) {
           // コピー情報が存在する場合、ペースト
           const date = Util.getDate();
-          this.rowDataEdits.emit([
-            Util.getUpdEditData(this.rowDataKey(), [
-              {
-                ...this.copyData(),
-                [Const.ROW_DATA_COMMON_COL_ID.ID]:
-                  event.data[Const.ROW_DATA_COMMON_COL_ID.ID],
-                [Const.MONEY_DIARY_COL_ID.DATE]: date,
-                [Const.MONEY_DIARY_COL_ID.USE_DATE]: date,
-              },
-            ]),
-            Util.getAddDefaultEditData(this.rowDataKey(), this.mainRowDatas()),
+          this.rowEdt.emit([
+            Util.getRowEdtAdd(
+              this.tbl(),
+              [
+                {
+                  ...this.copyData(),
+                  [Const.CMN_COL.ID]: event.data[Const.CMN_COL.ID],
+                  [Const.MAIN_COL.DATE]: date,
+                  [Const.MAIN_COL.USE_DATE]: date,
+                },
+              ],
+              [],
+              Util.getRowIdsSet(this.mainRows()),
+            ),
           ]);
           // // コピー情報初期化
           // this.copyData.set({});
@@ -253,16 +243,16 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       }
     } else {
       // 上記以外
-      const rowDatas = this.gridApi.getSelectedRows();
-      if (rowDatas.length === 0) {
+      const rows = this.gridApi.getSelectedRows();
+      if (rows.length === 0) {
         return;
       }
 
       const today = Util.getDate();
       if (
-        !this.editPastData() &&
-        rowDatas.some((dt) => {
-          const payDate = dt[Const.MONEY_DIARY_COL_ID.PAY_DATE];
+        !this.edtPastData() &&
+        rows.some((dt) => {
+          const payDate = dt[Const.MAIN_COL.PAY_DATE];
           return !!payDate && payDate < today;
         })
       ) {
@@ -272,7 +262,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         this.gridmenuItemDisabled.set(false);
       }
 
-      this.gridMenuDisp.set(true);
+      this.gridMenuDsp.set(true);
       // const pointer = event.event as PointerEvent;
       // this.gridMenuStyle.set({
       //   left: `${pointer.clientX}px`,
@@ -285,8 +275,11 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    * 削除時(コンテキストメニュー)
    */
   protected readonly onDelete = (): void => {
-    this.rowDataEdits.emit([
-      Util.getDelEditData(this.rowDataKey(), this.gridApi.getSelectedRows()),
+    this.rowEdt.emit([
+      Util.getRowEdtDel(
+        this.tbl(),
+        Util.getRowIds(this.gridApi.getSelectedRows()),
+      ),
     ]);
   };
 
@@ -297,9 +290,9 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     // ダイアログ入力データ作成
     const input = this.usecase.createInputData(
       this.gridApi.getSelectedRows(),
-      this.rowDataKey(),
-      [this.mainRowDatas()],
-      { type: INPUT_OPTION_TYPE.REPLACE, editPastData: this.editPastData() },
+      this.tbl(),
+      [this.mainRows()],
+      { type: INPUT_OPTION_TYPE.REPLACE, edtPastData: this.edtPastData() },
     );
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
@@ -310,12 +303,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       this.gridApi.getSelectedRows(),
-      this.mainRowDatas(),
-      this.rowDataKey(),
+      this.mainRows(),
+      this.tbl(),
       INPUT_OPTION_TYPE.REPLACE,
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 
   /**
@@ -325,9 +318,9 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     // ダイアログ入力データ作成
     const input = this.usecase.createInputData(
       this.gridApi.getSelectedRows(),
-      this.rowDataKey(),
-      [this.mainRowDatas()],
-      { type: INPUT_OPTION_TYPE.SERIAL_NUM, editPastData: this.editPastData() },
+      this.tbl(),
+      [this.mainRows()],
+      { type: INPUT_OPTION_TYPE.SERIAL_NUM, edtPastData: this.edtPastData() },
     );
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
@@ -338,12 +331,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       this.gridApi.getSelectedRows(),
-      this.mainRowDatas(),
-      this.rowDataKey(),
+      this.mainRows(),
+      this.tbl(),
       INPUT_OPTION_TYPE.SERIAL_NUM,
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 
   /**
@@ -353,15 +346,15 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     // ダイアログ入力データ作成
     const input = this.usecase.createInputData(
       this.gridApi.getSelectedRows(),
-      this.rowDataKey(),
+      this.tbl(),
       [
-        this.mainRowDatas(),
-        this.storageDatas(),
-        this.creditDatas(),
-        this.itemDatas(),
-        this.remarkDatas(),
+        this.mainRows(),
+        this.stgRows(),
+        this.crdRows(),
+        this.itmRows(),
+        this.rmkRows(),
       ],
-      { type: INPUT_OPTION_TYPE.UPDATE, editPastData: this.editPastData() },
+      { type: INPUT_OPTION_TYPE.UPDATE, edtPastData: this.edtPastData() },
     );
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
@@ -372,18 +365,18 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       this.gridApi.getSelectedRows(),
-      this.mainRowDatas(),
-      this.rowDataKey(),
+      this.mainRows(),
+      this.tbl(),
       INPUT_OPTION_TYPE.UPDATE,
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 
   /**
    * ステータスリスト押下時
    */
   protected readonly onClickStatusContent = (): void => {
-    this.screenIdSet.emit(Const.SCREEN_ID.STORAGE);
+    this.scrIdSet.emit(Const.SCR.STORAGE);
   };
 }

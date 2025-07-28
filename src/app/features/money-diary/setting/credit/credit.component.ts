@@ -14,7 +14,7 @@ import { GridComponent } from 'src/app/shared/grid/grid.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreditComponent extends SettingComponent {
-  protected override readonly inputColId = Const.MONEY_DIARY_COL_ID.CREDIT;
+  protected override readonly inputColId = Const.MAIN_COL.CREDIT;
   constructor(protected override readonly usecase: CreditUsecase) {
     super(usecase);
   }
@@ -25,10 +25,10 @@ export class CreditComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    const id = event.data[Const.ROW_DATA_COMMON_COL_ID.ID];
-    const label = event.data[Const.ROW_DATA_COMMON_COL_ID.LABEL];
+    const id = event.data[Const.CMN_COL.ID];
+    const label = event.data[Const.CMN_COL.LABEL];
 
-    if (id === Const.MARK.NO_SELECT.ID || !label) {
+    if (id === Const.MARK.NO_SELECT.id || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -37,9 +37,9 @@ export class CreditComponent extends SettingComponent {
     const [filterCredit, filterPayDate] = (() => {
       if (selectDatas.length === 0) {
         // 未選択
-        const payDay = event.data[Const.CREDIT_COL_ID.PAY_DAY];
+        const payDay = event.data[Const.CRD_COL.PAY_DAY];
         const date = `${event.colDef.headerName}-${payDay}`;
-        const businessDays = event.data[Const.CREDIT_COL_ID.BUSINESS_DAYS];
+        const businessDays = event.data[Const.CRD_COL.BUSINESS_DAYS];
         const payDate = Util.calcPayDateConsiderHoliday(date, businessDays);
 
         return [
@@ -60,7 +60,7 @@ export class CreditComponent extends SettingComponent {
       return [
         {
           conditions: selectDatas.map((dt) => ({
-            filter: dt[Const.STORAGE_COL_ID.LABEL],
+            filter: dt[Const.STG_COL.LABEL],
             filterType: 'text',
             type: 'equals',
           })),
@@ -69,9 +69,9 @@ export class CreditComponent extends SettingComponent {
         },
         {
           conditions: selectDatas.map((dt) => {
-            const payDay = dt[Const.CREDIT_COL_ID.PAY_DAY];
+            const payDay = dt[Const.CRD_COL.PAY_DAY];
             const date = `${event.colDef.headerName}-${payDay}`;
-            const businessDays = dt[Const.CREDIT_COL_ID.BUSINESS_DAYS];
+            const businessDays = dt[Const.CRD_COL.BUSINESS_DAYS];
             const payDate = Util.calcPayDateConsiderHoliday(date, businessDays);
             return {
               dateFrom: payDate,
@@ -88,15 +88,15 @@ export class CreditComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterInputModelSet.emit({
-      [Const.MONEY_DIARY_COL_ID.CREDIT]: filterCredit,
-      [Const.MONEY_DIARY_COL_ID.PAY_DATE]: filterPayDate,
-      [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+      [Const.MAIN_COL.CREDIT]: filterCredit,
+      [Const.MAIN_COL.PAY_DATE]: filterPayDate,
+      [Const.MAIN_COL.INPUT_MODE]: {
         filter: Const.INPUT_MODE.ALL_REQ,
         filterType: 'number',
         type: 'equal',
       },
     });
     // 入力画面に遷移
-    this.screenIdSet.emit(Const.SCREEN_ID.MONEY_DIARY);
+    this.scrIdSet.emit(Const.SCR.MAIN);
   };
 }

@@ -6,27 +6,27 @@ import {
   model,
   output,
 } from '@angular/core';
-import { ScreenData } from 'src/app/domain/screen-info';
+import { ScrData } from 'src/app/domain/screen-info';
 import * as Const from 'src/app/shared/constants/constants';
-import { ScreenId } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/constants/types';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 import { SwipeComponent } from 'src/app/shared/swipe/swipe.component';
 
 @Component({
-    selector: 'app-screen-transition',
-    imports: [SharedCommonModule, SwipeComponent],
-    templateUrl: './screen-transition.component.html',
-    styleUrl: './screen-transition.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-screen-transition',
+  imports: [SharedCommonModule, SwipeComponent],
+  templateUrl: './screen-transition.component.html',
+  styleUrl: './screen-transition.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScreenTransitionComponent {
-  readonly mapDisp = model.required<boolean>();
-  readonly screenId = input.required<ScreenId>();
-  readonly screenDatas = input.required<ScreenData[]>();
+  readonly mapDsp = model.required<boolean>();
+  readonly scrId = input.required<Scr>();
+  readonly scrData = input.required<Record<Scr, ScrData>>();
 
   readonly swipeReverse = input<boolean>(true);
 
-  protected readonly screenIdChange = output<ScreenId | undefined>();
+  protected readonly scrIdChange = output<Scr | undefined>();
 
   private readonly threshold = 30 as const;
   private readonly swipeDirection = computed(() =>
@@ -35,27 +35,17 @@ export class ScreenTransitionComponent {
 
   /**
    * スワイプ時
-   * @param distance
+   * @param dis
    */
-  protected readonly onSwipe = (distance: { x: number; y: number }): void => {
-    const screenId = this.screenId();
-    const datas = this.screenDatas();
-
+  protected readonly onSwipe = (dis: { x: number; y: number }): void => {
     // スワイプ距離がしきい値より大きい場合、画面遷移する
-    const disX = distance.x;
-    const disY = distance.y;
+    const moveX = this.moveDirection(dis.x);
+    const moveY = this.moveDirection(dis.y);
 
-    const moveX = this.moveDirection(disX);
-    const moveY = this.moveDirection(disY);
+    const scrNow = this.scrData()[this.scrId()];
 
-    const screenNow = datas.find((data) => data.id === screenId);
-
-    if (!screenNow) {
-      return;
-    }
-
-    const initX = this.movedPos(screenNow.px, moveX);
-    const initY = this.movedPos(screenNow.py, moveY);
+    const initX = this.movedPos(scrNow.px, moveX);
+    const initY = this.movedPos(scrNow.py, moveY);
 
     if (moveX !== 0 && moveY !== 0) {
       // X,Y方向
@@ -64,14 +54,14 @@ export class ScreenTransitionComponent {
       }
     } else if (moveX !== 0) {
       // X方向
-      for (let px = initX; px !== screenNow.px; px = this.movedPos(px, moveX)) {
+      for (let px = initX; px !== scrNow.px; px = this.movedPos(px, moveX)) {
         if (this.matchPos(px, initY)) {
           return;
         }
       }
     } else if (moveY !== 0) {
       // Y方向
-      for (let py = initY; py !== screenNow.py; py = this.movedPos(py, moveY)) {
+      for (let py = initY; py !== scrNow.py; py = this.movedPos(py, moveY)) {
         if (this.matchPos(initX, py)) {
           return;
         }
@@ -84,18 +74,18 @@ export class ScreenTransitionComponent {
    */
   protected readonly onClick = (): void => {
     // 前画面に遷移
-    this.screenIdChange.emit(undefined);
+    this.scrIdChange.emit(undefined);
   };
 
   /**
    * 移動先の方向を返却する
-   * @param distance
+   * @param dis
    * @returns
    */
-  private readonly moveDirection = (distance: number): number => {
-    if (distance < -this.threshold) {
+  private readonly moveDirection = (dis: number): number => {
+    if (dis < -this.threshold) {
       return this.swipeDirection();
-    } else if (distance > this.threshold) {
+    } else if (dis > this.threshold) {
       return -this.swipeDirection();
     }
     return 0;
@@ -109,8 +99,8 @@ export class ScreenTransitionComponent {
    */
   private readonly movedPos = (posNow: number, direction: number): number => {
     if (direction < 0 && posNow === 0) {
-      return Const.MAX_LEN.SCREEN_TRANS_MAP - 1;
-    } else if (direction > 0 && posNow === Const.MAX_LEN.SCREEN_TRANS_MAP - 1) {
+      return Const.MAX_LEN.SCR_TRANS_MAP - 1;
+    } else if (direction > 0 && posNow === Const.MAX_LEN.SCR_TRANS_MAP - 1) {
       return 0;
     }
     return posNow + direction;
@@ -123,9 +113,9 @@ export class ScreenTransitionComponent {
    * @returns
    */
   private readonly matchPos = (px: number, py: number): boolean => {
-    for (const screen of this.screenDatas()) {
-      if (screen.px === px && screen.py === py) {
-        this.screenIdChange.emit(screen.id);
+    for (const [scr, data] of Object.entries(this.scrData())) {
+      if (data.px === px && data.py === py) {
+        this.scrIdChange.emit(scr as Scr);
         return true;
       }
     }
@@ -136,13 +126,13 @@ export class ScreenTransitionComponent {
    * タッチ開始時
    */
   protected readonly onTouchStart = (): void => {
-    this.mapDisp.set(true);
+    this.mapDsp.set(true);
   };
 
   /**
    * タッチ終了時
    */
   protected readonly onTouchEnd = (): void => {
-    this.mapDisp.set(false);
+    this.mapDsp.set(false);
   };
 }

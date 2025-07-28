@@ -4,14 +4,13 @@
       width: '100vw',
       height: 'calc(100vh - 200px - 25px)',
     }"
-    [rowDataKey]="rowDataKey()"
-    [columnDefs]="colDefs()"
-    [rowDatas]="rowDatas()"
-    [rowStyle]="rowStyle()"
+    [tbl]="tbl()"
+    [colDefs]="colDefs()"
+    [rows]="rows()"
     [aboveContentOption]="aboveContentOption()"
-    [belowContentOption]="belowContentOption()"
-    [cellClickForbColumns]="cellClickForbColumns"
-    (rowDataEdits)="rowDataEdits.emit($event)"
+    [belowContentOpt]="belowContentOption()"
+    [cellClickForbCols]="cellClickForbColumns"
+    (rowEdt)="rowEdt.emit($event)"
     (cellClick)="onClickCell($event)"
     (cellContextMenu)="onCellContextMenu($event)"
   />

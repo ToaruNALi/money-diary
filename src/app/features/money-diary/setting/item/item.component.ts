@@ -13,7 +13,7 @@ import { GridComponent } from 'src/app/shared/grid/grid.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItemComponent extends SettingComponent {
-  protected override readonly inputColId = Const.MONEY_DIARY_COL_ID.ITEM;
+  protected override readonly inputColId = Const.MAIN_COL.ITEM;
   constructor(protected override readonly usecase: ItemUsecase) {
     super(usecase);
   }
@@ -24,10 +24,10 @@ export class ItemComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    const id = event.data[Const.ROW_DATA_COMMON_COL_ID.ID];
-    const label = event.data[Const.ROW_DATA_COMMON_COL_ID.LABEL];
+    const id = event.data[Const.CMN_COL.ID];
+    const label = event.data[Const.CMN_COL.LABEL];
 
-    if (id === Const.MARK.NO_SELECT.ID || !label) {
+    if (id === Const.MARK.NO_SELECT.id || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -45,7 +45,7 @@ export class ItemComponent extends SettingComponent {
       // 選択あり
       return {
         conditions: selectDatas.map((dt) => ({
-          filter: dt[Const.STORAGE_COL_ID.LABEL],
+          filter: dt[Const.STG_COL.LABEL],
           filterType: 'text',
           type: 'equals',
         })),
@@ -56,14 +56,14 @@ export class ItemComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterInputModelSet.emit({
-      [Const.MONEY_DIARY_COL_ID.ITEM]: filterItem,
-      [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+      [Const.MAIN_COL.ITEM]: filterItem,
+      [Const.MAIN_COL.INPUT_MODE]: {
         filter: Const.INPUT_MODE.ALL_REQ,
         filterType: 'number',
         type: 'equal',
       },
     });
     // 入力画面に遷移
-    this.screenIdSet.emit(Const.SCREEN_ID.MONEY_DIARY);
+    this.scrIdSet.emit(Const.SCR.MAIN);
   };
 }

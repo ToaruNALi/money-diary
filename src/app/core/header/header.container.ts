@@ -7,13 +7,13 @@ import { StoreUsecase } from 'src/app/usecase/store.usecase';
   imports: [HeaderComponent],
   template: `
     <app-header
-      [screenDatas]="usecase.screenDatas()"
+      [scrData]="usecase.scrDatas()"
       [data]="usecase.allData()"
-      [history]="usecase.storeHistory.history()"
-      [editPastData]="usecase.storeTemp.editPastData()"
-      (historyReset)="usecase.resetHistory()"
+      [hist]="usecase.storeHist.hist()"
+      [edtPastData]="usecase.storeTmp.edtPastData()"
+      (histReset)="usecase.resetHist()"
       (dataChange)="usecase.setAllData($event)"
-      (editPastDataChange)="usecase.storeTemp.setEditPastData($event)"
+      (edtPastDataChange)="usecase.storeTmp.setEdtPastData($event)"
     ></app-header>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

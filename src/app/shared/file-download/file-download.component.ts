@@ -25,8 +25,8 @@ export class FileDownloadComponent {
   protected readonly onBtnDownloadClicked = (): void => {
     // URL生成
     const saveData = structuredClone(this.data());
-    for (const key of Object.values(Const.ROW_DATA_KEY)) {
-      saveData.rm[key] = Util.createSaveRowDatas(key, saveData.rm[key]);
+    for (const key of Object.values(Const.TBL)) {
+      saveData.rm[key] = Util.getSaveRows(key, saveData.rm[key]);
     }
 
     const downloadData = JSON.stringify(saveData);
@@ -35,9 +35,9 @@ export class FileDownloadComponent {
     this.fileDownload().nativeElement.setAttribute('href', url);
 
     // ファイル名生成
-    const fileName = Const.FILE_NAME.DOWNLOAD.replace(
+    const fileName = Const.FILE_NAME.DL.replace(
       '{0}',
-      Util.getDate(undefined, Const.DATE_FORMAT.YYMMDD_HHMMSS),
+      Util.getDate(undefined, Const.DATE_FMT.YYMMDD_HHMMSS),
     );
     this.fileDownload().nativeElement.setAttribute('download', fileName);
 

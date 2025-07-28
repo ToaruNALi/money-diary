@@ -9,67 +9,63 @@ import {
 import { FilterInputModel } from 'src/app/shared/constants/types';
 
 /** State */
-type TempDataState = {
+type TmpState = {
   /** 画面遷移マップ表示フラグ */
-  mapDisp: boolean;
+  mapDsp: boolean;
   /** 画面遷移マップ表示タイマー */
-  mapDispTimers: any[];
+  mapDspTimers: any[];
   /** 入力画面フィルタ情報 */
   filterInputModel: FilterInputModel;
   /** 過去データ編集可能フラグ */
-  editPastData: boolean;
+  edtPastData: boolean;
 };
 
 /** Initial State */
-const initialState: TempDataState = {
-  mapDisp: false,
-  mapDispTimers: [],
+const initState: TmpState = {
+  mapDsp: false,
+  mapDspTimers: [],
   filterInputModel: 'none',
-  editPastData: true, // false
+  edtPastData: true, // false
 };
 
 /** Signal Store */
-export const TempDataStore = signalStore(
+export const TmpStore = signalStore(
   { providedIn: 'root' },
   // Redux DevTools Enable
-  withDevtools('tempData'),
+  withDevtools('tmp'),
   // Initial State
-  withState(initialState),
+  withState(initState),
   // Method
   withMethods((store) => ({
     /** 画面遷移マップ表示フラグ設定 */
-    setMapDisp: (mapDisp: boolean): void => {
-      patchState(store, { mapDisp });
+    setMapDsp: (mapDsp: boolean): void => {
+      patchState(store, { mapDsp });
     },
-
     /** 画面遷移マップ表示タイマーリセット */
-    resetMapDispTimers: (): void => {
-      for (const id of store.mapDispTimers()) {
+    resetMapDspTimers: (): void => {
+      for (const id of store.mapDspTimers()) {
         clearTimeout(id);
       }
-      patchState(store, { mapDispTimers: [] });
+      patchState(store, { mapDspTimers: [] });
     },
-
     /** 画面遷移マップ表示タイマー追加 */
-    addMapDispTimer: (timer: any): void => {
-      patchState(store, addMapDispTimers([timer]));
+    addMapDspTimer: (timer: any): void => {
+      patchState(store, addMapDspTimers([timer]));
     },
-
     /** フィルタモデル設定 */
     setFilterInputModel: (filterInputModel: FilterInputModel): void => {
       patchState(store, { filterInputModel });
     },
-
     /** 過去データ編集フラグ設定 */
-    setEditPastData: (editPastData: boolean): void => {
-      patchState(store, { editPastData });
+    setEdtPastData: (edtPastData: boolean): void => {
+      patchState(store, { edtPastData });
     },
   })),
 );
 
 /** 画面遷移マップ表示タイマー追加 */
-const addMapDispTimers =
-  (timers: any[]): PartialStateUpdater<{ mapDispTimers: any[] }> =>
+const addMapDspTimers =
+  (timers: any[]): PartialStateUpdater<{ mapDspTimers: any[] }> =>
   (state) => ({
-    mapDispTimers: [...state.mapDispTimers, ...timers],
+    mapDspTimers: [...state.mapDspTimers, ...timers],
   });

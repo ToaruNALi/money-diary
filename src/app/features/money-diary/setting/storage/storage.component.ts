@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CellContextMenuEvent } from 'ag-grid-community';
 import { addDays } from 'date-fns';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import { SettingComponent } from 'src/app/features/money-diary/setting/setting.component';
 import { StorageUsecase } from 'src/app/features/money-diary/setting/storage/storage.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
 
@@ -17,7 +17,7 @@ import { GridComponent } from 'src/app/shared/grid/grid.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StorageComponent extends SettingComponent {
-  protected override inputColId = Const.MONEY_DIARY_COL_ID.STORAGE;
+  protected override inputColId = Const.MAIN_COL.STORAGE;
   constructor(protected override readonly usecase: StorageUsecase) {
     super(usecase);
   }
@@ -26,11 +26,11 @@ export class StorageComponent extends SettingComponent {
    * セル長押し時
    */
   protected override readonly onCellContextMenu = (
-    event: CellContextMenuEvent<RowData, ValueType>,
+    event: CellContextMenuEvent<Row, ValType>,
   ): void => {
-    const id = event.data?.[Const.ROW_DATA_COMMON_COL_ID.ID];
-    const label = event.data?.[Const.ROW_DATA_COMMON_COL_ID.LABEL];
-    if (id === Const.MARK.NO_SELECT.ID || !label) {
+    const id = event.data?.[Const.CMN_COL.ID];
+    const label = event.data?.[Const.CMN_COL.LABEL];
+    if (id === Const.MARK.NO_SELECT.id || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -48,7 +48,7 @@ export class StorageComponent extends SettingComponent {
       // 選択あり
       return {
         conditions: selectDatas.map((dt) => ({
-          filter: dt[Const.STORAGE_COL_ID.LABEL],
+          filter: dt[Const.STG_COL.LABEL],
           filterType: 'text',
           type: 'equals',
         })),
@@ -60,7 +60,7 @@ export class StorageComponent extends SettingComponent {
     const today = Util.getDate(addDays(new Date(), 1));
     const colId = event.column.getId();
     const filterPayDate = (() => {
-      if (colId === Const.STORAGE_COL_ID.SAVINGS) {
+      if (colId === Const.STG_COL.SAVINGS) {
         // 現時点での残高
         return {
           dateFrom: today,
@@ -74,15 +74,15 @@ export class StorageComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterInputModelSet.emit({
-      [Const.MONEY_DIARY_COL_ID.STORAGE]: filterStorage,
-      [Const.MONEY_DIARY_COL_ID.PAY_DATE]: filterPayDate,
-      [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+      [Const.MAIN_COL.STORAGE]: filterStorage,
+      [Const.MAIN_COL.PAY_DATE]: filterPayDate,
+      [Const.MAIN_COL.INPUT_MODE]: {
         filter: Const.INPUT_MODE.ALL_REQ,
         filterType: 'number',
         type: 'equal',
       },
     });
     // 入力画面に遷移
-    this.screenIdSet.emit(Const.SCREEN_ID.MONEY_DIARY);
+    this.scrIdSet.emit(Const.SCR.MAIN);
   };
 }

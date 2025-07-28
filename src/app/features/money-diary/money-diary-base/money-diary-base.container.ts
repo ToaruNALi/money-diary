@@ -8,9 +8,9 @@ import * as Animation from 'src/app/shared/constants/animations';
 import * as Const from 'src/app/shared/constants/constants';
 import {
   FilterInputModel,
-  RowDataEdit,
-  RowDataKey,
-  ScreenId,
+  RowEdt,
+  Scr,
+  Tbl,
 } from 'src/app/shared/constants/types';
 import { StoreUsecase } from 'src/app/usecase/store.usecase';
 
@@ -22,46 +22,28 @@ import { StoreUsecase } from 'src/app/usecase/store.usecase';
 export abstract class MoneyDiaryBaseContainerComponent {
   protected readonly usecase = inject(StoreUsecase);
 
-  protected abstract readonly screenId: ScreenId;
-  protected abstract readonly rowDataKey: RowDataKey;
+  protected abstract readonly scrId: Scr;
+  protected abstract readonly tbl: Tbl;
 
-  /** RowDataMap */
-  protected readonly map = computed(() =>
-    this.usecase.storeRowData.rowDataMap(),
-  );
+  /** TblMap */
+  protected readonly map = computed(() => this.usecase.storeTblInf.tblMap());
 
   /** 行データMap */
-  protected readonly inputDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.MONEY_DIARY],
-  );
-  protected readonly storageDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.STORAGE],
-  );
-  protected readonly creditDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.CREDIT],
-  );
-  protected readonly itemDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.ITEM],
-  );
-  protected readonly remarkDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.REMARK],
-  );
-  protected readonly summaryDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.SUMMARY],
-  );
-  protected readonly scheduleDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.SCHEDULE],
-  );
-  protected readonly memoDatas = computed(
-    () => this.map()[Const.ROW_DATA_KEY.MEMO],
-  );
+  protected readonly mainRows = computed(() => this.map()[Const.TBL.MAIN]);
+  protected readonly stgRows = computed(() => this.map()[Const.TBL.STORAGE]);
+  protected readonly crdRows = computed(() => this.map()[Const.TBL.CREDIT]);
+  protected readonly itmRows = computed(() => this.map()[Const.TBL.ITEM]);
+  protected readonly rmkRows = computed(() => this.map()[Const.TBL.REMARK]);
+  protected readonly smrRows = computed(() => this.map()[Const.TBL.SUMMARY]);
+  protected readonly scdRows = computed(() => this.map()[Const.TBL.SCHEDULE]);
+  protected readonly memRows = computed(() => this.map()[Const.TBL.MEMO]);
 
   /**
    * 行データ編集時
    * @param event
    */
-  protected readonly onEditRowDatas = (event: RowDataEdit[]): void => {
-    this.usecase.editRowData(event);
+  protected readonly onEdtRows = (event: RowEdt[]): void => {
+    this.usecase.edtRows(event);
   };
 
   /**
@@ -78,25 +60,25 @@ export abstract class MoneyDiaryBaseContainerComponent {
    * 画面遷移先設定
    * @param event
    */
-  protected readonly onSetScreenId = (event: ScreenId): void => {
-    this.usecase.changeScreen(event);
+  protected readonly onSetScrId = (event: Scr): void => {
+    this.usecase.changeScr(event);
   };
 
   /** 画面表示オプション */
   protected readonly displayOpt = computed(() => {
-    const screenId = this.usecase.storeScreen.screenInfo.si();
-    const oldScreenId = this.usecase.storeScreen.screenInfo.oi();
-    if (this.screenId === screenId) {
+    const scrId = this.usecase.storeScr.scrInf.si();
+    const oldScrId = this.usecase.storeScr.scrInf.oi();
+    if (this.scrId === scrId) {
       return {
         // 非表示画面の遷移後Class
         afterClass: 'display',
         // 表示画面の遷移前Style
-        beforeStyle: this.usecase.hiddenOptions().nextBeforeStyle,
+        beforeStyle: this.usecase.hiddenOpts().nextBeforeStyle,
       };
-    } else if (this.screenId === oldScreenId) {
+    } else if (this.scrId === oldScrId) {
       return {
         // 非表示画面の遷移後Class
-        afterClass: this.usecase.hiddenOptions().prevAfterClass,
+        afterClass: this.usecase.hiddenOpts().prevAfterClass,
         // 表示画面の遷移前Style
         beforeStyle: {},
       };

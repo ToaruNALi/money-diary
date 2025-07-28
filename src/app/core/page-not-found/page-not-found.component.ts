@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageNotFoundComponent {
-  protected readonly errInfo = {
+  protected readonly errInf = {
     code: '404',
     msg: 'ページが見つかりません',
   } as const;

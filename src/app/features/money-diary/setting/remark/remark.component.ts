@@ -13,7 +13,7 @@ import { GridComponent } from 'src/app/shared/grid/grid.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemarkComponent extends SettingComponent {
-  protected override readonly inputColId = Const.MONEY_DIARY_COL_ID.REMARK;
+  protected override readonly inputColId = Const.MAIN_COL.REMARK;
   constructor(protected override readonly usecase: RemarkUsecase) {
     super(usecase);
   }
@@ -24,10 +24,10 @@ export class RemarkComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    const id = event.data[Const.ROW_DATA_COMMON_COL_ID.ID];
-    const label = event.data[Const.ROW_DATA_COMMON_COL_ID.LABEL];
+    const id = event.data[Const.CMN_COL.ID];
+    const label = event.data[Const.CMN_COL.LABEL];
 
-    if (id === Const.MARK.NO_SELECT.ID || !label) {
+    if (id === Const.MARK.NO_SELECT.id || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -45,7 +45,7 @@ export class RemarkComponent extends SettingComponent {
       // 選択あり
       return {
         conditions: selectDatas.map((dt) => ({
-          filter: dt[Const.STORAGE_COL_ID.LABEL],
+          filter: dt[Const.STG_COL.LABEL],
           filterType: 'text',
           type: 'equals',
         })),
@@ -56,14 +56,14 @@ export class RemarkComponent extends SettingComponent {
 
     const colId = event.column.getId();
     const filterAmount = (() => {
-      if (colId === Const.REMARK_COL_ID.INCOME) {
+      if (colId === Const.RMK_COL.INCOME) {
         // 収入
         return {
           filter: 0,
           filterType: 'number',
           type: 'greaterThanOrEqual',
         };
-      } else if (colId === Const.REMARK_COL_ID.EXPENSES) {
+      } else if (colId === Const.RMK_COL.EXPENSES) {
         // 支出
         return {
           filter: 0,
@@ -76,15 +76,15 @@ export class RemarkComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterInputModelSet.emit({
-      [Const.MONEY_DIARY_COL_ID.REMARK]: filterRemark,
-      [Const.MONEY_DIARY_COL_ID.AMOUNT_NUM]: filterAmount,
-      [Const.MONEY_DIARY_COL_ID.INPUT_MODE]: {
+      [Const.MAIN_COL.REMARK]: filterRemark,
+      [Const.MAIN_COL.AMOUNT_NUM]: filterAmount,
+      [Const.MAIN_COL.INPUT_MODE]: {
         filter: Const.INPUT_MODE.ALL_REQ,
         filterType: 'number',
         type: 'equal',
       },
     });
     // 入力画面に遷移
-    this.screenIdSet.emit(Const.SCREEN_ID.MONEY_DIARY);
+    this.scrIdSet.emit(Const.SCR.MAIN);
   };
 }

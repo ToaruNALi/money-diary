@@ -10,7 +10,7 @@ import { AbstractControl, FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { take } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import {
   DialogInputData,
   DialogOption,
@@ -38,12 +38,12 @@ export abstract class FormsComponent<T extends Pick<DialogInputData, 'type'>> {
       ...this.data(),
     };
     return {
-      initValue: Const.INPUT_FORM[data.type!].INIT_VAL,
+      initValue: Const.INPUT_FORM[data.type!].initVal,
       ...data,
     };
   });
   protected readonly control = computed(
-    () => this.form() as FormControl<ValueType>,
+    () => this.form() as FormControl<ValType>,
   );
 
   /**
@@ -67,7 +67,7 @@ export abstract class FormsComponent<T extends Pick<DialogInputData, 'type'>> {
     }
 
     data.filteredOptions$.pipe(take(1)).subscribe((res) => {
-      const opt = res.find((opt) => opt.label === event.option.viewValue);
+      const opt = res.find((opt) => opt.lb === event.option.viewValue);
       if (!opt) {
         return;
       }

@@ -14,7 +14,7 @@
 // import {
 //   RowDataAdd,
 //   RowDataDel,
-//   RowDataEdit,
+//   RowDataEdt,
 //   RowDataUpd,
 //   ValueType,
 // } from 'src/app/shared/constants/types';
@@ -37,11 +37,11 @@
 //   /** usecase */
 //   private readonly usecase = inject(MemoUsecase);
 //   /** 行データKey */
-//   protected readonly rowDataKey = Const.ROW_DATA_KEY.MEMO;
+//   protected readonly tbl = Const.ROW_DATA_KEY.MEMO;
 //   /** 列定義 */
 //   protected readonly columnDefs = computed(() => this.usecase.getColumnDefs());
 //   /** 行データ */
-//   protected readonly rowDatas = computed(() =>
+//   protected readonly rows = computed(() =>
 //     structuredClone(this.data.datas()),
 //   );
 
@@ -59,10 +59,10 @@
 //   protected readonly onChangeCellValue = (
 //     event: CellValueChangedEvent<RowData, ValueType>,
 //   ): void => {
-//     const editInfo: RowDataEdit[] = [];
+//     const edtInf: RowDataEdt[] = [];
 
 //     // 更新情報
-//     editInfo.push({
+//     edtInf.push({
 //       type: Const.ROW_DATA_EDIT_TYPE.UPD,
 //       event: {
 //         key: Const.ROW_DATA_KEY.MEMO,
@@ -72,12 +72,12 @@
 
 //     if (!event.oldValue && !!event.newValue) {
 //       // 追加情報
-//       editInfo.push({
+//       edtInf.push({
 //         type: Const.ROW_DATA_EDIT_TYPE.ADD,
 //         event: {
 //           key: Const.ROW_DATA_KEY.MEMO,
 //           datas: [
-//             Usecase.getDefaultRowData(
+//             Usecase.getDefRowData(
 //               Const.ROW_DATA_KEY.MEMO,
 //               this.data.datas(),
 //             ),
@@ -87,7 +87,7 @@
 //       });
 //     } else if (!!event.oldValue && !event.newValue) {
 //       // 削除情報
-//       editInfo.push({
+//       edtInf.push({
 //         type: Const.ROW_DATA_EDIT_TYPE.DEL,
 //         event: {
 //           key: Const.ROW_DATA_KEY.MEMO,
@@ -96,6 +96,6 @@
 //       });
 //     }
 
-//     this.rowDatasEdit.emit(editInfo);
+//     this.rowEdt.emit(edtInf);
 //   };
 // }

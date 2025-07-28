@@ -4,48 +4,42 @@ import {
   computed,
   inject,
   input,
-  signal,
 } from '@angular/core';
-import { CellClickedEvent, RowClassParams, RowStyle } from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { CellClickedEvent } from 'ag-grid-community';
+import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { ScheduleUsecase } from 'src/app/features/money-diary/schedule/schedule.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from '../../../shared/shared-common.module';
 
 @Component({
-    selector: 'app-schedule',
-    imports: [SharedCommonModule, GridComponent],
-    providers: [ScheduleUsecase],
-    templateUrl: './schedule.component.html',
-    styleUrl: './schedule.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-schedule',
+  imports: [SharedCommonModule, GridComponent],
+  providers: [ScheduleUsecase],
+  templateUrl: './schedule.component.html',
+  styleUrl: './schedule.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScheduleComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(ScheduleUsecase);
 
   /** Other Row Datas */
-  readonly inputDatas = input.required<RowData[]>();
+  readonly inputRows = input.required<Row[]>();
 
   /** 列定義 */
   protected override readonly colDefs = computed(() =>
     this.usecase.getColDefs(),
   );
   /** 行データ */
-  protected override readonly rowDatas = computed(() =>
-    this.usecase.getRowDatas(this.mainRowDatas(), this.inputDatas()),
+  protected override readonly rows = computed(() =>
+    this.usecase.getRows(this.mainRows(), this.inputRows()),
   );
-  /** 行スタイル */
-  protected readonly rowStyle = signal<{ (params: RowClassParams): RowStyle }>(
-    this.usecase.getRowStyle,
-  );
-
   /** セルクリック禁止列 */
-  protected readonly cellClickForbColumns = [
-    Const.SCHEDULE_COL_ID.LABEL,
+  protected readonly cellClickForbCols = [
+    Const.SCD_COL.LABEL,
   ] as const satisfies string[];
 
   /**
@@ -53,7 +47,7 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
    * @param event
    */
   protected readonly onClickCell = async (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 入力チェック
     const check = this.usecase.checkInputData(event);
@@ -61,11 +55,8 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
       return;
     }
     // ダイアログ入力データ作成
-    const rowDatas = this.mainRowDatas();
-    const input = this.usecase.createInputData(
-      [event.data!],
-      this.rowDataKey(),
-    );
+    const rows = this.mainRows();
+    const input = this.usecase.createInputData([event.data!], this.tbl());
     // ダイアログオープン
     const output = await this.usecase.openDialog(input);
     if (!output) {
@@ -75,10 +66,10 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       [event.data!],
-      rowDatas,
-      this.rowDataKey(),
+      rows,
+      this.tbl(),
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 }

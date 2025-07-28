@@ -3,19 +3,13 @@ import {
   Component,
   computed,
   input,
-  signal,
 } from '@angular/core';
-import {
-  CellClickedEvent,
-  CellContextMenuEvent,
-  RowClassParams,
-  RowStyle,
-} from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { CellClickedEvent, CellContextMenuEvent } from 'ag-grid-community';
+import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { MoneyDiaryColId, ValueType } from 'src/app/shared/constants/types';
+import { MainCol, ValType } from 'src/app/shared/constants/types';
 import {
   GridAboveContentOption,
   GridBelowContentOption,
@@ -29,39 +23,28 @@ import {
 })
 export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   /** 入力データ */
-  readonly inputDatas = input.required<RowData[]>();
+  readonly inputRows = input.required<Row[]>();
   /** Creditデータ */
-  readonly creditDatas = input<RowData[]>([]);
+  readonly crdRows = input<Row[]>([]);
 
   /** 列定義 */
   protected override readonly colDefs = computed(() =>
-    this.usecase.getColDefs(this.inputDatas(), this.creditDatas()),
+    this.usecase.getColDefs(this.inputRows(), this.crdRows()),
   );
   /** 行データ */
-  protected override readonly rowDatas = computed(() =>
-    this.usecase.getRowDatas(
-      this.mainRowDatas(),
-      this.inputDatas(),
-      this.creditDatas(),
-    ),
-  );
-  /** 行スタイル */
-  protected readonly rowStyle = signal<{ (params: RowClassParams): RowStyle }>(
-    this.usecase.getRowStyle,
+  protected override readonly rows = computed(() =>
+    this.usecase.getRows(this.mainRows(), this.inputRows(), this.crdRows()),
   );
   /** グリッド上ボタンオプション */
   protected readonly aboveContentOption = computed<GridAboveContentOption>(
     () => ({
-      calcSelectStatus: this.usecase.calcSelectStatus,
+      calcSelectStatus: this.usecase.calcSelStatus,
     }),
   );
   /** グリッド下ボタンオプション */
   protected readonly belowContentOption = computed<GridBelowContentOption>(
     () => ({
-      addRow: () =>
-        this.mainRowDatas().every(
-          (dt) => !!dt[Const.ROW_DATA_COMMON_COL_ID.LABEL],
-        ),
+      addRow: () => this.mainRows().every((dt) => !!dt[Const.CMN_COL.LABEL]),
       changeSelection: true,
       jumpFirstRow: true,
       jumpLastRow: true,
@@ -69,11 +52,11 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   );
   /** セルクリック禁止列 */
   protected readonly cellClickForbColumns = [
-    Const.ROW_DATA_COMMON_COL_ID.LABEL,
+    Const.CMN_COL.LABEL,
   ] as const satisfies string[];
 
   /** 入力データ関連列ID */
-  protected abstract readonly inputColId: MoneyDiaryColId;
+  protected abstract readonly inputColId: MainCol;
 
   constructor(protected readonly usecase: SettingUsecase) {
     super();
@@ -84,7 +67,7 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
    * @param event
    */
   protected readonly onClickCell = async (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 入力チェック
     const check = this.usecase.checkInputData(event);
@@ -94,8 +77,8 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
     // ダイアログ入力データ作成
     const input = this.usecase.createInputData(
       [event.data!],
-      this.rowDataKey(),
-      [this.mainRowDatas(), this.inputDatas()],
+      this.tbl(),
+      [this.mainRows(), this.inputRows()],
       this.inputColId,
     );
     // ダイアログオープン
@@ -107,11 +90,11 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
     const result = this.usecase.createResultData(
       output,
       [event.data!],
-      this.mainRowDatas(),
-      this.rowDataKey(),
+      this.mainRows(),
+      this.tbl(),
     );
     // Emit
-    this.rowDataEdits.emit(result);
+    this.rowEdt.emit(result);
   };
 
   /**

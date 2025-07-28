@@ -1,57 +1,58 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
+import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
   FilterInputModel,
-  RowDataEdit,
-  ScreenId,
+  RowEdt,
+  Scr,
+  Tbl,
+  ValType,
 } from 'src/app/shared/constants/types';
-import { RowDataEditHistoryStore } from 'src/app/store/row-data-edit-history.store';
-import { RowDataStore } from 'src/app/store/row-data.store';
-import { ScreenInfoStore } from 'src/app/store/screen-info.store';
-import { TempDataStore } from 'src/app/store/temp-data.store';
+import * as Util from 'src/app/shared/constants/utils';
+import { HistStore } from 'src/app/store/row-data-edit-history.store';
+import { TblInfStore } from 'src/app/store/row-data.store';
+import { ScrInfStore } from 'src/app/store/screen-info.store';
+import { TmpStore } from 'src/app/store/temp-data.store';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StoreUsecase {
-  readonly storeRowData = inject(RowDataStore);
-  readonly storeScreen = inject(ScreenInfoStore);
-  readonly storeHistory = inject(RowDataEditHistoryStore);
-  readonly storeTemp = inject(TempDataStore);
+  readonly storeTblInf = inject(TblInfStore);
+  readonly storeScr = inject(ScrInfStore);
+  readonly storeHist = inject(HistStore);
+  readonly storeTmp = inject(TmpStore);
 
   /** Loading All */
   readonly loadingAll = computed(() => {
     return (
-      this.storeRowData.loading() ||
-      this.storeScreen.loading() ||
-      this.storeHistory.loading()
+      this.storeTblInf.loading() ||
+      this.storeScr.loading() ||
+      this.storeHist.loading()
     );
   });
 
   /** 画面遷移データ */
-  readonly screenDatas = computed(() => {
-    const screenId = this.storeScreen.screenInfo.si();
-    const screenDatas = this.storeScreen.screenInfo.sd();
-    const data = screenDatas.find((data) => data.id === screenId)!;
-    const info = Const.SCREEN_INFO.find((info) => info.id === screenId)!;
-
-    return { ...info, ...data };
+  readonly scrDatas = computed(() => {
+    const scrId = this.storeScr.scrInf.si();
+    const scrData = this.storeScr.scrInf.sd();
+    return { ...Const.SCR_INF[scrId], ...scrData[scrId] };
   });
 
   /** 画面遷移マップ表示フラグ */
-  readonly mapDisp = computed(() => {
-    return this.storeScreen.screenInfo.md() ? this.storeTemp.mapDisp() : false;
+  readonly mapDsp = computed(() => {
+    return this.storeScr.scrInf.md() ? this.storeTmp.mapDsp() : false;
   });
 
   /** 非表示オプション */
-  readonly hiddenOptions = computed(() => {
-    const datas = this.storeScreen.screenInfo.sd();
-    const screenId = this.storeScreen.screenInfo.si();
-    const oldScreenId = this.storeScreen.screenInfo.oi();
+  readonly hiddenOpts = computed(() => {
+    const scrData = this.storeScr.scrInf.sd();
+    const scrId = this.storeScr.scrInf.si();
+    const oldScrId = this.storeScr.scrInf.oi();
 
-    const next = datas.find((data) => data.id === screenId);
-    const old = datas.find((data) => data.id === oldScreenId);
+    const next = scrData[scrId];
+    const old = scrData[oldScrId];
 
     let prevAfterClass = 'hidden';
     const nextBeforeStyle: Record<string, any> = {
@@ -121,9 +122,9 @@ export class StoreUsecase {
    */
   readonly allData = computed(() => {
     return {
-      rm: this.storeRowData.rowDataMap(),
-      si: this.storeScreen.screenInfo(),
-      rh: this.storeHistory.history(),
+      rm: this.storeTblInf.tblMap(),
+      si: this.storeScr.scrInf(),
+      rh: this.storeHist.hist(),
     } as MoneyDiaryData;
   });
 
@@ -132,9 +133,9 @@ export class StoreUsecase {
    * @param data
    */
   readonly setAllData = (data: MoneyDiaryData): void => {
-    this.storeRowData.setRowDataMapOnLoad(data.rm);
-    this.storeScreen.setScreenInfo(data.si);
-    this.storeHistory.setRowDataEdit(data.rh);
+    this.storeTblInf.setTblMapOnLoad(data.rm);
+    this.storeScr.setScrInf(data.si);
+    this.storeHist.setHist(data.rh);
   };
 
   /**
@@ -143,156 +144,417 @@ export class StoreUsecase {
    */
   readonly undoRedo = (undoRedo: boolean): void => {
     // 行データ編集前チェック
-    const history = structuredClone(this.storeHistory.history());
+    const hist = structuredClone(this.storeHist.hist());
     if (
-      (!undoRedo && history.ix <= 0) ||
-      (undoRedo && history.ix >= history.rd.length)
+      (!undoRedo && hist.ix <= 0) ||
+      (undoRedo && hist.ix >= hist.rd.length)
     ) {
       return;
     }
     // 履歴情報IDX更新
-    this.storeHistory.updHistoryIdx(undoRedo);
+    this.storeHist.updHistIdx(undoRedo);
     // 画面遷移前チェック
-    const historyEditDatas = undoRedo
-      ? history.rd[history.ix]
-      : history.ud[history.ix - 1];
-    const rowDataKey = historyEditDatas.at(-1)?.event.key;
-    if (!rowDataKey) {
+    const histData = undoRedo ? hist.rd[hist.ix] : hist.ud[hist.ix - 1];
+    const tbl = histData.at(-1)?.tbl;
+    if (!tbl) {
       return;
     }
-    const screenId = Const.ROW_DATA_INFO[rowDataKey].screenId;
-    if (!screenId) {
+    const scrId = Util.getTblScrId(tbl);
+    if (!scrId) {
       return;
     }
     // 画面遷移
-    if (screenId !== this.storeScreen.screenInfo.si()) {
-      this.changeScreen(screenId);
+    if (scrId !== this.storeScr.scrInf.si()) {
+      this.changeScr(scrId);
     }
     setTimeout(() => {
       // 画面遷移後に行データ編集
-      this.editRowDataMain(historyEditDatas);
-    }, Const.TIME_MILI.UNDO_REDO_BEFORE);
+      this.setRowEdt(histData);
+    }, Const.TIME.UNDO_REDO_BEF);
   };
 
   /**
    * 行データ編集
-   * @param editDatas
+   * @param rowEdt
    */
-  readonly editRowData = (editDatas: RowDataEdit[]): void => {
+  readonly edtRows = (rowEdt: RowEdt[]): void => {
     // 履歴削除
-    this.storeHistory.delRowDataEdit();
+    this.storeHist.delHist();
     // 行データ編集
-    this.editRowDataMain(editDatas, true);
+    this.setRowEdt(rowEdt, true);
     // 履歴情報IDX更新
-    this.storeHistory.updHistoryIdx(true);
+    this.storeHist.updHistIdx(true);
   };
 
   /**
    * 行データ編集Main
-   * @param editDatas
-   * @param addHistory
+   * @param rowEdt
+   * @param addHistFlg
    */
-  private readonly editRowDataMain = (
-    editDatas: RowDataEdit[],
-    addHistory: boolean = false,
+  private readonly setRowEdt = (
+    rowEdt: RowEdt[],
+    addHistFlg: boolean = false,
   ): void => {
-    for (const edit of editDatas) {
-      if (edit.type === Const.ROW_DATA_EDIT_TYPE.ADD) {
+    for (const edt of rowEdt) {
+      const rows = this.storeTblInf.tblMap()[edt.tbl];
+      if (edt.type === Const.TBL_EDIT_TYPE.ADD) {
         // 追加
-        if (addHistory) {
-          this.storeHistory.setRowDataAdd(edit);
+        if (addHistFlg) {
+          this.storeHist.updRowEdt(
+            this.getRowEdtAddUndo(edt.tbl, edt.rows),
+            edt,
+          );
         }
-        this.storeRowData.addRowData(edit.event);
-      } else if (edit.type === Const.ROW_DATA_EDIT_TYPE.UPD) {
+        this.storeTblInf.updRows(
+          edt.tbl,
+          this.getRowAdd(edt.rows, edt.addIds, rows),
+        );
+      } else if (edt.type === Const.TBL_EDIT_TYPE.UPD) {
         // 更新
-        if (addHistory) {
-          this.storeHistory.setRowDataUpd(
-            edit,
-            this.storeRowData.rowDataMap()[edit.event.key],
+        if (addHistFlg) {
+          this.storeHist.updRowEdt(
+            this.getRowEdtUpdUndo(edt.tbl, edt.rows, rows),
+            edt,
           );
         }
-        this.storeRowData.updRowData(edit.event);
-      } else if (edit.type === Const.ROW_DATA_EDIT_TYPE.DEL) {
+        this.storeTblInf.updRows(edt.tbl, this.getRowUpd(edt.rows, rows));
+      } else if (edt.type === Const.TBL_EDIT_TYPE.DEL) {
         // 削除
-        if (addHistory) {
-          this.storeHistory.setRowDataDel(
-            edit,
-            this.storeRowData.rowDataMap()[edit.event.key],
+        if (addHistFlg) {
+          this.storeHist.updRowEdt(
+            this.getRowEdtDelUndo(edt.tbl, edt.delIds, rows),
+            edt,
           );
         }
-        this.storeRowData.delRowData(edit.event);
-      } else if (edit.type === Const.ROW_DATA_EDIT_TYPE.DRAG) {
+        this.storeTblInf.updRows(edt.tbl, this.getRowDel(edt.delIds, rows));
+      } else if (edt.type === Const.TBL_EDIT_TYPE.DRG) {
         // 移動
-        if (addHistory) {
-          this.storeHistory.setRowDataDrag(
-            edit,
-            this.storeRowData.rowDataMap()[edit.event.key],
+        if (addHistFlg) {
+          this.storeHist.updRowEdt(
+            this.getRowEdtDrgUndo(edt.tbl, edt.delIds, rows),
+            edt,
           );
         }
-        this.storeRowData.dragRowData(edit.event);
+        this.storeTblInf.updRows(
+          edt.tbl,
+          this.getRowDrg(edt.delIds, edt.addIds, rows),
+        );
       }
     }
+
+    if (addHistFlg) {
+      const tblSet = new Set<Tbl>();
+      for (const edt of rowEdt) {
+        if (tblSet.has(edt.tbl)) {
+          continue;
+        }
+
+        tblSet.add(edt.tbl);
+        const rows = this.storeTblInf.tblMap()[edt.tbl];
+        if (Util.checkNoneData(rows)) {
+          continue;
+        }
+
+        const addEdt = Util.getRowEdtAddNew(edt.tbl, rows);
+        if (addEdt.type !== Const.TBL_EDIT_TYPE.ADD) {
+          continue;
+        }
+
+        this.storeHist.updRowEdt(
+          this.getRowEdtAddUndo(addEdt.tbl, addEdt.rows),
+          addEdt,
+        );
+        this.storeTblInf.updRows(
+          addEdt.tbl,
+          this.getRowAdd(addEdt.rows, addEdt.addIds, rows),
+        );
+      }
+    }
+  };
+
+  private readonly getRowEdtAddUndo = (edtTbl: Tbl, edtRows: Row[]): RowEdt => {
+    return {
+      type: Const.TBL_EDIT_TYPE.DEL,
+      tbl: edtTbl,
+      delIds: edtRows.map((row) => row[Const.CMN_COL.ID]),
+    };
+  };
+
+  private readonly getRowEdtUpdUndo = (
+    edtTbl: Tbl,
+    edtRows: Row[],
+    stateRows: Row[],
+  ): RowEdt => {
+    const updRows: Row[] = [];
+    for (const evtRow of edtRows) {
+      const updRow = stateRows.find(
+        (row) => row[Const.CMN_COL.ID] === evtRow[Const.CMN_COL.ID],
+      );
+      if (!!updRow) {
+        updRows.push(updRow);
+      }
+    }
+    // undo用更新データ作成
+    return {
+      type: Const.TBL_EDIT_TYPE.UPD,
+      tbl: edtTbl,
+      rows: updRows,
+    };
+  };
+
+  private readonly getRowEdtDelUndo = (
+    edtTbl: Tbl,
+    edtDelIds: ValType[],
+    stateRows: Row[],
+  ): RowEdt => {
+    const delIds = [...edtDelIds];
+    const addRows: Row[] = [];
+    const addIds: ValType[] = [];
+    for (const [rowIdx, row] of stateRows.entries()) {
+      const delIdx = delIds.findIndex((id) => id === row[Const.CMN_COL.ID]);
+      if (delIdx === -1) {
+        continue;
+      }
+      delIds.splice(delIdx, 1);
+
+      addRows.push(row);
+      // 行追加するIDを算出
+      for (let idx = rowIdx + 1; ; idx++) {
+        if (!stateRows[idx]) {
+          // 最下行に追加する必要がある場合nullを設定
+          addIds.push(Const.TBL_ADD_POS.MAX);
+          break;
+        }
+
+        if (!delIds.includes(stateRows[idx][Const.CMN_COL.ID])) {
+          // 行追加するIDを設定
+          addIds.push(stateRows[idx][Const.CMN_COL.ID]!.toString());
+          break;
+        }
+      }
+
+      if (delIds.length === 0) {
+        break;
+      }
+    }
+    // undo用追加データ作成
+    return {
+      type: Const.TBL_EDIT_TYPE.ADD,
+      tbl: edtTbl,
+      rows: addRows,
+      addIds,
+    };
+  };
+
+  private readonly getRowEdtDrgUndo = (
+    edtTbl: Tbl,
+    edtDelIds: ValType[],
+    stateRows: Row[],
+  ): RowEdt => {
+    const evtDelIds = [...edtDelIds];
+    const delIds: ValType[] = [];
+    const addIds: ValType[] = [];
+    for (const [rowIdx, row] of stateRows.entries()) {
+      const delIdx = evtDelIds.findIndex((id) => id === row[Const.CMN_COL.ID]);
+      if (delIdx === -1) {
+        continue;
+      }
+      evtDelIds.splice(delIdx, 1);
+
+      delIds.push(row[Const.CMN_COL.ID]);
+      // 行追加するIDを算出
+      for (let idx = rowIdx + 1; ; idx++) {
+        if (!stateRows[idx]) {
+          // 最終行に追加する必要がある場合nullを設定
+          addIds.push(null);
+          break;
+        }
+
+        if (!evtDelIds.includes(stateRows[idx][Const.CMN_COL.ID])) {
+          // 行追加するIDを設定
+          addIds.push(stateRows[idx][Const.CMN_COL.ID]!.toString());
+          break;
+        }
+      }
+
+      if (evtDelIds.length === 0) {
+        break;
+      }
+    }
+    // undo用移動データ作成
+    return {
+      type: Const.TBL_EDIT_TYPE.DRG,
+      tbl: edtTbl,
+      delIds,
+      addIds,
+    };
+  };
+
+  private readonly getRowAdd = (
+    edtRows: Row[],
+    edtAddIds: ValType[],
+    stateRows: Row[],
+  ): Row[] => {
+    const newRows = structuredClone(stateRows);
+    for (const [idx, data] of edtRows.entries()) {
+      const addIdx = newRows.findIndex(
+        (row) => row[Const.CMN_COL.ID] === edtAddIds[idx],
+      );
+
+      if (addIdx >= 0) {
+        // 指定された追加行がある場合
+        newRows.splice(addIdx, 0, data);
+      } else {
+        // 指定された追加行がない場合
+        if (edtAddIds[idx] === Const.TBL_ADD_POS.MIN) {
+          // 最上行に追加の場合
+          newRows.splice(0, 0, data);
+        } else if (edtAddIds[idx] === Const.TBL_ADD_POS.MAX) {
+          // 最下行に追加の場合
+          const lastRow = newRows.at(-1);
+          if (
+            !!lastRow &&
+            Util.checkInputMode(lastRow, Const.INPUT_MODE.NONE)
+          ) {
+            // 最下行データがある、かつ空データの場合
+            newRows.splice(newRows.length - 1, 0, data);
+          } else {
+            // 上記以外の場合
+            newRows.push(data);
+          }
+        }
+      }
+    }
+    return newRows;
+  };
+
+  private readonly getRowUpd = (edtRows: Row[], stateRows: Row[]): Row[] => {
+    const newRows = structuredClone(stateRows);
+    for (const row of edtRows) {
+      for (let idx = 0; idx < newRows.length; idx++) {
+        if (newRows[idx][Const.CMN_COL.ID] === row[Const.CMN_COL.ID]) {
+          newRows[idx] = row;
+          break;
+        }
+      }
+    }
+    return newRows;
+  };
+
+  private readonly getRowDel = (
+    edtDelIds: ValType[],
+    stateRows: Row[],
+  ): Row[] => {
+    const rows = structuredClone(stateRows);
+    return rows.filter((row) => !edtDelIds.includes(row[Const.CMN_COL.ID]));
+  };
+
+  private readonly getRowDrg = (
+    edtDelIds: ValType[],
+    edtAddIds: ValType[],
+    stateRows: Row[],
+  ): Row[] => {
+    const rows = structuredClone(stateRows);
+    const markDel = '_delete';
+    for (const [idx, delId] of edtDelIds.entries()) {
+      const drgRow = rows.find((row) => row[Const.CMN_COL.ID] === delId);
+      if (!drgRow) {
+        continue;
+      }
+
+      const addIdx = rows.findIndex(
+        (row) => row[Const.CMN_COL.ID] === edtAddIds[idx],
+      );
+
+      if (addIdx >= 0) {
+        // 指定された追加行がある場合
+        rows.splice(addIdx, 0, structuredClone(drgRow));
+      } else {
+        // 指定された追加行がない場合
+        if (edtAddIds[idx] === Const.TBL_ADD_POS.MIN) {
+          // 最上行に追加の場合
+          rows.splice(0, 0, structuredClone(drgRow));
+        } else if (edtAddIds[idx] === Const.TBL_ADD_POS.MAX) {
+          // 最下行に追加の場合
+          const lastRow = rows.at(-1);
+          if (
+            !!lastRow &&
+            Util.checkInputMode(lastRow, Const.INPUT_MODE.NONE)
+          ) {
+            // 最下行データがある、かつ空データの場合
+            rows.splice(rows.length - 1, 0, structuredClone(drgRow));
+          } else {
+            // 上記以外の場合
+            rows.push(structuredClone(drgRow));
+          }
+        }
+      }
+      drgRow[Const.CMN_COL.ID] += markDel;
+    }
+    return rows.filter(
+      (data) => !(data[Const.CMN_COL.ID]?.toString() ?? '').endsWith(markDel),
+    );
   };
 
   /**
    * 履歴情報リセット
    */
-  readonly resetHistory = (): void => {
-    this.storeHistory.resetHistory();
+  readonly resetHist = (): void => {
+    this.storeHist.resetHist();
   };
 
   /**
    * 画面遷移
-   * @param screenId
+   * @param scrId
    */
-  readonly changeScreen = (screenId?: ScreenId): void => {
-    if (screenId === this.storeScreen.screenInfo.si()) {
+  readonly changeScr = (scrId?: Scr): void => {
+    if (scrId === this.storeScr.scrInf.si()) {
       // すでに開いている場合は下記処理を実施しない
       return;
     }
     // タイマー初期化
-    this.storeTemp.resetMapDispTimers();
+    this.storeTmp.resetMapDspTimers();
     // マップ表示
-    this.storeTemp.setMapDisp(true);
+    this.storeTmp.setMapDsp(true);
     // タイマー設定
-    this.storeTemp.addMapDispTimer(
+    this.storeTmp.addMapDspTimer(
       setTimeout(() => {
         // 画面ID設定
-        this.storeScreen.updScreenId(screenId);
+        this.storeScr.updScrId(scrId);
         // マップ表示
-        this.storeTemp.setMapDisp(true);
+        this.storeTmp.setMapDsp(true);
         // タイマー設定
-        this.storeTemp.addMapDispTimer(
+        this.storeTmp.addMapDspTimer(
           setTimeout(() => {
             // タイマー初期化
-            this.storeTemp.resetMapDispTimers();
+            this.storeTmp.resetMapDspTimers();
             // マップ非表示
-            this.storeTemp.setMapDisp(false);
-          }, Const.TIME_MILI.DISP_MAP_AFTER_TRAN),
+            this.storeTmp.setMapDsp(false);
+          }, Const.TIME.DISP_MAP_AFT_TRAN),
         );
-      }, Const.TIME_MILI.DISP_MAP_BEFORE_TRAN),
+      }, Const.TIME.DISP_MAP_BEF_TRAN),
     );
   };
 
   /**
    * 画面遷移マップ表示フラグ変更
-   * @param mapDisp
+   * @param mapDsp
    */
-  readonly changeMapDisp = (mapDisp: boolean): void => {
-    if (mapDisp) {
+  readonly changeMapDsp = (mapDsp: boolean): void => {
+    if (mapDsp) {
       // タイマー初期化
-      this.storeTemp.resetMapDispTimers();
+      this.storeTmp.resetMapDspTimers();
       // マップ表示
-      this.storeTemp.setMapDisp(mapDisp);
+      this.storeTmp.setMapDsp(mapDsp);
     } else {
       // タイマー設定
-      this.storeTemp.addMapDispTimer(
+      this.storeTmp.addMapDspTimer(
         setTimeout(() => {
           // タイマー初期化
-          this.storeTemp.resetMapDispTimers();
+          this.storeTmp.resetMapDspTimers();
           // マップ非表示
-          this.storeTemp.setMapDisp(mapDisp);
-        }, Const.TIME_MILI.DISP_MAP_LONG_CLICK),
+          this.storeTmp.setMapDsp(mapDsp);
+        }, Const.TIME.DISP_MAP_LONG_CLICK),
       );
     }
   };
@@ -303,11 +565,11 @@ export class StoreUsecase {
    */
   readonly setFilterInputModel = (model: FilterInputModel): void => {
     // フィルタモデル設定
-    this.storeTemp.setFilterInputModel(model);
+    this.storeTmp.setFilterInputModel(model);
     // 一定時間待機
     setTimeout(() => {
       // フィルタモデルリセット
-      this.storeTemp.setFilterInputModel('none');
+      this.storeTmp.setFilterInputModel('none');
     });
   };
 }

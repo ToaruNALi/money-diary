@@ -10,14 +10,14 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: Const.ROUTE_PATH.MONEY_DIARY,
+    redirectTo: Const.ROUTE_PATH.MAIN,
   },
   {
-    path: Const.ROUTE_PATH.MONEY_DIARY,
+    path: Const.ROUTE_PATH.MAIN,
     component: MoneyDiaryPageComponent,
   },
   {
-    path: Const.ROUTE_PATH.ERROR,
+    path: Const.ROUTE_PATH.ERR,
     component: InternalServerErrorComponent,
   },
   {

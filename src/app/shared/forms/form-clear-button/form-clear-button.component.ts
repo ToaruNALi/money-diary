@@ -4,17 +4,17 @@ import {
   input,
   output,
 } from '@angular/core';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
-    selector: 'app-form-clear-button',
-    imports: [SharedCommonModule],
-    templateUrl: './form-clear-button.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-form-clear-button',
+  imports: [SharedCommonModule],
+  templateUrl: './form-clear-button.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormClearButtonComponent {
   readonly disabled = input.required<boolean>();
-  readonly value = input.required<ValueType>();
+  readonly value = input.required<ValType>();
   protected readonly clearBtnClick = output<void>();
 }

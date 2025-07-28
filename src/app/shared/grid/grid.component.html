@@ -1,6 +1,6 @@
 <!-- グリッド上共通機能 -->
 @if (!!aboveContentOption()) {
-  <app-money-status [list]="statusDispList()"></app-money-status>
+  <app-money-status [list]="statusDspList()"></app-money-status>
 }
 
 <!-- グリッド -->
@@ -10,8 +10,8 @@
     [gridOptions]="gridOptions()"
     [getRowId]="rowId()"
     [style]="style()"
-    [columnDefs]="columnDefs()"
-    [rowData]="rowDatas()"
+    [columnDefs]="colDefs()"
+    [rowData]="rows()"
     [getRowStyle]="rowStyle()"
     (selectionChanged)="onSelectCell()"
     (gridReady)="onReadyGrid($event)"
@@ -21,7 +21,7 @@
     (cellDoubleClicked)="cellDoubleClick.emit($event)"
     (rowClicked)="rowClick.emit($event)"
     (rowDoubleClicked)="rowDoubleClick.emit($event)"
-    (firstDataRendered)="onDispFirstData($event)"
+    (firstDataRendered)="onDspFirstData($event)"
     (rowDragEnd)="onDragEndRow($event)"
     (rowDragEnter)="onDragEnterRow($event)"
     (cellContextMenu)="cellContextMenu.emit($event)"
@@ -31,7 +31,7 @@
 </div>
 
 <!-- グリッド下共通機能 -->
-@if (!!belowContentOption()) {
+@if (!!belowContentOpt()) {
   <div class="grid-below-content my-scrollbar-hidden">
     <div style="flex: auto"></div>
     <div class="overflow">

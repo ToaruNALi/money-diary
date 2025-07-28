@@ -23,10 +23,4 @@ import { StoreUsecase } from 'src/app/usecase/store.usecase';
 export class AppComponent {
   protected readonly isDisabled = false; // アニメーションの非表示
   protected readonly usecase = inject(StoreUsecase);
-
-  ngOnInit() {
-    // window.onbeforeunload = (_) => {
-    //   return '本当にページ移動しますか？';
-    // };
-  }
 }

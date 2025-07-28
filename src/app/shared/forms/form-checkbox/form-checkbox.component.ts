@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
 import { FormControl, FormRecord } from '@angular/forms';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValueType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/constants/types';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import { FormsComponent } from 'src/app/shared/forms/forms.component';
@@ -29,6 +29,6 @@ export class FormCheckboxComponent extends FormsComponent<FormCheckbox> {
   };
 
   protected readonly group = computed(
-    () => this.form() as FormRecord<FormControl<ValueType>>,
+    () => this.form() as FormRecord<FormControl<ValType>>,
   );
 }

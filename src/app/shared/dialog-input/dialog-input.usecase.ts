@@ -9,7 +9,7 @@ import {
 } from '@angular/forms';
 import Fuse from 'fuse.js';
 import * as Const from 'src/app/shared/constants/constants';
-import { FormCtrl, InputType, ValueType } from 'src/app/shared/constants/types';
+import { FormCtrl, InputType, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
@@ -33,7 +33,7 @@ export class DialogInputUsecase {
    */
   readonly getFilterOptions = (
     options: DialogOption[],
-    value: ValueType,
+    value: ValType,
   ): DialogOption[] => {
     if (value === null || value === '') {
       return options;
@@ -162,17 +162,17 @@ export class DialogInputUsecase {
    * @returns
    */
   readonly cvtValueToFormCtrl = (
-    value: ValueType = null,
+    value: ValType = null,
     type: InputType | undefined,
     options: DialogOption[] = [],
   ): FormCtrl => {
     if (type === Const.INPUT_TYPE.CHECK) {
       // Checkbox
-      const record = this.fb.record<FormControl<ValueType>>({});
+      const record = this.fb.record<FormControl<ValType>>({});
       for (const opt of options) {
         record.addControl(
           opt.id.toString(),
-          this.fb.control<ValueType>(
+          this.fb.control<ValType>(
             Array.isArray(value) && value.includes(opt.id),
           ),
         );
@@ -181,7 +181,7 @@ export class DialogInputUsecase {
     }
 
     // Checkbox 以外
-    return this.fb.control<ValueType>(Array.isArray(value) ? null : value);
+    return this.fb.control<ValType>(Array.isArray(value) ? null : value);
   };
 
   /**
@@ -192,13 +192,13 @@ export class DialogInputUsecase {
    * @returns
    */
   readonly cvtValueToFormValue = (
-    value: ValueType = null,
+    value: ValType = null,
     type: InputType | undefined,
     options: DialogOption[] = [],
-  ): ValueType | Record<string, ValueType> => {
+  ): ValType | Record<string, ValType> => {
     if (type === Const.INPUT_TYPE.CHECK) {
       // Checkbox
-      const record: Record<string, ValueType> = {};
+      const record: Record<string, ValType> = {};
       for (const opt of options) {
         record[opt.id.toString()] =
           Array.isArray(value) && value.includes(opt.id);
@@ -217,12 +217,12 @@ export class DialogInputUsecase {
    * @returns
    */
   readonly cvtFormValueToValue = (
-    value: ValueType | Record<string, ValueType> = null,
+    value: ValType | Record<string, ValType> = null,
     type: InputType | undefined,
-  ): ValueType => {
+  ): ValType => {
     if (type === Const.INPUT_TYPE.CHECK) {
       // Checkbox
-      const ret: ValueType = [];
+      const ret: ValType = [];
       if (
         typeof value === 'object' &&
         value !== null &&

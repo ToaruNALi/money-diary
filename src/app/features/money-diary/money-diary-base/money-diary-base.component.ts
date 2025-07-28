@@ -6,13 +6,13 @@ import {
   Signal,
 } from '@angular/core';
 import { ColDef } from 'ag-grid-community';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import {
   FilterInputModel,
-  RowDataEdit,
-  RowDataKey,
-  ScreenId,
-  ValueType,
+  RowEdt,
+  Scr,
+  Tbl,
+  ValType,
 } from 'src/app/shared/constants/types';
 
 @Component({
@@ -21,24 +21,24 @@ import {
 })
 export abstract class MoneyDiaryBaseComponent {
   /** 行データMap Main */
-  readonly mainRowDatas = input.required<RowData[]>();
+  readonly mainRows = input.required<Row[]>();
   /** 行データKey */
-  readonly rowDataKey = input.required<RowDataKey>();
+  readonly tbl = input.required<Tbl>();
   /** 表示区分 */
   readonly display = input<string>();
 
   /** フィルターモデル */
   protected readonly filterInputModelSet = output<FilterInputModel>();
   /** 画面ID */
-  protected readonly screenIdSet = output<ScreenId>();
+  protected readonly scrIdSet = output<Scr>();
   /** 行データ更新 */
-  readonly rowDataEdits = output<RowDataEdit[]>();
+  readonly rowEdt = output<RowEdt[]>();
 
   /** 列定義 */
-  protected abstract readonly colDefs: Signal<ColDef<RowData, ValueType>[]>;
+  protected abstract readonly colDefs: Signal<ColDef<Row, ValType>[]>;
   /** 行データ */
-  protected abstract readonly rowDatas: Signal<RowData[]>;
+  protected abstract readonly rows: Signal<Row[]>;
 
   /** 初期表示フラグ */
-  protected firstDisp = false;
+  protected firstDsp = false;
 }

@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InternalServerErrorComponent {
-  protected readonly errInfo = {
+  protected readonly errInf = {
     code: '500',
     msg: 'Internal Server Error',
   } as const;

@@ -3,29 +3,77 @@ import { CellClassParams, CellStyle, GridApi } from 'ag-grid-community';
 import * as DateUtil from 'date-fns';
 import { addDays } from 'date-fns';
 import moji from 'moji';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
   InputMode,
-  PayDateInfo,
-  RowDataEdit,
-  RowDataEditType,
-  RowDataKey,
-  ScreenId,
-  SortOption,
-  ValueType,
+  PayDateInf,
+  RowEdt,
+  Scr,
+  ScrDspData,
+  SortOpt,
+  Tbl,
+  ValType,
 } from 'src/app/shared/constants/types';
 
-/***************
- * Util
- ***************/
+/**************************************************
+ * 定数からデータを取得する共通処理
+ **************************************************/
+
+/** テーブル名を返却する */
+export const getTblName = (tbl: Tbl): string => {
+  return Const.TBL_BASIC_INF[tbl].name;
+};
+
+/** 画面IDを返却する */
+export const getTblScrId = (tbl: Tbl): Scr => {
+  return Const.TBL_BASIC_INF[tbl].scrId;
+};
+
+/** デフォルト行データを返却する */
+export const getTblDefRow = (tbl: Tbl): Row => {
+  return structuredClone(Const.TBL_DEF_VAL[tbl]);
+};
+
+/** デフォルト値を返却する */
+export const getTblDefVal = (tbl: Tbl, col: string): ValType => {
+  return getTblDefRow(tbl)[col];
+};
+
+/** 保存するカラムIDを返却する */
+export const getSaveCol = (tbl: Tbl): string[] => {
+  return structuredClone(Const.SAVE_COL[tbl]);
+};
+
+/** 保存時のデフォルト行データを返却する */
+export const getSaveDefRow = (tbl: Tbl): Row => {
+  return structuredClone(Const.SAVE_DEF_VAL[tbl]);
+};
+
+/** 保存時のデフォルト値を返却する */
+export const getSaveDefVal = (tbl: Tbl, col: string): ValType => {
+  return getSaveDefRow(tbl)[col];
+};
+
+/** 画面情報リストを返却する */
+export const getMenuList = (): (ScrDspData & { id: Scr })[] => {
+  return Object.entries(Const.SCR_INF).map(([scr, data]) => ({
+    ...data,
+    id: scr as Scr,
+  }));
+};
+
+/**************************************************
+ * 共通処理
+ **************************************************/
+
 /** 有効な整数かどうかを判断する */
-export const isValidInteger = (value?: ValueType): value is number =>
+export const isValidInt = (value?: ValType): value is number =>
   Number.isSafeInteger(value);
 
 /** 数値 ｰ> 金額表示に変換する (入力が数値でない場合、空文字を返却する) */
-export const cvtNumToPrice = (value?: ValueType): string => {
-  if (!isValidInteger(value)) {
+export const cvtNumToPrice = (value?: ValType): string => {
+  if (!isValidInt(value)) {
     return '';
   }
 
@@ -36,7 +84,7 @@ export const cvtNumToPrice = (value?: ValueType): string => {
 };
 
 /** 日付文字列 ｰ> 日付 に変換する */
-export const cvtStringToDate = (value?: ValueType): Date | null => {
+export const cvtStrToDate = (value?: ValType): Date | null => {
   if (!value || typeof value !== 'string') {
     return null;
   }
@@ -50,7 +98,7 @@ export const cvtStringToDate = (value?: ValueType): Date | null => {
 };
 
 /** 計算結果を返却する */
-export const calcResult = (value?: ValueType): number => {
+export const calcResult = (value?: ValType): number => {
   try {
     if (
       value === undefined ||
@@ -65,7 +113,7 @@ export const calcResult = (value?: ValueType): number => {
     const num = Math.round(
       (() => {
         if (typeof value === 'number') {
-          if (!isValidInteger(value)) {
+          if (!isValidInt(value)) {
             throw new Error();
           }
           return value;
@@ -81,15 +129,12 @@ export const calcResult = (value?: ValueType): number => {
 };
 
 /** 金額コンパレーター */
-export const amountComparator = (
-  valueA?: ValueType,
-  valueB?: ValueType,
-): number => {
-  if (!isValidInteger(valueA) && !isValidInteger(valueB)) {
+export const compAmt = (valueA?: ValType, valueB?: ValType): number => {
+  if (!isValidInt(valueA) && !isValidInt(valueB)) {
     return 0;
-  } else if (!isValidInteger(valueA)) {
+  } else if (!isValidInt(valueA)) {
     return 1;
-  } else if (!isValidInteger(valueB)) {
+  } else if (!isValidInt(valueB)) {
     return -1;
   }
   return valueA - valueB;
@@ -97,30 +142,30 @@ export const amountComparator = (
 
 /** 金額のスタイルを返却する */
 export const getStylePrice = (
-  value?: ValueType,
+  value?: ValType,
   cellStyle: CellStyle = {},
 ): CellStyle => {
-  if (!isValidInteger(value)) {
+  if (!isValidInt(value)) {
     return cellStyle;
   }
 
   cellStyle['color'] = (() => {
     if (value < 0) {
-      return Const.COLOR.AMOUNT_MINUS;
+      return Const.FONT_CLR.AMT_NEGA;
     } else if (value > 0) {
-      return Const.COLOR.AMOUNT_PLUS;
+      return Const.FONT_CLR.AMT_POSI;
     }
-    return Const.COLOR.AMOUNT_ZERO;
+    return Const.FONT_CLR.DEF;
   })();
   return cellStyle;
 };
 
 /** セル共通スタイル */
-export const getCellCommonStyle = (
-  params: CellClassParams<RowData, ValueType>,
+export const getCellCmnStyle = (
+  params: CellClassParams<Row, ValType>,
   cellStyle: CellStyle = {},
 ): CellStyle => {
-  const valid = params.data?.[Const.ROW_DATA_COMMON_COL_ID.VALID] ?? true;
+  const valid = params.data?.[Const.CMN_COL.VALID] ?? true;
   if (valid) {
     cellStyle['opacity'] = 1;
   } else {
@@ -132,17 +177,17 @@ export const getCellCommonStyle = (
 /** 日付を返却する */
 export const getDate = (
   date: DateUtil.DateArg<Date> = new Date(),
-  formatStr: string = Const.DATE_FORMAT.YYYY_MM_DD,
+  fmtStr: string = Const.DATE_FMT.YYYY_MM_DD,
 ) => {
-  return DateUtil.format(date, formatStr);
+  return DateUtil.format(date, fmtStr);
 };
 
 /** 支払日を返却する */
 export const getPayDate = (
-  date: ValueType,
-  credit: ValueType,
-  creditList: RowData[],
-  formatStr: string = Const.DATE_FORMAT.YYYY_MM_DD,
+  date: ValType,
+  credit: ValType,
+  creditList: Row[],
+  formatStr: string = Const.DATE_FMT.YYYY_MM_DD,
 ): string => {
   if (
     !date ||
@@ -153,18 +198,15 @@ export const getPayDate = (
     return '';
   }
 
-  const creditInfo = creditList.find(
-    (data) => data[Const.CREDIT_COL_ID.ID] === credit,
+  const creditInf = creditList.find(
+    (data) => data[Const.CRD_COL.ID] === credit,
   );
 
-  if (
-    !!creditInfo &&
-    creditInfo[Const.CREDIT_COL_ID.ID] !== Const.MARK.NO_SELECT.ID
-  ) {
-    const closeDay = creditInfo[Const.CREDIT_COL_ID.CLOSE_DAY];
-    const payDay = creditInfo[Const.CREDIT_COL_ID.PAY_DAY];
-    const payMonth = creditInfo[Const.CREDIT_COL_ID.PAY_MONTH];
-    const businessDays = creditInfo[Const.CREDIT_COL_ID.BUSINESS_DAYS];
+  if (!!creditInf && creditInf[Const.CRD_COL.ID] !== Const.MARK.NO_SELECT.id) {
+    const closeDay = creditInf[Const.CRD_COL.CLOSE_DAY];
+    const payDay = creditInf[Const.CRD_COL.PAY_DAY];
+    const payMonth = creditInf[Const.CRD_COL.PAY_MONTH];
+    const businessDays = creditInf[Const.CRD_COL.BUSINESS_DAYS];
 
     if (
       typeof closeDay === 'number' &&
@@ -188,26 +230,26 @@ export const getPayDate = (
 };
 
 /** 支払い日付情報をもとに支払日を算出する */
-export const calcPayDate = (payDateInfo: PayDateInfo): Date => {
-  const newDate = new Date(payDateInfo.date);
+export const calcPayDate = (payDateInf: PayDateInf): Date => {
+  const newDate = new Date(payDateInf.date);
   const addMonth =
-    payDateInfo.payMonth + (newDate.getDate() <= payDateInfo.closeDay ? 0 : 1);
+    payDateInf.payMonth + (newDate.getDate() <= payDateInf.closeDay ? 0 : 1);
   let payDate =
-    payDateInfo.payDay >= 29
+    payDateInf.payDay >= 29
       ? // 月末
         new Date(newDate.getFullYear(), newDate.getMonth() + addMonth + 1, 0)
       : // 月末以外
         new Date(
           newDate.getFullYear(),
           newDate.getMonth() + addMonth,
-          payDateInfo.payDay,
+          payDateInf.payDay,
         );
 
-  if (payDateInfo.businessDays === Const.BUSINESS_DAYS.ALWAYS) {
+  if (payDateInf.businessDays === Const.BIZ_DAYS.ALW) {
     // 支払日に条件がない場合
     return payDate;
   }
-  return calcPayDateConsiderHoliday(payDate, payDateInfo.businessDays);
+  return calcPayDateConsiderHoliday(payDate, payDateInf.businessDays);
 };
 
 /** 休日を考慮した支払い日付を算出する */
@@ -244,20 +286,20 @@ const judgeHoliday = (date: string | Date): boolean => {
 };
 
 /** 行データをソートオプション順に並び替える */
-export const sortRowDatas = (
-  rowDatas: RowData[],
-  sortOpts: SortOption[],
+export const sortRow = (
+  rows: Row[],
+  sortOpts: SortOpt[],
   useToSorted: boolean = true,
-): RowData[] =>
+): Row[] =>
   useToSorted
-    ? rowDatas.toSorted((a, b) => sortCommonProc(a, b, sortOpts))
-    : rowDatas.sort((a, b) => sortCommonProc(a, b, sortOpts));
+    ? rows.toSorted((a, b) => sortCmnPrc(a, b, sortOpts))
+    : rows.sort((a, b) => sortCmnPrc(a, b, sortOpts));
 
 /** ソート共通処理 */
-export const sortCommonProc = (
-  a: RowData | undefined,
-  b: RowData | undefined,
-  sortOpts: SortOption[],
+export const sortCmnPrc = (
+  a: Row | undefined,
+  b: Row | undefined,
+  sortOpts: SortOpt[],
 ): number => {
   if (sortOpts.length === 0) {
     return 0;
@@ -279,7 +321,7 @@ export const sortCommonProc = (
   ) {
     const nextSortOpt = structuredClone(sortOpts);
     nextSortOpt.shift();
-    return sortCommonProc(a, b, nextSortOpt);
+    return sortCmnPrc(a, b, nextSortOpt);
   }
 
   if (bVal === '' || bVal === null) {
@@ -310,27 +352,43 @@ export const sortCommonProc = (
 };
 
 /** 入力モードを返却する */
-export const getInputMode = (rowData: RowData): InputMode => {
-  const dateEmpty = !rowData[Const.MONEY_DIARY_COL_ID.USE_DATE];
-  const amountEmpty = !rowData[Const.MONEY_DIARY_COL_ID.AMOUNT];
-  const memoEmpty = !rowData[Const.MONEY_DIARY_COL_ID.MEMO];
-  const storageNoSelect =
-    rowData[Const.MONEY_DIARY_COL_ID.STORAGE] === Const.MARK.NO_SELECT.ID;
+export const getInputMode = (row: Row, tbl?: Tbl): InputMode => {
+  if (tbl === Const.TBL.MAIN) {
+    // 入力データ用
+    const useDateInput = !!row[Const.MAIN_COL.USE_DATE];
+    const amtInput =
+      !!row[Const.MAIN_COL.AMOUNT] || row[Const.MAIN_COL.AMOUNT] === '0';
+    const memoInput = !!row[Const.MAIN_COL.MEMO];
+    const stgSel = row[Const.MAIN_COL.STORAGE] !== Const.MARK.NO_SELECT.id;
 
-  if (dateEmpty && amountEmpty && memoEmpty && storageNoSelect) {
-    return Const.INPUT_MODE.NONE;
-  } else if (!dateEmpty && !amountEmpty && !memoEmpty && !storageNoSelect) {
+    if (useDateInput && amtInput && memoInput && stgSel) {
+      return Const.INPUT_MODE.ALL_REQ;
+    } else if (!useDateInput && !amtInput && !memoInput && !stgSel) {
+      return Const.INPUT_MODE.NONE;
+    }
+    return Const.INPUT_MODE.SOME_REQ;
+  }
+
+  // 入力データ以外
+  const labelInput = !!row[Const.CMN_COL.LABEL];
+  if (labelInput) {
     return Const.INPUT_MODE.ALL_REQ;
   }
-  return Const.INPUT_MODE.SOME_REQ;
+  return Const.INPUT_MODE.NONE;
 };
 
 /** 入力モードが一致しているかをチェックする */
-export const checkInputMode = (rowData: RowData, mode: InputMode): boolean =>
-  getInputMode(rowData) === mode;
+export const checkInputMode = (row: Row, mode: InputMode): boolean => {
+  return row[Const.CMN_COL.INPUT_MODE] === mode;
+};
+
+/** 空データがあるかチェックする */
+export const checkNoneData = (rows: Row[]): boolean => {
+  return rows.some((row) => checkInputMode(row, Const.INPUT_MODE.NONE));
+};
 
 /** 指定行にジャンプする */
-export const jumpRow = (gridApi?: GridApi<RowData>, rowIdx?: number): void => {
+export const jumpRow = (gridApi?: GridApi<Row>, rowIdx?: number): void => {
   if (!gridApi) {
     return;
   }
@@ -344,7 +402,7 @@ export const jumpRow = (gridApi?: GridApi<RowData>, rowIdx?: number): void => {
 };
 
 /** 指定列にジャンプする */
-export const jumpCol = (gridApi?: GridApi<RowData>, colIdx?: number): void => {
+export const jumpCol = (gridApi?: GridApi<Row>, colIdx?: number): void => {
   if (!gridApi) {
     return;
   }
@@ -380,151 +438,109 @@ export const jumpCol = (gridApi?: GridApi<RowData>, colIdx?: number): void => {
 };
 
 /** IDを採番した初期行データを返却する */
-export const getDefaultRowData = (
-  key: RowDataKey,
-  datas: RowData[],
-): RowData => {
-  const newData = getInitRowData(key);
-  newData[Const.ROW_DATA_COMMON_COL_ID.ID] = createRowId(datas);
-  return newData;
+export const getTblInitRow = (tbl: Tbl, rows: Row[]): Row => {
+  const newRow = getTblDefRow(tbl);
+  newRow[Const.CMN_COL.ID] = getNewRowId(rows);
+  return newRow;
 };
 
-/** 初期行データを返却する */
-export const getInitRowData = (key: RowDataKey): RowData =>
-  structuredClone(Const.DEFAULT_ROW_DATA[key]);
-
-/** 初期セルデータを返却する */
-export const getInitValue = (key: RowDataKey, colId: string): ValueType =>
-  structuredClone((Const.DEFAULT_ROW_DATA[key] as RowData)[colId]);
+/** IDを採番した初期行データを返却する　※rowIdsを更新する */
+export const getTblInitRow2 = (tbl: Tbl, rowIds: Set<ValType>): Row => {
+  const newRow = getTblDefRow(tbl);
+  newRow[Const.CMN_COL.ID] = getNewRowId2(rowIds);
+  return newRow;
+};
 
 /** 一意なIDを採番する */
-export const createRowId = (datas: RowData[]): string => {
-  const idSet = new Set<ValueType>();
-  for (const data of datas) {
-    idSet.add(data[Const.ROW_DATA_COMMON_COL_ID.ID]);
+export const getNewRowId = (rows: Row[] = []): string => {
+  const rowIds = new Set<ValType>();
+  for (const row of rows) {
+    rowIds.add(row[Const.CMN_COL.ID]);
   }
-
-  const dataCnt = datas.length;
-  for (let idx = 1; idx < dataCnt + 1; idx++) {
-    if (!idSet.has(idx.toString())) {
-      return idx.toString();
-    }
-  }
-
-  return (dataCnt + 1).toString();
+  return getNewRowId2(rowIds);
 };
 
-/** 保存用行データ作成 */
-export const createSaveRowDatas = (
-  key: RowDataKey,
-  rowDatas: RowData[],
-): RowData[] => {
-  const saveDatas: RowData[] = [];
-  const saveCols = Const.ROW_DATA_INFO[key].saveColIds;
+/** 一意なiDを採番する　※rowIdsを更新する */
+export const getNewRowId2 = (rowIds = new Set<ValType>()): string => {
+  const newRowId = (() => {
+    const rowCnt = rowIds.size;
+    for (let idx = 1; idx < rowCnt + 1; idx++) {
+      if (!rowIds.has(idx.toString())) {
+        return idx.toString();
+      }
+    }
+    return (rowCnt + 1).toString();
+  })();
+  rowIds.add(newRowId);
+  return newRowId;
+};
 
-  for (const data of rowDatas) {
-    const saveData: RowData = {};
+/** 保存用データを返却する */
+export const getSaveRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
+  const saveRows: Row[] = [];
+  const saveCols = getSaveCol(tbl);
+
+  for (const row of rows) {
+    const saveRow: Row = {};
+    const defRow = getSaveDefRow(tbl);
+
     for (const col of saveCols) {
-      const initVal = getInitValue(key, col);
       if (
-        data[col] === undefined ||
-        data[col] === initVal ||
-        (!initVal && !data[col])
+        row[col] === undefined ||
+        row[col] === defRow[col] ||
+        (!row[col] && !defRow[col])
       ) {
         continue;
       }
 
-      if (key === Const.ROW_DATA_KEY.MONEY_DIARY) {
+      if (tbl === Const.TBL.MAIN) {
         // 入力データ限定処理
         if (
-          col === Const.MONEY_DIARY_COL_ID.DATE &&
-          data[col] === data[Const.MONEY_DIARY_COL_ID.USE_DATE]
+          col === Const.MAIN_COL.DATE &&
+          row[col] === row[Const.MAIN_COL.USE_DATE]
         ) {
           // 日付が利用日と同じ場合、日付を保存しない
           continue;
         }
       }
 
-      saveData[col] = data[col];
+      saveRow[col] = row[col];
     }
-    saveDatas.push(structuredClone(saveData));
+    saveRows.push(saveRow);
   }
 
-  return saveDatas;
+  return saveRows;
 };
 
-/** 行データロード時編集 */
-export const editRowDataOnLoad = (
-  key: RowDataKey,
-  datas: RowData[],
-): RowData[] => {
-  const group = Const.ROW_DATA_INFO[key].group;
-  if (group === Const.ROW_DATA_GROUP.MAIN) {
-    // 入力データ
-    return editInputDatasOnLoad(datas);
-  } else if (group === Const.ROW_DATA_GROUP.SETTING) {
-    // 設定データ
-    return editSettingDatasOnLoad(key, datas);
-  } else if (group === Const.ROW_DATA_GROUP.OTHER) {
-    // その他データ
-    return editOtherDatasOnLoad(key, datas);
-  }
-
-  return [];
-};
-
-/** Money Diary データロード時編集 */
-export const editInputDatasOnLoad = (datas: RowData[] = []): RowData[] => {
-  const retDatas = structuredClone(datas).map((data) => ({
-    ...getInitRowData(Const.ROW_DATA_KEY.MONEY_DIARY),
-    ...data,
-  }));
-  for (const data of retDatas) {
-    // 各行の金額計算結果を算出
-    data[Const.MONEY_DIARY_COL_ID.AMOUNT_NUM] = calcResult(
-      data[Const.MONEY_DIARY_COL_ID.AMOUNT],
-    );
-    // 入力モードを算出
-    data[Const.MONEY_DIARY_COL_ID.INPUT_MODE] = getInputMode(data);
-    // 日付が空の場合利用日を設定
-    if (!data[Const.MONEY_DIARY_COL_ID.DATE]) {
-      data[Const.MONEY_DIARY_COL_ID.DATE] =
-        data[Const.MONEY_DIARY_COL_ID.USE_DATE];
+/** 読込用データを返却する */
+export const getLoadRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
+  const editRow = (() => {
+    if (tbl === Const.TBL.MAIN) {
+      return (row: Row): Row => {
+        row = {
+          ...row,
+          // 計算後数値データ
+          [Const.MAIN_COL.AMOUNT_NUM]: calcResult(row[Const.MAIN_COL.AMOUNT]),
+          // 日付データ
+          [Const.MAIN_COL.DATE]:
+            row[Const.MAIN_COL.DATE] || row[Const.MAIN_COL.USE_DATE],
+        };
+        return row;
+      };
     }
-    // // ID未採番の場合IDを採番
-    // if (!data[Const.MONEY_DIARY_COL_ID.ID]) {
-    //   data[Const.MONEY_DIARY_COL_ID.ID] = createRowId(datas);
-    // }
-  }
-  return retDatas;
-};
+    return (row: Row) => row;
+  })();
 
-/** Setting データロード時編集 */
-export const editSettingDatasOnLoad = (
-  key: RowDataKey,
-  datas: RowData[] = [],
-): RowData[] => {
-  const retDatas = structuredClone(datas).map((data) => ({
-    ...getInitRowData(key),
-    ...data,
-  }));
-  return retDatas;
-};
-
-/** Other データロード時編集 */
-export const editOtherDatasOnLoad = (
-  key: RowDataKey,
-  datas: RowData[] = [],
-): RowData[] => {
-  const retDatas = structuredClone(datas).map((data) => ({
-    ...getInitRowData(key),
-    ...data,
-  }));
-  return retDatas;
+  return structuredClone(rows).map((row) =>
+    editRow({
+      ...getSaveDefRow(tbl),
+      ...row,
+    }),
+  );
 };
 
 /** 半角カタカナ->全角カタカナ,全角英数->半角英数 変換 */
-export const convertToZKAndToHE = (value?: ValueType): ValueType =>
+export const convertToZKAndToHE = (value?: ValType): ValType =>
   moji(value?.toString() ?? '')
     .convert('HK', 'ZK')
     .convert('ZE', 'HE')
@@ -550,67 +566,157 @@ export const equalObject = (aVal: any, bVal: any): boolean => {
   return JSON.stringify(aVal) === JSON.stringify(bVal);
 };
 
-/** 画面タイトルの返却 */
-export const getScreenTitle = (screenId: ScreenId): string => {
-  return Const.SCREEN_INFO.find((info) => info.id === screenId)?.label ?? '';
-};
-export const getScreenTitle2 = (rowDataKey: RowDataKey): string => {
-  return getScreenTitle(Const.ROW_DATA_INFO[rowDataKey].screenId);
+/** 行データからIDの一覧(Set)を作成して返却する */
+export const getRowIdsSet = (rows: Row[]): Set<ValType> => {
+  return new Set([...rows.map((row) => row[Const.CMN_COL.ID])]);
 };
 
-const getCommonEditData = (
-  type: RowDataEditType,
-  key: RowDataKey,
-  datas: RowData[],
-  addIds?: (string | null)[],
-): RowDataEdit => {
+/** 行データからIDの一覧(Array)を作成して返却する */
+export const getRowIds = (rows: Row[]): ValType[] => {
+  return rows.map((row) => row[Const.CMN_COL.ID]);
+};
+
+/** 行編集更新情報を返却する */
+export const getRowEdtUpd = (
+  tbl: Tbl,
+  updRows: Row[],
+  updFlg = true,
+): RowEdt => {
   return {
-    type,
-    event: {
-      key,
-      datas,
-      addIds,
-    },
+    type: Const.TBL_EDIT_TYPE.UPD,
+    tbl,
+    rows: updRows.map((row) => ({
+      ...row,
+      [Const.CMN_COL.UPDATE]: updFlg,
+      [Const.CMN_COL.UPD_DATE_TIME]: getDate(
+        undefined,
+        Const.DATE_FMT.YY_MM_DD_HH_MM_SS,
+      ),
+      [Const.CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
+    })),
   };
 };
 
-export const getAddDefaultEditData = (
-  key: RowDataKey,
-  datas: RowData[],
-): RowDataEdit => {
-  return getCommonEditData(
-    Const.ROW_DATA_EDIT_TYPE.ADD,
-    key,
-    [getDefaultRowData(key, datas)],
-    [null],
+/** 行編集追加情報を返却する(共通処理) */
+const getRowEdtAddCmn = (
+  tbl: Tbl,
+  addRows: Row[],
+  addIds: ValType[] = [],
+): RowEdt => {
+  addRows = structuredClone(addRows);
+  addIds = [...addIds];
+  for (let idx = 0; idx < addRows.length - addIds.length; idx++) {
+    // addIdsのサイズが不足している場合追加する
+    addIds.push(null);
+  }
+
+  return {
+    type: Const.TBL_EDIT_TYPE.ADD,
+    tbl,
+    rows: addRows,
+    addIds,
+  };
+};
+
+/** 行編集追加情報を返却する */
+export const getRowEdtAdd = (
+  tbl: Tbl,
+  addRows: Row[],
+  addIds: ValType[] = [],
+  rowIds = new Set<ValType>(),
+): RowEdt => {
+  return getRowEdtAddCmn(
+    tbl,
+    [
+      ...addRows.map((row) => ({
+        ...row,
+        [Const.CMN_COL.ID]: getNewRowId2(rowIds),
+        [Const.CMN_COL.UPDATE]: true,
+        [Const.CMN_COL.UPD_DATE_TIME]: getDate(
+          undefined,
+          Const.DATE_FMT.YY_MM_DD_HH_MM_SS,
+        ),
+        [Const.CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
+      })),
+    ],
+    addIds,
   );
 };
 
-export const getUpdEditData = (
-  key: RowDataKey,
-  datas: RowData[],
-): RowDataEdit => {
-  return getCommonEditData(
-    Const.ROW_DATA_EDIT_TYPE.UPD,
-    key,
-    datas.map((data) => ({
-      ...data,
-      [Const.ROW_DATA_COMMON_COL_ID.UPDATE]: true,
-    })),
+// /** 行編集追加情報(空データ)を返却する */
+// export const getRowEdtAddNew2 = (
+//   tbl: Tbl,
+//   rowIds = new Set<ValType>(),
+// ): RowEdt => {
+//   return getRowEdtAddCmn(
+//     tbl,
+//     [{ ...getTblInitRow2(tbl, rowIds) }],
+//     [Const.TBL_ADD_POS.MAX],
+//   );
+// };
+
+/** 行編集追加情報(空データ)を返却する */
+export const getRowEdtAddNew = (tbl: Tbl, rows: Row[]): RowEdt => {
+  return getRowEdtAddCmn(
+    tbl,
+    [{ ...getTblInitRow(tbl, rows) }],
+    [Const.TBL_ADD_POS.MAX],
   );
 };
 
-export const getDelEditData = (
-  key: RowDataKey,
-  datas: RowData[],
-): RowDataEdit => {
-  return getCommonEditData(Const.ROW_DATA_EDIT_TYPE.DEL, key, datas);
+/** 行編集追加情報(未選択データ)を返却する */
+export const getRowEdtAddNoSel = (tbl: Tbl): RowEdt => {
+  return getRowEdtAddCmn(
+    tbl,
+    [
+      {
+        ...getTblDefRow(tbl),
+        [Const.CMN_COL.ID]: Const.MARK.NO_SELECT.id,
+        [Const.CMN_COL.LABEL]: Const.MARK.NO_SELECT.label,
+        [Const.CMN_COL.INPUT_MODE]: Const.INPUT_MODE.ALL_REQ,
+      },
+    ],
+    [Const.TBL_ADD_POS.MIN],
+  );
 };
 
-export const getDragEditData = (
-  key: RowDataKey,
-  datas: RowData[],
-  addIds: (string | null)[],
-): RowDataEdit => {
-  return getCommonEditData(Const.ROW_DATA_EDIT_TYPE.DRAG, key, datas, addIds);
+/** 行編集削除情報を返却する */
+export const getRowEdtDel = (
+  tbl: Tbl,
+  delIds: ValType[],
+  rowIds = new Set<ValType>(),
+): RowEdt => {
+  delIds = [...delIds];
+  for (const delId of delIds) {
+    rowIds.delete(delId);
+  }
+
+  return {
+    type: Const.TBL_EDIT_TYPE.DEL,
+    tbl,
+    delIds,
+  };
+};
+
+/** 行編集移動情報を返却する */
+export const getRowEdtDrg = (
+  tbl: Tbl,
+  delIds: ValType[],
+  addIds: ValType[],
+): RowEdt => {
+  delIds = [...delIds].filter((id) => !!id);
+  addIds = [...addIds].filter((id) => !!id);
+  for (const idx of delIds.keys()) {
+    if (idx >= addIds.length) {
+      // addIdsのサイズが不足している場合追加する
+      addIds.push(null);
+    }
+  }
+
+  return {
+    type: Const.TBL_EDIT_TYPE.DRG,
+    tbl,
+    delIds,
+    addIds,
+  };
 };

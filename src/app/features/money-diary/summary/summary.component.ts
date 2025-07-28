@@ -5,7 +5,7 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { SummaryUsecase } from 'src/app/features/money-diary/summary/summary.usecase';
 import {
@@ -14,28 +14,28 @@ import {
 } from 'src/app/shared/grid/grid.component';
 
 @Component({
-    selector: 'app-summary',
-    imports: [GridComponent],
-    providers: [SummaryUsecase],
-    templateUrl: './summary.component.html',
-    styleUrl: './summary.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-summary',
+  imports: [GridComponent],
+  providers: [SummaryUsecase],
+  templateUrl: './summary.component.html',
+  styleUrl: './summary.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SummaryComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(SummaryUsecase);
 
   /** Other Row Datas */
-  readonly inputDatas = input.required<RowData[]>();
-  readonly itemDatas = input.required<RowData[]>();
+  readonly inputRows = input.required<Row[]>();
+  readonly itmRows = input.required<Row[]>();
 
   /** 列定義 */
   protected override readonly colDefs = computed(() =>
-    this.usecase.getColDefs(this.inputDatas(), this.itemDatas()),
+    this.usecase.getColDefs(this.inputRows(), this.itmRows()),
   );
   /** 行データ */
-  protected override readonly rowDatas = computed(() =>
-    this.usecase.getRowDatas(this.inputDatas(), this.itemDatas()),
+  protected override readonly rows = computed(() =>
+    this.usecase.getRows(this.inputRows(), this.itmRows()),
   );
   /** グリッド下ボタンオプション */
   protected readonly belowContentOption = {

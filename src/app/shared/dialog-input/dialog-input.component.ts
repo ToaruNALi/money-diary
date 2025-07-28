@@ -15,7 +15,7 @@ import {
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { map, Observable, of, startWith } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
-import { FormCtrl, InputType, ValueType } from 'src/app/shared/constants/types';
+import { FormCtrl, InputType, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { DialogCommonModule } from 'src/app/shared/dialog-common.module';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
@@ -50,9 +50,9 @@ export type DialogInputData = {
   /** ラベル @default '' */
   label?: string;
   /** 入力値(リセット時データ) ※必須 */
-  value: ValueType;
+  value: ValType;
   /** 入力欄初期値(クリア時データ) @default '' */
-  initValue?: ValueType;
+  initValue?: ValType;
   /** プレースホルダー @default '' */
   placeholder?: string;
   /** Setter @default null */
@@ -65,7 +65,7 @@ export type DialogInputData = {
     | null;
   /** Getter @default null */
   getter?:
-    | ((form: FormRecord<FormCtrl>, input: Required<DialogInput>) => ValueType)
+    | ((form: FormRecord<FormCtrl>, input: Required<DialogInput>) => ValType)
     | null;
   /** 入力タイプ @default Const.INPUT_TYPE.TEXT */
   type?: InputType;
@@ -112,7 +112,7 @@ export type DialogInputOption = {
 export type DialogOption = {
   id: string | number;
   value?: string;
-  label: string;
+  lb: string;
 };
 
 export type SetType = 'select' | 'clear';
@@ -154,7 +154,7 @@ export type DialogOutput = {
 };
 export type DialogOutputData = {
   id: string;
-  value: ValueType;
+  value: ValType;
 };
 
 @Component({
@@ -489,7 +489,7 @@ export class DialogInputComponent {
    * Clearボタン押下時
    */
   protected readonly onBtnAllClearClick = (): void => {
-    const value: Record<string, ValueType | Record<string, ValueType>> = {};
+    const value: Record<string, ValType | Record<string, ValType>> = {};
     const setValue = (data: DialogInputData) => {
       if (this.form.get(data.id)?.disabled || data.readonly) {
         // 非活性 または 読取専用の場合、初期値を設定しない
@@ -498,7 +498,7 @@ export class DialogInputComponent {
 
       value[data.id] = this.usecase.cvtValueToFormValue(
         data.initValue === undefined
-          ? Const.INPUT_FORM[data.type!].INIT_VAL
+          ? Const.INPUT_FORM[data.type!].initVal
           : data.initValue,
         data.type,
         data.options,
@@ -521,7 +521,7 @@ export class DialogInputComponent {
    * Resetボタン押下時
    */
   protected readonly onBtnResetClick = (): void => {
-    const value: Record<string, ValueType | Record<string, ValueType>> = {};
+    const value: Record<string, ValType | Record<string, ValType>> = {};
     const setValue = (data: DialogInputData) => {
       if (this.form.get(data.id)?.disabled || data.readonly) {
         // 非活性 または 読取専用の場合、初期値を設定しない

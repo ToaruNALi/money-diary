@@ -6,8 +6,8 @@
     }"
     [rowDataKey]="rowDataKey"
     [columnDefs]="columnDefs()"
-    [rowDatas]="rowDatas()"
-    (rowDatasEdit)="rowDatasEdit.emit($event)"
+    [rows]="rows()"
+    (rowEdt)="rowEdt.emit($event)"
     (cellValueChange)="onChangeCellValue($event)"
   />
 </div>

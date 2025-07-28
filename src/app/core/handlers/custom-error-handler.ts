@@ -9,7 +9,7 @@ export class CustomErrorHandler {
   readonly handle = (err: NavigationError): Promise<boolean> => {
     console.log(`NavigationError: ${err}`);
 
-    return this.router.navigate([`/${Const.ROUTE_PATH.ERROR}`], {
+    return this.router.navigate([`/${Const.ROUTE_PATH.ERR}`], {
       skipLocationChange: true,
     });
   };

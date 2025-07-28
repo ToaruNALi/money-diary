@@ -3,7 +3,7 @@
   <mat-radio-group class="radio-group" [formControl]="control()">
     @for (opt of reqData().options; track opt) {
       <mat-radio-button [style]="reqData().style" [value]="opt.id">{{
-        opt.label
+        opt.lb
       }}</mat-radio-button>
     }
   </mat-radio-group>

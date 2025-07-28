@@ -4,22 +4,13 @@ import {
   CellClickedEvent,
   ColDef,
   ColGroupDef,
-  RowClassParams,
-  RowStyle,
   ValueFormatterParams,
   ValueSetterParams,
 } from 'ag-grid-community';
 import { lastValueFrom } from 'rxjs';
-import { RowData } from 'src/app/domain/row-data';
+import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
-import {
-  RowDataAdd,
-  RowDataDel,
-  RowDataEdit,
-  RowDataKey,
-  RowDataUpd,
-  ValueType,
-} from 'src/app/shared/constants/types';
+import { RowEdt, Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogInput,
@@ -40,27 +31,25 @@ export abstract class MoneyDiaryBaseUsecase {
 
   /**
    * 列定義取得
-   * @param ...rowDatas
+   * @param ...rows
    * @returns 列定義
    */
-  abstract readonly getColDefs: (
-    ...rowDatas: RowData[][]
-  ) => ColDef<RowData, ValueType>[];
+  abstract readonly getColDefs: (...rows: Row[][]) => ColDef<Row, ValType>[];
 
   /**
    * 更新値 Setter
    * @param params
    * @returns boolean
    */
-  protected readonly newValueSetter = (
-    params: ValueSetterParams<RowData, ValueType>,
+  protected readonly newValSetter = (
+    params: ValueSetterParams<Row, ValType>,
   ): boolean => {
     if (params.newValue === undefined) {
       return false;
     }
     const colId = params.column.getId();
     params.data[colId] = params.newValue;
-    params.data[Const.ROW_DATA_COMMON_COL_ID.UPDATE] = true;
+    params.data[Const.CMN_COL.UPDATE] = true;
     return true;
   };
 
@@ -70,48 +59,38 @@ export abstract class MoneyDiaryBaseUsecase {
    * @returns 日付
    */
   protected readonly dateFormatter = (
-    params: ValueFormatterParams<RowData, ValueType>,
+    params: ValueFormatterParams<Row, ValType>,
   ): string => {
     const val = params.value;
     if (!val || typeof val !== 'string') {
       return '';
     }
 
-    return Util.getDate(new Date(val), Const.DATE_FORMAT.YY_MM_DD);
+    return Util.getDate(new Date(val), Const.DATE_FMT.YY_MM_DD);
   };
 
   /**
-   * コンボボックス取得
-   * @param rowDatas
-   * @returns コンボボックス
+   * セレクトボックス取得
+   * @param rows
+   * @returns セレクトボックス
    */
-  protected readonly getComboboxValue = (rowDatas: RowData[]): ValueType[] => {
-    return structuredClone(rowDatas)
-      .filter(
-        (data) =>
-          !!data[Const.ROW_DATA_COMMON_COL_ID.VALID] &&
-          !!data[Const.ROW_DATA_COMMON_COL_ID.LABEL],
-      )
-      .map((data) => data[Const.ROW_DATA_COMMON_COL_ID.ID]);
+  protected readonly getList = (rows: Row[]): ValType[] => {
+    return structuredClone(rows)
+      .filter((row) => !!row[Const.CMN_COL.VALID] && !!row[Const.CMN_COL.LABEL])
+      .map((row) => row[Const.CMN_COL.ID]);
   };
 
   /**
-   * コンボボックス Formmater/Filter Getter
-   * @param rowDatas
+   * セレクトボックス Formmater/Filter Getter
+   * @param rows
    * @param id
-   * @returns コンボボックス Label
+   * @returns セレクトボックス Label
    */
-  protected readonly comboboxFormatter = (
-    rowDatas: RowData[],
-    id?: ValueType,
-  ): string => {
-    const data = rowDatas.find(
-      (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID] === id,
-    );
-    const label =
-      data?.[Const.ROW_DATA_COMMON_COL_ID.LABEL] ?? Const.MARK.NO_SELECT.LABEL;
+  protected readonly listFormatter = (rows: Row[], id?: ValType): string => {
+    const row = rows.find((row) => row[Const.CMN_COL.ID] === id);
+    const label = row?.[Const.CMN_COL.LABEL] ?? Const.MARK.NO_SELECT.label;
     if (typeof label !== 'string') {
-      return Const.MARK.NO_SELECT.LABEL;
+      return Const.MARK.NO_SELECT.label;
     }
 
     return label;
@@ -119,64 +98,22 @@ export abstract class MoneyDiaryBaseUsecase {
 
   /**
    * 行データ取得
-   * @param ...rowDatas
+   * @param ...rows
    * @returns 行データ
    */
-  abstract readonly getRowDatas: (...rowDatas: RowData[][]) => RowData[];
+  abstract readonly getRows: (...rows: Row[][]) => Row[];
 
   /**
    * 選択行の金額を計算して返却する
-   * @param rowDatas
+   * @param rows
    * @param colDefs
    * @returns 行データ
    */
-  readonly calcSelectStatus = (
-    rowDatas: RowData[],
-    colDefs: (ColDef<RowData, any> | ColGroupDef<RowData>)[],
+  readonly calcSelStatus = (
+    rows: Row[],
+    colDefs: (ColDef<Row, any> | ColGroupDef<Row>)[],
   ): MoneyStatus[] => {
     return [];
-  };
-
-  /**
-   * 行スタイルを返却する
-   * @param params
-   * @param option
-   * @returns 行スタイル
-   */
-  readonly getRowStyle = (
-    params: RowClassParams<RowData>,
-    option?: any,
-  ): RowStyle => {
-    const rowData = params.data;
-    if (!rowData) {
-      return {};
-    }
-
-    return this.getRowStyleCustom(rowData, {}, option);
-  };
-
-  /**
-   * 行スタイル返却(Custom)
-   * @param rowData
-   * @param style
-   * @param option
-   * @default style = {}
-   * @returns 行スタイル
-   */
-  protected readonly getRowStyleCustom = (
-    rowData: RowData,
-    style: RowStyle = {},
-    option?: any,
-  ): RowStyle => {
-    if (!rowData[Const.ROW_DATA_COMMON_COL_ID.LABEL]) {
-      // 空データの場合
-      style['backgroundColor'] = Const.GRID_ROW_COLOR.NONE;
-    } else if (!!rowData[Const.ROW_DATA_COMMON_COL_ID.UPDATE]) {
-      // // 更新済データの場合
-      // style['backgroundColor'] = Const.GRID_ROW_COLOR.UPDATE;
-    }
-
-    return style;
   };
 
   /**
@@ -186,22 +123,22 @@ export abstract class MoneyDiaryBaseUsecase {
    * @returns チェック結果
    */
   abstract readonly checkInputData: (
-    event: CellClickedEvent<RowData, ValueType>,
+    event: CellClickedEvent<Row, ValType>,
     option?: any,
   ) => boolean;
 
   /**
    * ダイアログ入力データ作成
-   * @param selectRowDatas
-   * @param rowDataKey
-   * @param rowDatasList
+   * @param selectRows
+   * @param tbl
+   * @param rowsList
    * @param option
    * @returns 入力データ
    */
   abstract readonly createInputData: (
-    selectRowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    rowDatasList: RowData[][],
+    selectRows: Row[],
+    tbl: Tbl,
+    rowsList: Row[][],
     option?: any,
   ) => DialogInput;
 
@@ -231,284 +168,120 @@ export abstract class MoneyDiaryBaseUsecase {
   /**
    * 行編集Emitterデータ作成
    * @param output
-   * @param selectRowDatas
-   * @param rowDatas
-   * @param rowDataKey
+   * @param updRows
+   * @param rows
+   * @param tbl
    * @param option
    * @returns 編集用データ
    */
   readonly createResultData = (
     output: DialogOutput,
-    selectRowDatas: RowData[],
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
+    updRows: Row[],
+    rows: Row[],
+    tbl: Tbl,
     option?: any,
-  ): RowDataEdit[] => {
+  ): RowEdt[] => {
     // 入力項目反映
-    const selectNewDatas = this.reflectRowDatas(
-      selectRowDatas,
-      output.datas,
-      option,
-    );
+    updRows = this.reflectRows(updRows, output.datas, option);
 
-    let editInfo: RowDataEdit[] = [];
-    let newDatas = structuredClone(rowDatas);
-    if (output.status === DIALOG_STATUS.UPD) {
+    // 行ID初期設定
+    const rowIds = Util.getRowIdsSet(rows);
+    const rowEdt: RowEdt[] = [];
+
+    switch (output.status) {
       // 更新
-      [newDatas, editInfo] = this.procUpdStatus(
-        selectNewDatas,
-        newDatas,
-        rowDataKey,
-        editInfo,
-        option,
-      );
-    } else if (output.status === DIALOG_STATUS.ADD) {
+      case DIALOG_STATUS.UPD:
+        rowEdt.push(Util.getRowEdtUpd(tbl, updRows));
+        break;
       // 追加
-      [newDatas, editInfo] = this.procAddStatus(
-        selectNewDatas,
-        newDatas,
-        rowDataKey,
-        editInfo,
-        option,
-      );
-    } else if (output.status === DIALOG_STATUS.DEL) {
+      case DIALOG_STATUS.ADD:
+        rowEdt.push(Util.getRowEdtAdd(tbl, updRows, [], rowIds));
+        break;
       // 削除
-      [newDatas, editInfo] = this.procDelStatus(
-        selectNewDatas,
-        newDatas,
-        rowDataKey,
-        editInfo,
-        option,
-      );
-    } else {
+      case DIALOG_STATUS.DEL:
+        rowEdt.push(
+          Util.getRowEdtDel(
+            tbl,
+            updRows.map((row) => row[Const.CMN_COL.ID]),
+            rowIds,
+          ),
+        );
+        break;
       // その他
-      [newDatas, editInfo] = this.procOtherStatus(
-        output.status,
-        selectNewDatas,
-        newDatas,
-        rowDataKey,
-        editInfo,
-        option,
-      );
+      default:
+        rowEdt.push(
+          ...this.getRowEdts(output.status, tbl, updRows, rows, rowIds),
+        );
+        break;
     }
 
-    // 空データ追加チェック
-    if (this.checkAddEmptyData(newDatas)) {
-      // 空データ追加
-      [, editInfo] = this.procAddEmptyData(
-        newDatas,
-        rowDataKey,
-        editInfo,
-        option,
-        output.status,
-      );
+    // 未選択データ追加チェック
+    if (!this.checkNoSelData(rows)) {
+      // 未選択データ追加
+      rowEdt.push(Util.getRowEdtAddNoSel(tbl));
     }
-    return editInfo;
+
+    return rowEdt;
   };
 
   /**
    * 入力項目反映(行編集Emitterデータ作成)
-   * @param selectRowDatas
-   * @param outputDatas
+   * @param selRows
+   * @param outDatas
    * @param option
    * @returns 行データ項目追加後データ
-   * @default reflectRowDatasDefault
+   * @default reflectRowsDef
    */
-  protected readonly reflectRowDatas = (
-    selectRowDatas: RowData[],
-    outputDatas: DialogOutputData[],
+  protected readonly reflectRows = (
+    selRows: Row[],
+    outDatas: DialogOutputData[],
     option?: any,
-  ): RowData[] => this.reflectRowDatasDefault(selectRowDatas, outputDatas);
+  ): Row[] => this.reflectRowsDef(selRows, outDatas);
 
   /**
    * 入力項目反映デフォルト処理
-   * @param selectRowDatas
-   * @param outputDatas
+   * @param selRows
+   * @param outDatas
    * @returns 行データ項目追加後データ
    */
-  protected readonly reflectRowDatasDefault = (
-    selectRowDatas: RowData[],
-    outputDatas: DialogOutputData[],
-  ): RowData[] => {
-    const newDatas = structuredClone(selectRowDatas);
-    for (const newData of newDatas) {
-      for (const outputData of outputDatas) {
-        newData[outputData.id] = outputData.value;
+  protected readonly reflectRowsDef = (
+    selRows: Row[],
+    outDatas: DialogOutputData[],
+  ): Row[] => {
+    const newRows = structuredClone(selRows);
+    for (const row of newRows) {
+      for (const outData of outDatas) {
+        row[outData.id] = outData.value;
       }
     }
-    return newDatas;
-  };
-
-  /**
-   * 空データ追加チェック(行編集Emitterデータ作成)
-   * @param newDatas
-   * @param option
-   * @returns チェック結果
-   * @default false
-   */
-  protected readonly checkAddEmptyData = (
-    newDatas: RowData[],
-    option?: any,
-  ): boolean => false;
-
-  /**
-   * 更新ステータス返却時の処理(行編集Emitterデータ作成)
-   * @param selectNewDatas
-   * @param rowDatas
-   * @param rowDataKey
-   * @param editInfo
-   * @param option
-   * @returns [編集後行データ、行編集情報]
-   */
-  protected readonly procUpdStatus = (
-    selectNewDatas: RowData[],
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    editInfo: RowDataEdit[],
-    option?: any,
-  ): [RowData[], RowDataEdit[]] => {
-    const newEditInfo = [
-      ...editInfo,
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.UPD,
-        event: {
-          key: rowDataKey,
-          datas: selectNewDatas,
-        } as RowDataUpd,
-      },
-    ];
-    const newDatas = structuredClone(rowDatas);
-    for (let idx = 0; idx < newDatas.length; idx++) {
-      // 選択中のデータの場合、更新後データに書き換える
-      const newData = selectNewDatas.find(
-        (data) =>
-          data[Const.ROW_DATA_COMMON_COL_ID.ID] ===
-          newDatas[idx][Const.ROW_DATA_COMMON_COL_ID.ID],
-      );
-      if (!!newData) {
-        newDatas[idx] = structuredClone(newData);
-      }
-    }
-
-    return [newDatas, newEditInfo];
-  };
-
-  /**
-   * 追加ステータス返却時の処理(行編集Emitterデータ作成)
-   * @param selectNewDatas
-   * @param rowDatas
-   * @param rowDataKey
-   * @param editInfo
-   * @param option
-   * @returns [編集後行データ、行編集情報]
-   */
-  protected readonly procAddStatus = (
-    selectNewDatas: RowData[],
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    editInfo: RowDataEdit[],
-    option?: any,
-  ): [RowData[], RowDataEdit[]] => {
-    const addDatas = structuredClone(selectNewDatas);
-    let newDatas = structuredClone(rowDatas);
-    for (const addData of addDatas) {
-      addData[Const.ROW_DATA_COMMON_COL_ID.ID] = Util.createRowId(rowDatas);
-      newDatas = [...newDatas, structuredClone(addData)];
-    }
-    const newEditInfo = [
-      ...editInfo,
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.ADD,
-        event: {
-          key: rowDataKey,
-          datas: addDatas,
-          addIds: [null],
-        } as RowDataAdd,
-      },
-    ];
-    return [newDatas, newEditInfo];
-  };
-
-  /**
-   * 削除ステータス返却時の処理(行編集Emitterデータ作成)
-   * @param selectNewDatas
-   * @param rowDatas
-   * @param rowDataKey
-   * @param editInfo
-   * @param option
-   * @returns [編集後行データ、行編集情報]
-   */
-  protected readonly procDelStatus = (
-    selectNewDatas: RowData[],
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    editInfo: RowDataEdit[],
-    option?: any,
-  ): [RowData[], RowDataEdit[]] => {
-    const newEditInfo: RowDataEdit[] = [
-      ...editInfo,
-      {
-        type: Const.ROW_DATA_EDIT_TYPE.DEL,
-        event: {
-          key: rowDataKey,
-          datas: selectNewDatas,
-        } as RowDataDel,
-      },
-    ];
-    const delIds = selectNewDatas.map(
-      (data) => data[Const.ROW_DATA_COMMON_COL_ID.ID],
-    );
-    const newDatas = structuredClone(rowDatas).filter(
-      (data) => !delIds.includes(data[Const.ROW_DATA_COMMON_COL_ID.ID]),
-    );
-    return [newDatas, newEditInfo];
+    return newRows;
   };
 
   /**
    * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
    * @param status
-   * @param selectNewDatas
-   * @param rowDatas
-   * @param rowDataKey
-   * @param editInfo
-   * @param option
-   * @returns [編集後行データ、行編集情報]
-   * @default [newDatas,editInfo]
+   * @param tbl
+   * @param updRows
+   * @param rows
+   * @param rowIds
+   * @returns
    */
-  protected readonly procOtherStatus = (
+  protected readonly getRowEdts = (
     status: DialogStatus,
-    selectNewDatas: RowData[],
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    editInfo: RowDataEdit[],
-    option?: any,
-  ): [RowData[], RowDataEdit[]] => {
-    return [rowDatas, editInfo];
+    tbl: Tbl,
+    updRows: Row[],
+    rows: Row[] = [],
+    rowIds = new Set<ValType>(),
+  ): RowEdt[] => {
+    return [];
   };
 
   /**
-   * 空行追加(行編集Emitterデータ作成)
-   * @param rowDatas
-   * @param rowDataKey
-   * @param editInfo
-   * @param option
-   * @param status
-   * @returns [編集後行データ、行編集情報]
-   * @default [newDatas,editInfo]
+   * 未選択用データがあるかどうか(行編集Emitterデータ作成)
+   * @param rows
+   * @returns チェック結果
    */
-  protected readonly procAddEmptyData = (
-    rowDatas: RowData[],
-    rowDataKey: RowDataKey,
-    editInfo: RowDataEdit[],
-    option?: any,
-    status?: DialogStatus,
-  ): [RowData[], RowDataEdit[]] => {
-    return this.procAddStatus(
-      [Util.getInitRowData(rowDataKey)],
-      rowDatas,
-      rowDataKey,
-      editInfo,
-      option,
-    );
+  protected readonly checkNoSelData = (rows: Row[]): boolean => {
+    return true;
   };
 }

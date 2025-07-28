@@ -1,17 +1,16 @@
 <!-- Menu -->
 <app-menu
   class="menu-icon"
-  [screenId]="screenInfo().si"
-  (screenIdChange)="screenIdChange.emit($event)"
+  [scrId]="scrInf().si"
+  (scrIdChange)="scrIdChange.emit($event)"
 />
 <!-- Info -->
 <!-- <app-info></app-info> -->
-<!-- TODO: ヘッダに移動 -->
 <!-- History Reset -->
 <!-- <app-history-reset
   class="icon"
-  [history]="history()"
-  (historyReset)="historyReset.emit()"
+  [hist]="hist()"
+  (histReset)="histReset.emit()"
 ></app-history-reset> -->
 <!-- Favorite -->
 <!-- <app-favorite
@@ -21,16 +20,16 @@
 /> -->
 <!-- TODO: グラフ表示機能作成予定 -->
 <!-- Chart -->
-<app-chart [datas]="inputDatas()"></app-chart>
+<app-chart [rows]="mainRows()"></app-chart>
 <!-- Screen Transition -->
 <app-screen-transition
   class="icon"
-  [(mapDisp)]="mapDisp"
-  [screenId]="screenInfo().si"
-  [screenDatas]="screenInfo().sd"
-  (screenIdChange)="screenIdChange.emit($event)"
+  [(mapDsp)]="mapDsp"
+  [scrId]="scrInf().si"
+  [scrData]="scrInf().sd"
+  (scrIdChange)="scrIdChange.emit($event)"
 />
 <!-- Undo -->
-<app-undo class="icon" [history]="history()" (undo)="undoRedo.emit(false)" />
+<app-undo class="icon" [hist]="hist()" (undo)="undoRedo.emit(false)" />
 <!-- Redo -->
-<app-redo class="icon" [history]="history()" (redo)="undoRedo.emit(true)" />
+<app-redo class="icon" [hist]="hist()" (redo)="undoRedo.emit(true)" />

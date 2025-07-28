@@ -1,7 +1,7 @@
-import { RowDataKey, ValueType } from 'src/app/shared/constants/types';
+import { Tbl, ValType } from 'src/app/shared/constants/types';
 
 /** 行データ */
-export type RowData = Record<string, ValueType>;
+export type Row = Record<string, ValType>;
 
 /** 行データMap */
-export type RowDataMap = Record<RowDataKey, RowData[]>;
+export type TblMap = Record<Tbl, Row[]>;
