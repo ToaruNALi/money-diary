@@ -356,12 +356,12 @@ export const getInputMode = (row: Row, tbl?: Tbl): InputMode => {
   if (tbl === Const.TBL.MAIN) {
     // 入力データ用
     const useDateInput = !!row[Const.MAIN_COL.USE_DATE];
-    const amtInput =
-      !!row[Const.MAIN_COL.AMOUNT] || row[Const.MAIN_COL.AMOUNT] === '0';
+    const amtNumInput = calcResult(row[Const.MAIN_COL.AMOUNT]) !== Number.NaN;
+    const amtInput = row[Const.MAIN_COL.AMOUNT] !== '';
     const memoInput = !!row[Const.MAIN_COL.MEMO];
     const stgSel = row[Const.MAIN_COL.STORAGE] !== Const.MARK.NO_SELECT.id;
 
-    if (useDateInput && amtInput && memoInput && stgSel) {
+    if (useDateInput && amtNumInput && memoInput && stgSel) {
       return Const.INPUT_MODE.ALL_REQ;
     } else if (!useDateInput && !amtInput && !memoInput && !stgSel) {
       return Const.INPUT_MODE.NONE;
@@ -514,6 +514,12 @@ export const getSaveRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
 
 /** 読込用データを返却する */
 export const getLoadRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
+  const editInputMode = (row: Row) => {
+    return {
+      ...row,
+      [Const.CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
+    };
+  };
   const editRow = (() => {
     if (tbl === Const.TBL.MAIN) {
       return (row: Row): Row => {
@@ -525,10 +531,10 @@ export const getLoadRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
           [Const.MAIN_COL.DATE]:
             row[Const.MAIN_COL.DATE] || row[Const.MAIN_COL.USE_DATE],
         };
-        return row;
+        return editInputMode(row);
       };
     }
-    return (row: Row) => row;
+    return (row: Row) => editInputMode(row);
   })();
 
   return structuredClone(rows).map((row) =>

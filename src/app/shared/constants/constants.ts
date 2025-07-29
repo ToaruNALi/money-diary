@@ -425,14 +425,19 @@ export const COL = {
 } as const satisfies Record<Tbl, Record<string, string>>;
 
 /** 共通保存カラムID */
-const CMN_SAVE_COL = [...Object.values(CMN_COL)] as const satisfies CmnCol[];
+const CMN_SAVE_COL = [
+  CMN_COL.ID,
+  CMN_COL.LABEL,
+  CMN_COL.UPDATE,
+  CMN_COL.UPD_DATE_TIME,
+  CMN_COL.VALID,
+] as const satisfies string[];
 
 /** 保存カラムID */
 export const SAVE_COL = {
   [TBL.MAIN]: [
     CMN_COL.ID,
     CMN_COL.UPDATE,
-    CMN_COL.INPUT_MODE,
     MAIN_COL.DATE,
     MAIN_COL.AMOUNT,
     MAIN_COL.MEMO,

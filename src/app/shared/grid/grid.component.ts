@@ -403,10 +403,8 @@ export class GridComponent {
       // セルクリック禁止列に該当する場合、Emit
       this.cellClick.emit(event);
     } else {
-      // セルクリック禁止列に該当しない場合 かつ 空行でない場合、セル選択状態を切り替える
-      if (!this.emptyRowJudgeFn()(event.data)) {
-        event.node.setSelected(!event.node.isSelected());
-      }
+      // 上記以外、セル選択状態を切り替える
+      event.node.setSelected(!event.node.isSelected());
       this.selectCellClick.emit(event);
     }
   };

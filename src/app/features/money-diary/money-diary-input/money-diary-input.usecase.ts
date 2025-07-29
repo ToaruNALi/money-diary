@@ -683,7 +683,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           id: Const.MAIN_COL.AMOUNT,
           label: 'Amount',
           value: selectRows[0][Const.MAIN_COL.AMOUNT],
-          required: true,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
           forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
@@ -696,7 +695,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           value: Util.cvtNumToPrice(
             Util.calcResult(selectRows[0][Const.MAIN_COL.AMOUNT]),
           ),
-          required: true,
           readonly: true,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           notReturn: true,
@@ -1448,7 +1446,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           id: Const.MAIN_COL.AMOUNT,
           label: 'Amount',
           value: matchInfRec[Const.MAIN_COL.AMOUNT].val,
-          required: true,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
           forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
@@ -1462,7 +1459,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           value: Util.cvtNumToPrice(
             Util.calcResult(matchInfRec[Const.MAIN_COL.AMOUNT].val),
           ),
-          required: true,
           readonly: true,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           notReturn: true,
