@@ -15,6 +15,7 @@ import * as Const from 'src/app/shared/constants/constants';
 import {
   FormCtrl,
   MainCol,
+  RowEdt,
   Tbl,
   ValType,
 } from 'src/app/shared/constants/types';
@@ -28,6 +29,7 @@ import {
   DialogOption,
   DialogOutput,
   DialogOutputData,
+  DialogStatus,
   SetType,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
@@ -1667,5 +1669,59 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         }
         return newDatasDef;
     }
+  };
+
+  /**
+   * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
+   * @param status
+   * @param tbl
+   * @param updRows
+   * @param rows
+   * @param rowIds
+   * @returns
+   */
+  protected override readonly getRowEdts = (
+    status: DialogStatus,
+    tbl: Tbl,
+    updRows: Row[],
+    rows: Row[] = [],
+    rowIds = new Set<ValType>(),
+  ): RowEdt[] => {
+    const rowEdt: RowEdt[] = [];
+    if (status === DIALOG_STATUS.MOVE) {
+      // moveデータを更新
+      rowEdt.push(Util.getRowEdtUpd(tbl, updRows));
+
+      // moveの相方を探す
+      const memo = updRows[0][Const.MAIN_COL.MEMO] as string;
+      const amtNum = Number(updRows[0][Const.MAIN_COL.AMOUNT_NUM]);
+      const findRow = rows.findLast((row) => {
+        const num = Number(row[Const.MAIN_COL.AMOUNT_NUM]);
+        return (
+          // メモが一致、かつ、金額の正負が逆になっている場合
+          row[Const.MAIN_COL.MEMO]?.toString().includes(memo) &&
+          ((amtNum > 0 && num < 0) || (amtNum < 0 && num > 0))
+        );
+      });
+
+      // 追加データ
+      const addRows = [
+        {
+          ...updRows[0],
+          [Const.MAIN_COL.AMOUNT]: (-amtNum).toString(),
+          [Const.MAIN_COL.AMOUNT_NUM]: -amtNum,
+          [Const.MAIN_COL.STORAGE]:
+            findRow?.[Const.MAIN_COL.STORAGE] ??
+            Util.getTblDefVal(tbl, Const.MAIN_COL.STORAGE),
+          [Const.MAIN_COL.CREDIT]:
+            findRow?.[Const.MAIN_COL.CREDIT] ??
+            Util.getTblDefVal(tbl, Const.MAIN_COL.CREDIT),
+        },
+      ];
+
+      // moveの相方データを追加
+      rowEdt.push(Util.getRowEdtAdd(tbl, addRows, [], rowIds));
+    }
+    return [...rowEdt];
   };
 }
