@@ -1,14 +1,6 @@
 <div class="content">
   <app-grid
-    [style]="{
-      width: '100vw',
-      height: 'calc(100vh - 200px)',
-    }"
-    [tbl]="tbl()"
-    [colDefs]="colDefs()"
-    [rows]="rows()"
-    [belowContentOpt]="belowContentOpt()"
-    [cellClickForbCols]="cellClickForbCols"
+    [gridInput]="gridInput()"
     (rowEdt)="rowEdt.emit($event)"
     (gridReady)="onReadyGrid($event)"
     (cellClick)="onClickCell($event)"

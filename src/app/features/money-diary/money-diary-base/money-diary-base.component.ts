@@ -5,15 +5,15 @@ import {
   output,
   Signal,
 } from '@angular/core';
-import { ColDef } from 'ag-grid-community';
+import { GridApi } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import {
   FilterInputModel,
   RowEdt,
   Scr,
   Tbl,
-  ValType,
 } from 'src/app/shared/constants/types';
+import { GridInput } from 'src/app/shared/grid/grid.component';
 
 @Component({
   template: '',
@@ -34,11 +34,11 @@ export abstract class MoneyDiaryBaseComponent {
   /** 行データ更新 */
   readonly rowEdt = output<RowEdt[]>();
 
-  /** 列定義 */
-  protected abstract readonly colDefs: Signal<ColDef<Row, ValType>[]>;
-  /** 行データ */
-  protected abstract readonly rows: Signal<Row[]>;
+  /** グリッド入力データ */
+  protected abstract readonly gridInput: Signal<GridInput>;
 
   /** 初期表示フラグ */
   protected firstDsp = false;
+  /** Grid Api */
+  protected gridApi!: GridApi<Row>;
 }

@@ -1,13 +1,4 @@
 <!-- 収支入力グリッド -->
 <div class="content">
-  <app-grid
-    [style]="{
-      width: '100vw',
-      height: 'calc(100vh - 200px)',
-    }"
-    [tbl]="tbl()"
-    [colDefs]="colDefs()"
-    [rows]="rows()"
-    [belowContentOpt]="belowContentOption"
-  />
+  <app-grid [gridInput]="gridInput()" />
 </div>

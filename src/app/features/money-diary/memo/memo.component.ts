@@ -11,7 +11,12 @@ import { MemoUsecase } from 'src/app/features/money-diary/memo/memo.usecase';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValType } from 'src/app/shared/constants/types';
-import { GridComponent } from 'src/app/shared/grid/grid.component';
+import {
+  GridBtmOptKey,
+  GridComponent,
+  GridInput,
+  GridOptInput,
+} from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
@@ -25,20 +30,42 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 export class MemoComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(MemoUsecase);
-  /** 列定義 */
-  protected override readonly colDefs = signal<ColDef<Row, ValType>[]>([]);
-  /** 行データ */
-  protected override readonly rows = computed(() => this.mainRows());
-  /** グリッド下ボタンオプション */
-  protected readonly belowContentOpt = computed(() => ({
-    addRow: () => this.mainRows().length === 0,
-    jumpFirstRow: true,
-    jumpLastRow: true,
+
+  /** Grid入力データ */
+  protected readonly gridInput = computed<GridInput>(() => ({
+    style: this.style,
+    tbl: this.tbl,
+    colDefs: this.colDefs,
+    rows: this.rows,
+    btmOpt: this.gridBtmOpt,
+    cellClickForbCols: this.cellClickForbCols,
   }));
+  /** スタイル */
+  private readonly style = signal<Record<string, string>>({
+    width: '100vw',
+    height: 'calc(100vh - 200px)',
+  });
+  /** 列定義 */
+  private readonly colDefs = signal<ColDef<Row, ValType>[]>([]);
+  /** 行データ */
+  private readonly rows = computed(() => this.mainRows());
+  /** グリッド下ボタンオプション */
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
+    {
+      key: 'addRow',
+      valid: true,
+    },
+    {
+      key: 'jmpFirstRow',
+      valid: true,
+    },
+    {
+      key: 'jmpLastRow',
+      valid: true,
+    },
+  ]);
   /** セルクリック禁止列 */
-  protected readonly cellClickForbCols = [
-    Const.MEM_COL.LABEL,
-  ] as const satisfies string[];
+  private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
 
   /**
    * グリッド初期化処理

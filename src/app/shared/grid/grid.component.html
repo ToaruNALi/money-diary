@@ -1,6 +1,6 @@
 <!-- グリッド上共通機能 -->
-@if (!!aboveContentOption()) {
-  <app-money-status [list]="statusDspList()"></app-money-status>
+@if (!!topOpt()) {
+  <app-money-status [list]="gridTopOptDsp()[0].detail"></app-money-status>
 }
 
 <!-- グリッド -->
@@ -13,7 +13,7 @@
     [columnDefs]="colDefs()"
     [rowData]="rows()"
     [getRowStyle]="rowStyle()"
-    (selectionChanged)="onSelectCell()"
+    (selectionChanged)="onSelectCell($event)"
     (gridReady)="onReadyGrid($event)"
     (rowSelected)="rowSelect.emit($event)"
     (cellClicked)="onClickCell($event)"
@@ -27,75 +27,22 @@
     (cellContextMenu)="cellContextMenu.emit($event)"
     (columnHeaderContextMenu)="columnHeaderLongClick.emit($event)"
     (modelUpdated)="onUpdateModel($event)"
+    (rowDataUpdated)="onUpdRows($event)"
   />
 </div>
 
 <!-- グリッド下共通機能 -->
-@if (!!belowContentOpt()) {
+@if (!!btmOpt()) {
   <div class="grid-below-content my-scrollbar-hidden">
     <div style="flex: auto"></div>
     <div class="overflow">
-      <!-- 行追加 -->
-      <mat-icon [class.hidden]="!belowOpt().addRow" (click)="onAddRow()"
-        >add</mat-icon
-      >
-      <!-- ソート -->
-      <mat-icon [class.hidden]="!belowOpt().sort" (click)="onSort()"
-        >sort</mat-icon
-      >
-      <!-- フィルタ解除 -->
-      <mat-icon [class.hidden]="!belowOpt().filterOff" (click)="onFilterOff()"
-        >filter_list_off
-      </mat-icon>
-      <!-- フィルタ状態切替2 (エラー/正常) -->
-      <mat-icon
-        [class.hidden]="!belowOpt().changeFilter"
-        (click)="onChangeFilter()"
-        >{{ filterChangeState ? 'warning' : 'check_circle' }}
-      </mat-icon>
-      <!-- 選択状態切替 (全選択/選択解除) -->
-      <mat-icon
-        [class.hidden]="!belowOpt().changeSelection"
-        (click)="onChangeSelection()"
-        >{{ selectChangeState ? 'select_all' : 'deselect' }}
-      </mat-icon>
-      <!-- クイックフィルタ欄 -->
-      <input
-        #quickFilterText
-        [class.hidden]="!belowOpt().quickFilter"
-        type="text"
-        (input)="onFilter($event)"
-      />
-      <!-- 検索欄 -->
-      <input
-        [class.hidden]="!belowOpt().search"
-        type="text"
-        (input)="onSearch($event)"
-      />
-      <!-- 最左列ジャンプ -->
-      <mat-icon
-        [class.hidden]="!belowOpt().jumpFirstCol"
-        (click)="onJumpFirstCol()"
-        >arrow_left
-      </mat-icon>
-      <!-- 最右列ジャンプ -->
-      <mat-icon
-        [class.hidden]="!belowOpt().jumpLastCol"
-        (click)="onJumpLastCol()"
-        >arrow_right
-      </mat-icon>
-      <!-- 最上行ジャンプ -->
-      <mat-icon
-        [class.hidden]="!belowOpt().jumpFirstRow"
-        (click)="onJumpFirstRow()"
-        >arrow_drop_up
-      </mat-icon>
-      <!-- 最下行ジャンプ -->
-      <mat-icon
-        [class.hidden]="!belowOpt().jumpLastRow"
-        (click)="onJumpLastRow()"
-        >arrow_drop_down
-      </mat-icon>
+      @for (opt of gridBtmOptDsp(); track $index) {
+        <mat-icon
+          [class.hidden]="!opt.valid || opt.hide"
+          (click)="opt.func(opt)"
+          >{{ opt.icon }}</mat-icon
+        >
+      }
     </div>
   </div>
 }

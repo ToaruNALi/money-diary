@@ -7,17 +7,7 @@
 <!-- 収支入力グリッド -->
 <div class="main-content">
   <app-grid
-    [style]="{
-      width: '100vw',
-      height: 'calc(100vh - 200px - 25px - 25px)',
-    }"
-    [tbl]="tbl()"
-    [colDefs]="colDefs()"
-    [rows]="rows()"
-    [aboveContentOption]="aboveContentOption()"
-    [belowContentOpt]="belowContentOption()"
-    [cellClickForbCols]="cellClickForbColumns"
-    [emptyRowJudgeFn]="emptyRowJudgeFn"
+    [gridInput]="gridInput()"
     (rowEdt)="rowEdt.emit($event)"
     (gridReady)="onReadyGrid($event)"
     (cellClick)="onClickCell($event)"

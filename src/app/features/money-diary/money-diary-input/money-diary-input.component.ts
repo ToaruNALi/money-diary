@@ -11,7 +11,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   CellClickedEvent,
   CellContextMenuEvent,
-  GridApi,
   GridReadyEvent,
 } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
@@ -25,9 +24,11 @@ import { FilterInputModel, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import {
-  GridAboveContentOption,
-  GridBelowContentOption,
+  GridBtmOptKey,
   GridComponent,
+  GridInput,
+  GridOptInput,
+  GridTopOptKey,
 } from 'src/app/shared/grid/grid.component';
 import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
@@ -61,8 +62,25 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   readonly filterModel = input.required<FilterInputModel>();
   /** 過去データ編集可能フラグ */
   readonly edtPastData = input.required<boolean>();
+
+  /** Grid入力データ */
+  protected readonly gridInput = computed<GridInput>(() => ({
+    style: this.style,
+    tbl: this.tbl,
+    colDefs: this.colDefs,
+    rows: this.rows,
+    topOpt: this.gridTopOpt,
+    btmOpt: this.gridBtmOpt,
+    cellClickForbCols: this.cellClickForbCols,
+  }));
+
+  /** スタイル */
+  private readonly style = signal<Record<string, string>>({
+    width: '100vw',
+    height: 'calc(100vh - 200px - 25px - 25px)',
+  });
   /** 列定義 */
-  protected override readonly colDefs = computed(() =>
+  private readonly colDefs = computed(() =>
     this.usecase.getColDefs(
       this.stgRows(),
       this.crdRows(),
@@ -71,7 +89,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     ),
   );
   /** 行データ */
-  protected override readonly rows = computed(() => {
+  private readonly rows = computed(() => {
     const filter = this.filterModel();
     const display = this.display();
 
@@ -80,59 +98,69 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.gridApi?.setFilterModel(filter);
     }
 
-    if (display === 'display' && !this.firstDsp) {
-      setTimeout(() => {
-        this.firstDsp = true;
-        Util.jumpRow(this.gridApi);
-      });
-    }
+    // TODO: 正常に動作しないため一旦コメント化
+    // if (display === 'display' && !this.firstDsp) {
+    //   setTimeout(() => {
+    //     this.firstDsp = true;
+    //     Util.jumpRow(this.gridApi);
+    //   });
+    // }
 
     return this.usecase.getRows(this.mainRows(), this.crdRows());
   });
+  /** グリッド上ボタンオプション */
+  private readonly gridTopOpt = signal<GridOptInput<GridTopOptKey>[]>([
+    {
+      key: 'selSts',
+      func: this.usecase.calcSelStatus,
+    },
+  ]);
+  /** グリッド下ボタンオプション */
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
+    {
+      key: 'addRow',
+      valid: true,
+    },
+    {
+      key: 'sort',
+      valid: true,
+      detail: [
+        { col: Const.MAIN_COL.INPUT_MODE, asc: false },
+        { col: Const.MAIN_COL.DATE },
+      ],
+    },
+    {
+      key: 'fltOff',
+      valid: true,
+    },
+    {
+      key: 'chgFlt',
+      valid: true,
+    },
+    {
+      key: 'chgSel',
+      valid: true,
+    },
+    {
+      key: 'quickFlt',
+      valid: true,
+    },
+    {
+      key: 'jmpFirstRow',
+      valid: true,
+    },
+    {
+      key: 'jmpLastRow',
+      valid: true,
+    },
+  ]);
+  /** セルクリック禁止列 */
+  private readonly cellClickForbCols = signal([Const.MAIN_COL.DATE]);
+
   /** ステータスリスト */
   protected readonly statusList = computed(() =>
     this.usecase.calcStatusList(this.mainRows(), this.crdRows()),
   );
-  /** 行スタイル */
-  protected readonly rowStyleOption = computed(() => {
-    const edtPastData = this.edtPastData();
-    return {
-      edtPastData,
-    };
-  });
-  /** セルクリック禁止列 */
-  protected readonly cellClickForbColumns = [
-    Const.MAIN_COL.DATE,
-  ] as const satisfies string[];
-  /** グリッド上ボタンオプション */
-  protected readonly aboveContentOption = computed<GridAboveContentOption>(
-    () => ({
-      calcSelectStatus: this.usecase.calcSelStatus,
-    }),
-  );
-  /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = computed<GridBelowContentOption>(
-    () => ({
-      addRow: () => this.mainRows().length === 0,
-      sort: [
-        { col: Const.MAIN_COL.INPUT_MODE, asc: false },
-        { col: Const.MAIN_COL.DATE },
-      ],
-      filterOff: true,
-      changeFilter: true,
-      changeSelection: true,
-      quickFilter: true,
-      jumpFirstRow: true,
-      jumpLastRow: true,
-    }),
-  );
-  /** 空行判定 */
-  protected readonly emptyRowJudgeFn = (row: Row): boolean =>
-    row[Const.MAIN_COL.INPUT_MODE] === Const.INPUT_MODE.NONE;
-  /** Grid Api */
-  private gridApi!: GridApi<Row>;
-  /** コピー情報 */
-  private readonly copyData = signal<Row>({});
 
   /**
    * グリッド初期化処理
@@ -200,75 +228,72 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   protected readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    if (
-      (this.cellClickForbColumns as string[]).includes(event.column.getId())
-    ) {
-      // セルクリック禁止列の場合
-      if (Util.checkInputMode(event.data, Const.INPUT_MODE.NONE)) {
-        // 空行の場合
-        if (!Util.equalObject(this.copyData(), {})) {
-          // コピー情報が存在する場合、ペースト
-          const date = Util.getDate();
-          this.rowEdt.emit([
-            Util.getRowEdtAdd(
-              this.tbl(),
-              [
-                {
-                  ...this.copyData(),
-                  [Const.CMN_COL.ID]: event.data[Const.CMN_COL.ID],
-                  [Const.MAIN_COL.DATE]: date,
-                  [Const.MAIN_COL.USE_DATE]: date,
-                },
-              ],
-              [],
-              Util.getRowIdsSet(this.mainRows()),
-            ),
-          ]);
-          // // コピー情報初期化
-          // this.copyData.set({});
-          // メッセージ表示
-          this.snackBar.open('Pasted!');
-          setTimeout(() => {
-            this.snackBar.dismiss();
-          }, 1000);
-        }
-      } else {
-        // 空行以外の場合、コピー
-        this.copyData.set(event.data);
-        // メッセージ表示
-        this.snackBar.open('Copied!');
-        setTimeout(() => {
-          this.snackBar.dismiss();
-        }, 1000);
-      }
-    } else {
-      // 上記以外
-      const rows = this.gridApi.getSelectedRows();
-      if (rows.length === 0) {
-        return;
-      }
-
-      const today = Util.getDate();
-      if (
-        !this.edtPastData() &&
-        rows.some((dt) => {
-          const payDate = dt[Const.MAIN_COL.PAY_DATE];
-          return !!payDate && payDate < today;
-        })
-      ) {
-        // 過去データが編集可能でない かつ 支払日が過去のデータが含まれている場合
-        this.gridmenuItemDisabled.set(true);
-      } else {
-        this.gridmenuItemDisabled.set(false);
-      }
-
-      this.gridMenuDsp.set(true);
-      // const pointer = event.event as PointerEvent;
-      // this.gridMenuStyle.set({
-      //   left: `${pointer.clientX}px`,
-      //   top: `${pointer.clientY}px`,
-      // });
-    }
+    // TODO: 仕様変更予定のためコメント化
+    // if ((this.cellClickForbCols as string[]).includes(event.column.getId())) {
+    //   // セルクリック禁止列の場合
+    //   if (Util.checkInputMode(event.data, Const.INPUT_MODE.NONE)) {
+    //     // 空行の場合
+    //     if (!Util.equalObject(this.copyData(), {})) {
+    //       // コピー情報が存在する場合、ペースト
+    //       const date = Util.getDate();
+    //       this.rowEdt.emit([
+    //         Util.getRowEdtAdd(
+    //           this.tbl(),
+    //           [
+    //             {
+    //               ...this.copyData(),
+    //               [Const.CMN_COL.ID]: event.data[Const.CMN_COL.ID],
+    //               [Const.MAIN_COL.DATE]: date,
+    //               [Const.MAIN_COL.USE_DATE]: date,
+    //             },
+    //           ],
+    //           [],
+    //           Util.getRowIdsSet(this.mainRows()),
+    //         ),
+    //       ]);
+    //       // // コピー情報初期化
+    //       // this.copyData.set({});
+    //       // メッセージ表示
+    //       this.snackBar.open('Pasted!');
+    //       setTimeout(() => {
+    //         this.snackBar.dismiss();
+    //       }, 1000);
+    //     }
+    //   } else {
+    //     // 空行以外の場合、コピー
+    //     this.copyData.set(event.data);
+    //     // メッセージ表示
+    //     this.snackBar.open('Copied!');
+    //     setTimeout(() => {
+    //       this.snackBar.dismiss();
+    //     }, 1000);
+    //   }
+    // } else {
+    //   // 上記以外
+    //   const rows = this.gridApi.getSelectedRows();
+    //   if (rows.length === 0) {
+    //     return;
+    //   }
+    //   const today = Util.getDate();
+    //   if (
+    //     !this.edtPastData() &&
+    //     rows.some((dt) => {
+    //       const payDate = dt[Const.MAIN_COL.PAY_DATE];
+    //       return !!payDate && payDate < today;
+    //     })
+    //   ) {
+    //     // 過去データが編集可能でない かつ 支払日が過去のデータが含まれている場合
+    //     this.gridmenuItemDisabled.set(true);
+    //   } else {
+    //     this.gridmenuItemDisabled.set(false);
+    //   }
+    //   this.gridMenuDsp.set(true);
+    //   // const pointer = event.event as PointerEvent;
+    //   // this.gridMenuStyle.set({
+    //   //   left: `${pointer.clientX}px`,
+    //   //   top: `${pointer.clientY}px`,
+    //   // });
+    // }
   };
 
   /**

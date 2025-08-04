@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   input,
+  signal,
 } from '@angular/core';
 import { CellClickedEvent, CellContextMenuEvent } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
@@ -11,9 +12,11 @@ import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.use
 import * as Const from 'src/app/shared/constants/constants';
 import { MainCol, ValType } from 'src/app/shared/constants/types';
 import {
-  GridAboveContentOption,
-  GridBelowContentOption,
+  GridBtmOptKey,
   GridComponent,
+  GridInput,
+  GridOptInput,
+  GridTopOptKey,
 } from 'src/app/shared/grid/grid.component';
 
 @Component({
@@ -27,33 +30,57 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   /** Creditデータ */
   readonly crdRows = input<Row[]>([]);
 
+  /** Grid入力データ */
+  protected readonly gridInput = computed<GridInput>(() => ({
+    style: this.style,
+    tbl: this.tbl,
+    colDefs: this.colDefs,
+    rows: this.rows,
+    topOpt: this.gridTopOpt,
+    btmOpt: this.gridBtmOpt,
+    cellClickForbCols: this.cellClickForbCols,
+  }));
+  /** スタイル */
+  private readonly style = signal<Record<string, string>>({
+    width: '100vw',
+    height: 'calc(100vh - 200px - 25px)',
+  });
   /** 列定義 */
-  protected override readonly colDefs = computed(() =>
+  private readonly colDefs = computed(() =>
     this.usecase.getColDefs(this.inputRows(), this.crdRows()),
   );
   /** 行データ */
-  protected override readonly rows = computed(() =>
+  private readonly rows = computed(() =>
     this.usecase.getRows(this.mainRows(), this.inputRows(), this.crdRows()),
   );
   /** グリッド上ボタンオプション */
-  protected readonly aboveContentOption = computed<GridAboveContentOption>(
-    () => ({
-      calcSelectStatus: this.usecase.calcSelStatus,
-    }),
-  );
+  private readonly gridTopOpt = signal<GridOptInput<GridTopOptKey>[]>([
+    {
+      key: 'selSts',
+      func: this.usecase.calcSelStatus,
+    },
+  ]);
   /** グリッド下ボタンオプション */
-  protected readonly belowContentOption = computed<GridBelowContentOption>(
-    () => ({
-      addRow: () => this.mainRows().every((dt) => !!dt[Const.CMN_COL.LABEL]),
-      changeSelection: true,
-      jumpFirstRow: true,
-      jumpLastRow: true,
-    }),
-  );
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
+    {
+      key: 'addRow',
+      valid: true,
+    },
+    {
+      key: 'chgSel',
+      valid: true,
+    },
+    {
+      key: 'jmpFirstRow',
+      valid: true,
+    },
+    {
+      key: 'jmpLastRow',
+      valid: true,
+    },
+  ]);
   /** セルクリック禁止列 */
-  protected readonly cellClickForbColumns = [
-    Const.CMN_COL.LABEL,
-  ] as const satisfies string[];
+  private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
 
   /** 入力データ関連列ID */
   protected abstract readonly inputColId: MainCol;

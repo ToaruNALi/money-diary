@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { CellClickedEvent } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
@@ -11,7 +12,7 @@ import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diar
 import { ScheduleUsecase } from 'src/app/features/money-diary/schedule/schedule.usecase';
 import * as Const from 'src/app/shared/constants/constants';
 import { ValType } from 'src/app/shared/constants/types';
-import { GridComponent } from 'src/app/shared/grid/grid.component';
+import { GridComponent, GridInput } from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from '../../../shared/shared-common.module';
 
 @Component({
@@ -29,18 +30,28 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
   /** Other Row Datas */
   readonly inputRows = input.required<Row[]>();
 
+  /** Grid入力データ */
+  protected readonly gridInput = computed<GridInput>(() => ({
+    style: this.style,
+    tbl: this.tbl,
+    colDefs: this.colDefs,
+    rows: this.rows,
+    cellClickForbCols: this.cellClickForbCols,
+  }));
+
+  /** スタイル */
+  private readonly style = signal<Record<string, string>>({
+    width: '100vw',
+    height: 'calc(100vh - 230px)',
+  });
   /** 列定義 */
-  protected override readonly colDefs = computed(() =>
-    this.usecase.getColDefs(),
-  );
+  private readonly colDefs = computed(() => this.usecase.getColDefs());
   /** 行データ */
-  protected override readonly rows = computed(() =>
+  private readonly rows = computed(() =>
     this.usecase.getRows(this.mainRows(), this.inputRows()),
   );
   /** セルクリック禁止列 */
-  protected readonly cellClickForbCols = [
-    Const.SCD_COL.LABEL,
-  ] as const satisfies string[];
+  private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
 
   /**
    * セルクリック時
