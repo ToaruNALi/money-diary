@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { of } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
-import { InputRestrictionsDirective } from 'src/app/shared/directives/input-restrictions.derective';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import { FormClearButtonComponent } from 'src/app/shared/forms/form-clear-button/form-clear-button.component';
 import { FormsComponent } from 'src/app/shared/forms/forms.component';
@@ -17,19 +16,13 @@ export type FormNumber = Pick<
   | 'placeholder'
   | 'min'
   | 'max'
-  | 'forbiddenChars'
   | 'filteredOptions$'
   | 'style'
 >;
 
 @Component({
   selector: 'app-form-number',
-  imports: [
-    SharedCommonModule,
-    FormsCommonModule,
-    FormClearButtonComponent,
-    InputRestrictionsDirective,
-  ],
+  imports: [SharedCommonModule, FormsCommonModule, FormClearButtonComponent],
   templateUrl: './form-number.component.html',
   styleUrl: '../forms.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +36,6 @@ export class FormNumberComponent extends FormsComponent<FormNumber> {
     placeholder: '',
     min: Number.MIN_SAFE_INTEGER,
     max: Number.MAX_SAFE_INTEGER,
-    forbiddenChars: [],
     filteredOptions$: of([]),
     style: {},
   };

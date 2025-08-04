@@ -41,7 +41,7 @@ export class ScreenTransitionMapComponent {
       }
     }
 
-    const map = [...new Array(ySize)].map((_) =>
+    const retMap = [...new Array(ySize)].map((_) =>
       [...new Array(xSize)].fill({
         id: '',
         select: false,
@@ -51,39 +51,13 @@ export class ScreenTransitionMapComponent {
 
     for (const [scr, data] of Object.entries(datas)) {
       const info = Const.SCR_INF[scr as Scr];
-      map[data.py][data.px] = {
+      retMap[data.py][data.px] = {
         id: scr,
         select: scr === id,
         icon: info.ic,
       };
     }
 
-    // // Y方向の空行削除
-    // const delListY = [];
-    // for (const [idx, datas] of map.entries()) {
-    //   if (!datas.some((data) => !!data.id)) {
-    //     delListY.push(idx);
-    //   }
-    // }
-    // delListY.reverse();
-    // for (const y of delListY) {
-    //   map.splice(y, 1);
-    // }
-
-    // // X方向の空行削除
-    // const delListX = [];
-    // for (let idx = 0; idx < Const.MAX_LEN.SCREEN_TRANS_MAP; idx++) {
-    //   if (!map.some((datas) => !!datas[idx].id)) {
-    //     delListX.push(idx);
-    //   }
-    // }
-    // delListX.reverse();
-    // for (const x of delListX) {
-    //   for (const data of map) {
-    //     data.splice(x, 1);
-    //   }
-    // }
-
-    return map;
+    return retMap;
   });
 }

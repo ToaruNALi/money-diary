@@ -649,18 +649,6 @@ export const getRowEdtAdd = (
   );
 };
 
-// /** 行編集追加情報(空データ)を返却する */
-// export const getRowEdtAddNew2 = (
-//   tbl: Tbl,
-//   rowIds = new Set<ValType>(),
-// ): RowEdt => {
-//   return getRowEdtAddCmn(
-//     tbl,
-//     [{ ...getTblInitRow2(tbl, rowIds) }],
-//     [Const.TBL_ADD_POS.MAX],
-//   );
-// };
-
 /** 行編集追加情報(空データ)を返却する */
 export const getRowEdtAddNew = (tbl: Tbl, rows: Row[]): RowEdt => {
   return getRowEdtAddCmn(
