@@ -17,14 +17,12 @@ import { RedoComponent } from 'src/app/shared/redo/redo.component';
 import { ScreenTransitionComponent } from 'src/app/shared/screen-transition/screen-transition.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 import { UndoComponent } from 'src/app/shared/undo/undo.component';
-import { HistoryResetComponent } from '../../shared/history-reset/history-reset.component';
 
 @Component({
   selector: 'app-footer',
   imports: [
     SharedCommonModule,
     MenuComponent,
-    HistoryResetComponent,
     ScreenTransitionComponent,
     UndoComponent,
     RedoComponent,

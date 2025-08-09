@@ -6,10 +6,8 @@ import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.use
 import * as Const from 'src/app/shared/constants/constants';
 import { ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
-import {
-  DialogInputDatas,
-  DialogOption,
-} from 'src/app/shared/dialog-input/dialog-input.component';
+import { DialogInputDatas } from 'src/app/shared/dialog-input/dialog-input.component';
+import { SelectOption } from 'src/app/shared/forms/forms.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 @Injectable()
@@ -344,7 +342,7 @@ export class CreditUsecase extends SettingUsecase {
       value: row[Const.CRD_COL.BUSINESS_DAYS],
       type: Const.INPUT_TYPE.SELECT,
       initValue: initValues[Const.CRD_COL.BUSINESS_DAYS],
-      options: Const.BIZ_DAYS_LIST.map<DialogOption>((opt) => ({
+      options: Const.BIZ_DAYS_LIST.map<SelectOption>((opt) => ({
         id: opt.id,
         lb: opt.lb,
       })),

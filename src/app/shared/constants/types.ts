@@ -69,9 +69,12 @@ export type SortOpt = {
   asc?: boolean;
 };
 /** 画面表示データ */
-export type ScrDspData = ScrData & {
+export type ScrDspData = ScrData & Pick<MenuListData, 'lb' | 'ab' | 'ic'>;
+/** メニューリストデータ */
+export type MenuListData = {
+  id: string;
   lb: string;
-  ab: string;
+  ab?: string;
   ic: string;
 };
 /** フィルターモデル */

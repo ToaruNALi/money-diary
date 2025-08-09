@@ -7,14 +7,15 @@ import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
   InputMode,
+  MenuListData,
   PayDateInf,
   RowEdt,
   Scr,
-  ScrDspData,
   SortOpt,
   Tbl,
   ValType,
 } from 'src/app/shared/constants/types';
+import { environment } from 'src/environments/environment';
 
 /**************************************************
  * 定数からデータを取得する共通処理
@@ -56,7 +57,7 @@ export const getSaveDefVal = (tbl: Tbl, col: string): ValType => {
 };
 
 /** 画面情報リストを返却する */
-export const getMenuList = (): (ScrDspData & { id: Scr })[] => {
+export const getMenuList = (): MenuListData[] => {
   return Object.entries(Const.SCR_INF).map(([scr, data]) => ({
     ...data,
     id: scr as Scr,
@@ -105,7 +106,8 @@ export const calcResult = (value?: ValType): number => {
       value === null ||
       value === '' ||
       typeof value === 'boolean' ||
-      (typeof value === 'string' && Const.FORBIDDEN_CHARS.FORMULA.test(value))
+      (typeof value === 'string' &&
+        Const.INPUT_CHARS.FORMULA_FORBIDDEN.test(value))
     ) {
       throw new Error();
     }
@@ -611,7 +613,7 @@ const getRowEdtAddCmn = (
 ): RowEdt => {
   addRows = structuredClone(addRows);
   addIds = [...addIds];
-  for (let idx = 0; idx < addRows.length - addIds.length; idx++) {
+  for (let idx = 0; idx < addRows.length - addIds.length; ) {
     // addIdsのサイズが不足している場合追加する
     addIds.push(null);
   }
@@ -713,4 +715,12 @@ export const getRowEdtDrg = (
     delIds,
     addIds,
   };
+};
+
+/** ログをコンソールに出力する */
+export const outputLog = (val: any): void => {
+  if (!environment.production) {
+    // 開発時のみログ出力
+    console.log(val);
+  }
 };

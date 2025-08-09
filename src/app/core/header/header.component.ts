@@ -12,24 +12,14 @@ import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { Hist } from 'src/app/domain/row-data-edit-history';
 import { MESSAGE } from 'src/app/shared/constants/messages';
 import { ScrDspData } from 'src/app/shared/constants/types';
+import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 import { FileDownloadComponent } from 'src/app/shared/file-download/file-download.component';
 import { FileUploadComponent } from 'src/app/shared/file-upload/file-upload.component';
-import {
-  FormToggle,
-  FormToggleComponent,
-} from 'src/app/shared/forms/form-toggle/form-toggle.component';
-import { HistoryResetComponent } from 'src/app/shared/history-reset/history-reset.component';
 import { SharedCommonModule } from './../../shared/shared-common.module';
 
 @Component({
   selector: 'app-header',
-  imports: [
-    SharedCommonModule,
-    FormToggleComponent,
-    HistoryResetComponent,
-    FileDownloadComponent,
-    FileUploadComponent,
-  ],
+  imports: [SharedCommonModule, FileDownloadComponent, FileUploadComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +33,7 @@ export class HeaderComponent {
   readonly edtPastData = model<boolean>(false);
   protected readonly histReset = output<void>();
 
-  protected readonly formData = signal<Partial<FormToggle>>({
+  protected readonly formData = signal<Partial<DialogInputData>>({
     label: 'Past Edit',
   });
   protected readonly form = signal(
