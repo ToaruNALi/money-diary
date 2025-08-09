@@ -1,7 +1,7 @@
 import {
   ApplicationConfig,
   inject,
-  provideExperimentalZonelessChangeDetection,
+  provideZonelessChangeDetection,
 } from '@angular/core';
 import {
   DateAdapter,
@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
       ), // エラー設定
       withHashLocation(), // サーバ上でリロードした際の Not Found にならない対策
     ),
-    provideExperimentalZonelessChangeDetection(), // Zone Less
+    provideZonelessChangeDetection(), // Zone Less
     provideAnimations(), // アニメーションを提供する
     provideNativeDateAdapter(),
     { provide: DateAdapter, useClass: MyDateAdapter }, // カレンダー日付表記修正
