@@ -13,7 +13,7 @@
     [columnDefs]="colDefs()"
     [rowData]="rows()"
     [getRowStyle]="rowStyle()"
-    (selectionChanged)="onSelectCell($event)"
+    (selectionChanged)="onChangeSelection($event)"
     (gridReady)="onReadyGrid($event)"
     (rowSelected)="rowSelect.emit($event)"
     (cellClicked)="onClickCell($event)"
@@ -28,6 +28,8 @@
     (columnHeaderContextMenu)="columnHeaderLongClick.emit($event)"
     (modelUpdated)="onUpdateModel($event)"
     (rowDataUpdated)="onUpdRows($event)"
+    (filterChanged)="onChangeFilterAndSort($event)"
+    (sortChanged)="onChangeFilterAndSort($event)"
   />
 </div>
 
@@ -37,11 +39,23 @@
     <div style="flex: auto"></div>
     <div class="overflow">
       @for (opt of gridBtmOptDsp(); track $index) {
-        <mat-icon
-          [class.hidden]="!opt.valid || opt.hide"
-          (click)="opt.func(opt)"
-          >{{ opt.icon }}</mat-icon
-        >
+        @if (opt.key === 'menuList') {
+          <!-- メニューリストの場合 -->
+          <app-menu-list
+            [class.hidden]="!opt.valid || opt.hide"
+            [class.disabled]="opt.disabled"
+            [menuInput]="{ icon: opt.icon, menuList: opt.detail }"
+            (menuClick)="opt.func(opt, $event)"
+          ></app-menu-list>
+        } @else {
+          <!-- 上記以外 -->
+          <mat-icon
+            [class.hidden]="!opt.valid || opt.hide"
+            [class.disabled]="opt.disabled"
+            (click)="opt.func(opt)"
+            >{{ opt.icon }}</mat-icon
+          >
+        }
       }
     </div>
   </div>

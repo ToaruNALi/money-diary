@@ -26,13 +26,13 @@ import {
   DialogInputButtonOption,
   DialogInputData,
   DialogInputDatas,
-  DialogOption,
   DialogOutput,
   DialogOutputData,
   DialogStatus,
   SetType,
 } from 'src/app/shared/dialog-input/dialog-input.component';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
+import { SelectOption } from 'src/app/shared/forms/forms.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
 
 export const INPUT_OPTION_TYPE = {
@@ -499,7 +499,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
     const selRec = {} as Record<
       MainCol,
-      { disabled: boolean; options: DialogOption[] }
+      { disabled: boolean; options: SelectOption[] }
     >;
     for (const [idx, col] of OTHER_COL_LIST.entries()) {
       // セレクトボックスの一致項目が無効化されている場合 true を設定
@@ -529,27 +529,30 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     /*************************
      * オートコンプリートメモデータの設定
      *************************/
-    const autocompMemoData: DialogOption[] = [];
+    const autocompMemoData: SelectOption[] = [];
     const optLabelSet: Set<string> = new Set();
     const reverseMainRows = mainRows.toReversed();
-    for (const data of reverseMainRows) {
-      if (data[Const.CMN_COL.ID] === selectRows[0][Const.CMN_COL.ID]) {
-        // 編集対象の場合、オートコンプリートに追加しない
+    for (const row of reverseMainRows) {
+      if (
+        row[Const.CMN_COL.ID] === selectRows[0][Const.CMN_COL.ID] ||
+        !row[Const.MAIN_COL.MEMO]
+      ) {
+        // 編集対象、またはメモが空欄の場合、オートコンプリートに追加しない
         continue;
       }
 
-      const storageId = data[Const.MAIN_COL.STORAGE]?.toString() ?? '';
+      const storageId = row[Const.MAIN_COL.STORAGE]?.toString() ?? '';
       const storage =
         otherRows[storageDatasIdx]
           .find((dt) => dt[Const.CMN_COL.ID] === storageId)
           ?.[Const.CMN_COL.LABEL]?.toString() ?? '';
-      const value = data[Const.MAIN_COL.MEMO]?.toString() ?? '';
+      const value = row[Const.MAIN_COL.MEMO]?.toString() ?? '';
       const label = value + (!!storage ? `　${storage}` : '');
 
       if (!!label && !optLabelSet.has(label)) {
         optLabelSet.add(label);
         autocompMemoData.push({
-          id: data[Const.CMN_COL.ID]?.toString() ?? '',
+          id: row[Const.CMN_COL.ID]?.toString() ?? '',
           value,
           lb: label,
         });
@@ -584,7 +587,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     const memoSetter = (
       form: FormRecord,
       _: Required<DialogInput>,
-      options?: { type: SetType; option: DialogOption },
+      options?: { type: SetType; option: SelectOption },
     ): void => {
       if (options?.type === 'select') {
         // オートコンプリートで選択した場合
@@ -687,7 +690,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           value: selectRows[0][Const.MAIN_COL.AMOUNT],
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
-          forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
+          forbiddenChars: [Const.INPUT_CHARS.FORMULA_FORBIDDEN],
           setter: calcResultSetter,
         },
         {
@@ -1292,7 +1295,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
 
     const selRec = {} as Record<
       MainCol,
-      { disabled: boolean; options: DialogOption[] }
+      { disabled: boolean; options: SelectOption[] }
     >;
     for (const [idx, col] of OTHER_COL_LIST.entries()) {
       // セレクトボックスの一致項目が無効化されている場合 true を設定
@@ -1329,22 +1332,27 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     /*************************
      * オートコンプリートメモデータの設定
      *************************/
-    const autocompMemoData: DialogOption[] = [];
+    const autocompMemoData: SelectOption[] = [];
     const optLabelSet: Set<string> = new Set();
     const reverseMainRows = mainRows.toReversed();
-    for (const data of reverseMainRows) {
-      const storageId = data[Const.MAIN_COL.STORAGE]?.toString() ?? '';
+    for (const row of reverseMainRows) {
+      if (!row[Const.MAIN_COL.MEMO]) {
+        // メモが空欄の場合、オートコンプリートに追加しない
+        continue;
+      }
+
+      const storageId = row[Const.MAIN_COL.STORAGE]?.toString() ?? '';
       const storage =
         otherRows[storageDatasIdx]
           .find((dt) => dt[Const.CMN_COL.ID] === storageId)
           ?.[Const.CMN_COL.LABEL]?.toString() ?? '';
-      const value = data[Const.MAIN_COL.MEMO]?.toString() ?? '';
+      const value = row[Const.MAIN_COL.MEMO]?.toString() ?? '';
       const label = value + (!!storage ? `　${storage}` : '');
 
       if (!!label && !optLabelSet.has(label)) {
         optLabelSet.add(label);
         autocompMemoData.push({
-          id: data[Const.CMN_COL.ID]?.toString() ?? '',
+          id: row[Const.CMN_COL.ID]?.toString() ?? '',
           value,
           lb: label,
         });
@@ -1450,7 +1458,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           value: matchInfRec[Const.MAIN_COL.AMOUNT].val,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
-          forbiddenChars: [Const.FORBIDDEN_CHARS.FORMULA],
+          forbiddenChars: [Const.INPUT_CHARS.FORMULA_FORBIDDEN],
           setter: calcResultSetter,
           formStyle: { width: 'calc((100% - 45px) / 2)' },
         },

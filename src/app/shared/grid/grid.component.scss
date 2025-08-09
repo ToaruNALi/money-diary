@@ -17,6 +17,7 @@
   height: 25px;
   overflow-x: auto;
   user-select: none;
+  opacity: 1;
 
   .overflow {
     display: flex;
@@ -31,6 +32,11 @@
     &.hidden {
       display: none;
     }
+  }
+
+  .disabled {
+    pointer-events: none;
+    opacity: 0.3;
   }
 
   input {

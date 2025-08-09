@@ -90,9 +90,10 @@ export const INPUT_FORM = {
 } as const satisfies Record<InputType, Record<string, ValType>>;
 
 /** 禁止文字 */
-export const FORBIDDEN_CHARS = {
+export const INPUT_CHARS = {
   /** 数値と符号以外禁止 */
-  FORMULA: /[^0-9+\-*/()]+/g,
+  FORMULA_FORBIDDEN: /[^0-9+\-*/()]+/g,
+  AUTOCOMP_REPLACE: /[.*+?^${}()|[\]\\]/g,
 } as const;
 
 /** ファイル名 */

@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
   Signal,
   signal,
 } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellClickedEvent,
@@ -17,6 +19,7 @@ import {
   ColDef,
   ColGroupDef,
   ColumnHeaderContextMenuEvent,
+  FilterChangedEvent,
   FilterModel,
   FirstDataRenderedEvent,
   GetRowIdParams,
@@ -35,17 +38,29 @@ import {
   RowSelectedEvent,
   RowStyle,
   SelectionChangedEvent,
+  SortChangedEvent,
   themeQuartz,
 } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
-import { RowEdt, SortOpt, Tbl, ValType } from 'src/app/shared/constants/types';
+import {
+  MenuListData,
+  RowEdt,
+  SortOpt,
+  Tbl,
+  ValType,
+} from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
+import {
+  DialogSearchComponent,
+  DialogSearchInput,
+} from 'src/app/shared/dialog-search/dialog-search.component';
 import {
   MoneyStatus,
   MoneyStatusComponent,
 } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import { MenuListComponent } from '../menu-list/menu-list.component';
 
 /** 入力タイプ */
 export type GridInput = {
@@ -86,13 +101,17 @@ export type GridBtmOptKey =
   | 'jmpFirstCol'
   | 'jmpLastCol'
   | 'jmpFirstRow'
-  | 'jmpLastRow';
+  | 'jmpLastRow'
+  | 'custom1'
+  | 'custom2'
+  | 'menuList';
 export type GridOptInput<T = GridTopOptKey | GridBtmOptKey, U = any> = {
   key: T;
   valid?: boolean;
-  hide?: boolean;
+  hide?: boolean | ((api: GridApi) => boolean);
+  disabled?: boolean | ((api: GridApi) => boolean);
   sts?: number;
-  odr?: number;
+  iconList?: string[];
   detail?: U;
   func?: (...opt: any) => any;
 };
@@ -104,12 +123,20 @@ type GridOpt<T = GridTopOptKey | GridBtmOptKey, U = any> = Required<
 
 @Component({
   selector: 'app-grid',
-  imports: [SharedCommonModule, AgGridAngular, MoneyStatusComponent],
+  imports: [
+    SharedCommonModule,
+    AgGridAngular,
+    MoneyStatusComponent,
+    MenuListComponent,
+  ],
   templateUrl: './grid.component.html',
   styleUrl: './grid.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridComponent {
+  /** ダイアログ */
+  private readonly dialog = inject(MatDialog);
+
   /********************
    * Grid
    ********************/
@@ -330,44 +357,34 @@ export class GridComponent {
   /********************
    * Grid Top Option
    ********************/
-  private readonly gridTopOptIcon = {
-    selSts: [''],
-  } as const satisfies Record<GridTopOptKey, string[]>;
-
-  private readonly gridTopOptFunc = {
-    selSts: (opt: any) => {},
-  } as const satisfies Record<GridTopOptKey, (opt: any) => void>;
-
   private readonly gridTopOptInputDef = [
     {
       key: 'selSts',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 1,
+      iconList: [''],
       detail: '',
-      func: () => {},
+      func: (_: any) => {},
     },
   ] as const satisfies Required<GridOptInput<GridTopOptKey>>[];
 
   private readonly gridTopOpt = linkedSignal<
     Required<GridOptInput<GridTopOptKey>>[]
-  >(() => {
-    const topOpt = this.topOpt();
-    return this.gridTopOptInputDef.map((def) => ({
-      ...def,
-      func: this.gridTopOptFunc[def.key],
-      ...(topOpt?.find((opt) => opt.key === def.key) ?? {}),
-    }));
-  });
+  >(
+    () =>
+      (this.topOpt()?.map((opt) => ({
+        ...(this.gridTopOptInputDef.find((def) => def.key === opt.key) ?? {}),
+        ...opt,
+      })) ?? []) as Required<GridOptInput<GridTopOptKey>>[],
+  );
 
   protected readonly gridTopOptDsp = computed<GridOpt<GridTopOptKey>[]>(() => {
-    return this.gridTopOpt()
-      .map((opt) => ({
-        ...opt,
-        icon: this.gridTopOptIcon[opt.key][opt.sts],
-      }))
-      .sort((a, b) => a.odr - b.odr);
+    return this.gridTopOpt().map((opt) => ({
+      ...opt,
+      icon: opt.iconList[opt.sts],
+    }));
   });
 
   /********************
@@ -378,7 +395,7 @@ export class GridComponent {
       const opt = list.find((opt) => opt.key === key);
       if (!!opt) {
         if (sts === undefined) {
-          if (opt.sts < this.gridBtmOptIcon[key].length - 1) {
+          if (opt.sts < opt.iconList.length - 1) {
             opt.sts++;
           } else {
             opt.sts = 0;
@@ -441,19 +458,15 @@ export class GridComponent {
     this.gridApi.applyColumnState({
       defaultState: { sort: null },
     });
-    // TODO: // クイックフィルタ入力欄クリア
-    // this.quickFilterText().nativeElement.value = '';
     // クイックフィルタ解除
     this.gridApi.setGridOption('quickFilterText', '');
   };
   private readonly onChgFlt = (opt: GridOpt<GridBtmOptKey>): void => {
-    // フィルタリセット
-    this.gridApi.setFilterModel(null);
     // フィルタモデル設定
     const hardcodedFilter: FilterModel = {
       [Const.CMN_COL.INPUT_MODE]: {
         filterType: 'number',
-        type: opt.sts === 0 ? 'notEqual' : 'equal',
+        type: opt.sts === 0 ? 'notEqual' : 'equals',
         filter: Const.INPUT_MODE.ALL_REQ,
       },
     };
@@ -470,8 +483,24 @@ export class GridComponent {
       this.gridApi.selectAll('filtered');
     }
   };
-  private readonly quickFlt = (_opt: GridOpt<GridBtmOptKey>): void => {
-    // TODO: フィルタ適用子画面を開く
+  private readonly quickFlt = (opt: GridOpt<GridBtmOptKey>): void => {
+    // ダイアログオープン
+    const dialogRef = this.dialog.open<
+      DialogSearchComponent,
+      DialogSearchInput
+    >(DialogSearchComponent, {
+      data: {
+        val: this.gridApi.getGridOption('quickFilterText') ?? '',
+        opts: opt.detail(),
+      },
+    });
+    // 出力データ
+    dialogRef.componentInstance.emitter.subscribe((res) => {
+      res = res
+        .replace(Const.INPUT_CHARS.AUTOCOMP_REPLACE, ' ')
+        .replace(/\s+/g, ' ');
+      this.gridApi.setGridOption('quickFilterText', res);
+    });
   };
   private readonly onJmpFirstCol = (_opt: GridOpt<GridBtmOptKey>): void => {
     Util.jumpCol(this.gridApi, 0);
@@ -485,144 +514,163 @@ export class GridComponent {
   private readonly onJmpLastRow = (_opt: GridOpt<GridBtmOptKey>): void => {
     Util.jumpRow(this.gridApi);
   };
-
-  protected readonly gridBtmOptIcon = {
-    addRow: ['add'],
-    sort: ['sort'],
-    fltOff: ['filter_list_off'],
-    chgFlt: ['warning', 'check_circle'],
-    chgSel: ['select_all', 'deselect'],
-    quickFlt: ['search'],
-    jmpFirstCol: ['arrow_left'],
-    jmpLastCol: ['arrow_right'],
-    jmpFirstRow: ['arrow_drop_up'],
-    jmpLastRow: ['arrow_drop_down'],
-  } as const satisfies Record<GridBtmOptKey, string[]>;
-
-  private readonly gridBtmOptFunc = {
-    addRow: this.onAddRow,
-    sort: this.onSort,
-    fltOff: this.onFltOff,
-    chgFlt: this.onChgFlt,
-    chgSel: this.onChgSel,
-    quickFlt: this.quickFlt,
-    jmpFirstCol: this.onJmpFirstCol,
-    jmpLastCol: this.onJmpLastCol,
-    jmpFirstRow: this.onJmpFirstRow,
-    jmpLastRow: this.onJmpLastRow,
-  } as const satisfies Record<GridBtmOptKey, (opt: any) => void>;
+  private readonly onClickMenu = (
+    opt: GridOpt<GridBtmOptKey>,
+    id: string,
+  ): void => {
+    (opt.detail as (MenuListData & { func: () => {} })[])
+      .find((dt) => dt.id === id)
+      ?.func();
+  };
 
   private readonly gridBtmOptInputDef = [
     {
       key: 'addRow',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 1,
+      iconList: ['add'],
       detail: [],
-      func: () => {},
+      func: this.onAddRow,
     },
     {
       key: 'sort',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 2,
+      iconList: ['sort'],
       detail: [],
-      func: () => {},
+      func: this.onSort,
     },
     {
       key: 'fltOff',
       valid: false,
       hide: false,
+      disabled: true, // 始めは非活性
       sts: 0,
-      odr: 3,
+      iconList: ['filter_list_off'],
       detail: [],
-      func: () => {},
-    },
-    {
-      key: 'chgFlt',
-      valid: false,
-      hide: false,
-      sts: 0,
-      odr: 4,
-      detail: [],
-      func: () => {},
+      func: this.onFltOff,
     },
     {
       key: 'chgSel',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 5,
+      iconList: ['select_all', 'deselect'],
       detail: [],
-      func: () => {},
+      func: this.onChgSel,
     },
     {
       key: 'quickFlt',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 6,
+      iconList: ['search'],
+      detail: () => [],
+      func: this.quickFlt,
+    },
+    {
+      key: 'chgFlt',
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['warning', 'check_circle'],
       detail: [],
-      func: () => {},
+      func: this.onChgFlt,
     },
     {
       key: 'jmpFirstCol',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 7,
+      iconList: ['arrow_left'],
       detail: [],
-      func: () => {},
+      func: this.onJmpFirstCol,
     },
     {
       key: 'jmpLastCol',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 8,
+      iconList: ['arrow_right'],
       detail: [],
-      func: () => {},
+      func: this.onJmpLastCol,
     },
     {
       key: 'jmpFirstRow',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 9,
+      iconList: ['arrow_drop_up'],
       detail: [],
-      func: () => {},
+      func: this.onJmpFirstRow,
     },
     {
       key: 'jmpLastRow',
       valid: false,
       hide: false,
+      disabled: false,
       sts: 0,
-      odr: 10,
+      iconList: ['arrow_drop_down'],
       detail: [],
-      func: () => {},
+      func: this.onJmpLastRow,
+    },
+    {
+      key: 'custom1',
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['looks_1'],
+      detail: [],
+      func: (_opt: GridOpt<GridBtmOptKey>) => {},
+    },
+    {
+      key: 'custom2',
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['looks_2'],
+      detail: [],
+      func: (_opt: GridOpt<GridBtmOptKey>) => {},
+    },
+    {
+      key: 'menuList',
+      valid: false,
+      hide: false,
+      disabled: true, // 始めは非活性
+      sts: 0,
+      iconList: ['more_vert'],
+      detail: [],
+      func: this.onClickMenu,
     },
   ] as const satisfies Required<GridOptInput<GridBtmOptKey>>[];
 
   private readonly gridBtmOpt = linkedSignal<
     Required<GridOptInput<GridBtmOptKey>>[]
-  >(() => {
-    const btmOpt = this.btmOpt();
-    return this.gridBtmOptInputDef.map((def) => ({
-      ...def,
-      func: this.gridBtmOptFunc[def.key],
-      ...(btmOpt?.find((opt) => opt.key === def.key) ?? {}),
-    }));
-  });
+  >(
+    () =>
+      (this.btmOpt()?.map((opt) => ({
+        ...(this.gridBtmOptInputDef.find((def) => def.key === opt.key) ?? {}),
+        ...opt,
+      })) ?? []) as Required<GridOptInput<GridBtmOptKey>>[],
+  );
 
   protected readonly gridBtmOptDsp = computed<GridOpt<GridBtmOptKey>[]>(() => {
-    return this.gridBtmOpt()
-      .map((opt) => ({
-        ...opt,
-        icon: this.gridBtmOptIcon[opt.key][opt.sts],
-      }))
-      .sort((a, b) => a.odr - b.odr);
+    return this.gridBtmOpt().map((opt) => ({
+      ...opt,
+      icon: opt.iconList[opt.sts],
+    }));
   });
 
   /********************
@@ -640,27 +688,37 @@ export class GridComponent {
    * セル選択時
    * @param event
    */
-  protected readonly onSelectCell = (event: SelectionChangedEvent): void => {
+  protected readonly onChangeSelection = (
+    event: SelectionChangedEvent,
+  ): void => {
     // 選択行の取得
     const rows = event.api.getSelectedRows() ?? [];
     // 列情報の取得
     const colDefs = event.api.getColumnDefs() ?? [];
-    // 選択状態更新
+
     this.gridBtmOpt.update((list) => {
-      const opt = list.find((opt) => opt.key === 'chgSel');
-      if (!!opt) {
-        opt.sts = rows.length === 0 ? 0 : 1;
+      for (const opt of list) {
+        if (opt.key === 'chgSel') {
+          // 選択状態更新
+          opt.sts = rows.length === 0 ? 0 : 1;
+        } else if (opt.key === 'menuList') {
+          // メニューリストボタンの活性状態更新
+          opt.disabled = rows.length === 0;
+        }
       }
       return [...list];
     });
-    // ステータスリスト更新
     this.gridTopOpt.update((list) => {
-      const opt = list.find((opt) => opt.key === 'selSts');
-      if (!!opt) {
-        opt.detail = opt.func(rows, colDefs);
+      for (const opt of list) {
+        if (opt.key === 'selSts') {
+          // ステータスリスト更新
+          opt.detail = opt.func(rows, colDefs);
+        }
       }
       return [...list];
     });
+
+    this.selectionChange.emit(event);
   };
   /**
    * 行選択状態を切り替える
@@ -689,23 +747,26 @@ export class GridComponent {
     const colDefs = event.api.getColumnDefs() ?? [];
 
     this.gridBtmOpt.update((list) => {
-      // 選択状態更新
-      const optChgSel = list.find((opt) => opt.key === 'chgSel');
-      if (!!optChgSel) {
-        optChgSel.sts = rows.length === 0 ? 0 : 1;
-      }
-      // 追加ボタンの有効/無効更新
-      const optAddRow = list.find((opt) => opt.key === 'addRow');
-      if (!!optAddRow) {
-        optAddRow.hide = this.rows().length > 0;
+      for (const opt of list) {
+        if (opt.key === 'chgSel') {
+          // 選択状態更新
+          opt.sts = rows.length === 0 ? 0 : 1;
+        } else if (opt.key === 'addRow') {
+          // 追加ボタンの有効状態更新
+          opt.hide = this.rows().length > 0;
+        } else if (opt.key === 'menuList') {
+          // メニューリストボタンの活性状態更新
+          opt.disabled = rows.length === 0;
+        }
       }
       return [...list];
     });
-    // ステータスリスト更新
     this.gridTopOpt.update((list) => {
-      const opt = list.find((opt) => opt.key === 'selSts');
-      if (!!opt) {
-        opt.detail = opt.func(rows, colDefs);
+      for (const opt of list) {
+        if (opt.key === 'selSts') {
+          // ステータスリスト更新
+          opt.detail = opt.func(rows, colDefs);
+        }
       }
       return [...list];
     });
@@ -776,5 +837,28 @@ export class GridComponent {
   protected readonly onDspFirstData = (event: FirstDataRenderedEvent): void => {
     // 最終行にスクロール
     Util.jumpRow(event.api);
+  };
+  /**
+   * フィルタ・ソート変更時
+   * @param event
+   */
+  protected readonly onChangeFilterAndSort = (
+    event: FilterChangedEvent | SortChangedEvent,
+  ): void => {
+    // ログ出力
+    Util.outputLog(event.api.getFilterModel());
+    this.gridBtmOpt.update((list) => {
+      for (const opt of list) {
+        if (opt.key === 'fltOff') {
+          // フィルタリセットボタン活性状態更新
+          const fltState = event.api.isAnyFilterPresent();
+          const sortState = event.api
+            .getColumnState()
+            .some((col) => !!col.sort);
+          opt.disabled = !fltState && !sortState;
+        }
+      }
+      return [...list];
+    });
   };
 }

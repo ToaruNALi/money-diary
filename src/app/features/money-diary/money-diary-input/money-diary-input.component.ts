@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   CellClickedEvent,
   CellContextMenuEvent,
@@ -20,9 +20,14 @@ import {
   MoneyDiaryInputUsecase,
 } from 'src/app/features/money-diary/money-diary-input/money-diary-input.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { FilterInputModel, ValType } from 'src/app/shared/constants/types';
+import {
+  FilterInputModel,
+  MenuListData,
+  ValType,
+} from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
+import { SelectOption } from 'src/app/shared/forms/forms.component';
 import {
   GridBtmOptKey,
   GridComponent,
@@ -51,7 +56,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(MoneyDiaryInputUsecase);
-  private readonly snackBar = inject(MatSnackBar);
 
   /** Other Row Datas */
   readonly stgRows = input.required<Row[]>();
@@ -115,10 +119,202 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       func: this.usecase.calcSelStatus,
     },
   ]);
+
+  /**
+   * 削除時(コンテキストメニュー)
+   */
+  private readonly onDelete = (): void => {
+    this.rowEdt.emit([
+      Util.getRowEdtDel(
+        this.tbl(),
+        Util.getRowIds(this.gridApi.getSelectedRows()),
+      ),
+    ]);
+  };
+
+  /**
+   * 置換時(コンテキストメニュー)
+   */
+  private readonly onReplace = async (): Promise<void> => {
+    // ダイアログ入力データ作成
+    const input = this.usecase.createInputData(
+      this.gridApi.getSelectedRows(),
+      this.tbl(),
+      [this.mainRows()],
+      { type: INPUT_OPTION_TYPE.REPLACE, edtPastData: this.edtPastData() },
+    );
+    // ダイアログオープン
+    const output = await this.usecase.openDialog(input);
+    if (!output) {
+      return;
+    }
+    // 行編集Emitterデータ作成
+    const result = this.usecase.createResultData(
+      output,
+      this.gridApi.getSelectedRows(),
+      this.mainRows(),
+      this.tbl(),
+      INPUT_OPTION_TYPE.REPLACE,
+    );
+    // Emit
+    this.rowEdt.emit(result);
+  };
+
+  /**
+   * 連番付与(コンテキストメニュー)
+   */
+  private readonly onSerialNumber = async (): Promise<void> => {
+    // ダイアログ入力データ作成
+    const input = this.usecase.createInputData(
+      this.gridApi.getSelectedRows(),
+      this.tbl(),
+      [this.mainRows()],
+      { type: INPUT_OPTION_TYPE.SERIAL_NUM, edtPastData: this.edtPastData() },
+    );
+    // ダイアログオープン
+    const output = await this.usecase.openDialog(input);
+    if (!output) {
+      return;
+    }
+    // 行編集Emitterデータ作成
+    const result = this.usecase.createResultData(
+      output,
+      this.gridApi.getSelectedRows(),
+      this.mainRows(),
+      this.tbl(),
+      INPUT_OPTION_TYPE.SERIAL_NUM,
+    );
+    // Emit
+    this.rowEdt.emit(result);
+  };
+
+  /**
+   * まとめて更新(コンテキストメニュー)
+   */
+  private readonly onUpdate = async (): Promise<void> => {
+    // ダイアログ入力データ作成
+    const input = this.usecase.createInputData(
+      this.gridApi.getSelectedRows(),
+      this.tbl(),
+      [
+        this.mainRows(),
+        this.stgRows(),
+        this.crdRows(),
+        this.itmRows(),
+        this.rmkRows(),
+      ],
+      { type: INPUT_OPTION_TYPE.UPDATE, edtPastData: this.edtPastData() },
+    );
+    // ダイアログオープン
+    const output = await this.usecase.openDialog(input);
+    if (!output) {
+      return;
+    }
+    // 行編集Emitterデータ作成
+    const result = this.usecase.createResultData(
+      output,
+      this.gridApi.getSelectedRows(),
+      this.mainRows(),
+      this.tbl(),
+      INPUT_OPTION_TYPE.UPDATE,
+    );
+    // Emit
+    this.rowEdt.emit(result);
+  };
+
+  /**
+   * まとめてコピー(コンテキストメニュー)
+   */
+  private readonly onCopy = (): void => {
+    this.rowEdt.emit([
+      Util.getRowEdtAdd(
+        this.tbl(),
+        this.gridApi.getSelectedRows(),
+        [],
+        Util.getRowIdsSet(this.rows()),
+      ),
+    ]);
+  };
+
   /** グリッド下ボタンオプション */
   private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
     {
+      key: 'menuList',
+      valid: true,
+      detail: [
+        {
+          id: 'replace',
+          lb: 'Replace',
+          ic: 'find_replace',
+          func: this.onReplace,
+        },
+        {
+          id: 'serialNumber',
+          lb: 'Serial Number',
+          ic: '123',
+          func: this.onSerialNumber,
+        },
+        {
+          id: 'update',
+          lb: 'Update',
+          ic: 'edit',
+          func: this.onUpdate,
+        },
+        {
+          id: 'copy',
+          lb: 'Copy & Paste',
+          ic: 'copy_all',
+          func: this.onCopy,
+        },
+        {
+          id: 'delete',
+          lb: 'Delete',
+          ic: 'delete',
+          func: this.onDelete,
+        },
+      ] as (MenuListData & { func: () => {} })[],
+      iconList: ['menu'],
+    },
+    {
       key: 'addRow',
+      valid: true,
+    },
+    {
+      key: 'chgFlt',
+      valid: true,
+    },
+    {
+      key: 'fltOff',
+      valid: true,
+    },
+    {
+      key: 'quickFlt',
+      valid: true,
+      detail: () => {
+        // オートコンプリートデータの設定
+        const autocompData: SelectOption[] = [];
+        const optLabelSet: Set<string> = new Set();
+        const reverseRows = this.rows().toReversed();
+        for (const row of reverseRows) {
+          const label = row[Const.MAIN_COL.MEMO]?.toString() ?? '';
+          if (!label || optLabelSet.has(label)) {
+            // メモが空欄、または既にに存在する場合、オートコンプリートに追加しない
+            continue;
+          }
+
+          optLabelSet.add(label);
+          autocompData.push({
+            id: row[Const.CMN_COL.ID]?.toString() ?? '',
+            value: label,
+            lb: label,
+          });
+        }
+
+        return autocompData;
+      },
+    },
+    {
+      key: 'chgSel',
       valid: true,
     },
     {
@@ -130,22 +326,6 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       ],
     },
     {
-      key: 'fltOff',
-      valid: true,
-    },
-    {
-      key: 'chgFlt',
-      valid: true,
-    },
-    {
-      key: 'chgSel',
-      valid: true,
-    },
-    {
-      key: 'quickFlt',
-      valid: true,
-    },
-    {
       key: 'jmpFirstRow',
       valid: true,
     },
@@ -154,6 +334,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       valid: true,
     },
   ]);
+
   /** セルクリック禁止列 */
   private readonly cellClickForbCols = signal([Const.MAIN_COL.DATE]);
 
@@ -168,12 +349,6 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   protected readonly onReadyGrid = (event: GridReadyEvent): void => {
     this.gridApi = event.api;
-
-    // コンテキストメニューの削除
-    document.body.addEventListener('click', () => {
-      this.gridMenuDsp.set(false);
-      this.gridMenuStyle.set({});
-    });
   };
 
   /**
@@ -217,9 +392,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     this.rowEdt.emit(result);
   };
 
-  protected readonly gridMenuDsp = signal(false);
-  protected readonly gridMenuStyle = signal({});
-  protected readonly gridmenuItemDisabled = signal(false);
+  /**
+   * ステータスリスト押下時
+   */
+  protected readonly onClickStatusContent = (): void => {
+    this.scrIdSet.emit(Const.SCR.STORAGE);
+  };
 
   /**
    * 長押し時
@@ -228,180 +406,22 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   protected readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    // TODO: 仕様変更予定のためコメント化
-    // if ((this.cellClickForbCols as string[]).includes(event.column.getId())) {
-    //   // セルクリック禁止列の場合
-    //   if (Util.checkInputMode(event.data, Const.INPUT_MODE.NONE)) {
-    //     // 空行の場合
-    //     if (!Util.equalObject(this.copyData(), {})) {
-    //       // コピー情報が存在する場合、ペースト
-    //       const date = Util.getDate();
-    //       this.rowEdt.emit([
-    //         Util.getRowEdtAdd(
-    //           this.tbl(),
-    //           [
-    //             {
-    //               ...this.copyData(),
-    //               [Const.CMN_COL.ID]: event.data[Const.CMN_COL.ID],
-    //               [Const.MAIN_COL.DATE]: date,
-    //               [Const.MAIN_COL.USE_DATE]: date,
-    //             },
-    //           ],
-    //           [],
-    //           Util.getRowIdsSet(this.mainRows()),
-    //         ),
-    //       ]);
-    //       // // コピー情報初期化
-    //       // this.copyData.set({});
-    //       // メッセージ表示
-    //       this.snackBar.open('Pasted!');
-    //       setTimeout(() => {
-    //         this.snackBar.dismiss();
-    //       }, 1000);
-    //     }
-    //   } else {
-    //     // 空行以外の場合、コピー
-    //     this.copyData.set(event.data);
-    //     // メッセージ表示
-    //     this.snackBar.open('Copied!');
-    //     setTimeout(() => {
-    //       this.snackBar.dismiss();
-    //     }, 1000);
-    //   }
-    // } else {
-    //   // 上記以外
-    //   const rows = this.gridApi.getSelectedRows();
-    //   if (rows.length === 0) {
-    //     return;
-    //   }
-    //   const today = Util.getDate();
-    //   if (
-    //     !this.edtPastData() &&
-    //     rows.some((dt) => {
-    //       const payDate = dt[Const.MAIN_COL.PAY_DATE];
-    //       return !!payDate && payDate < today;
-    //     })
-    //   ) {
-    //     // 過去データが編集可能でない かつ 支払日が過去のデータが含まれている場合
-    //     this.gridmenuItemDisabled.set(true);
-    //   } else {
-    //     this.gridmenuItemDisabled.set(false);
-    //   }
-    //   this.gridMenuDsp.set(true);
-    //   // const pointer = event.event as PointerEvent;
-    //   // this.gridMenuStyle.set({
-    //   //   left: `${pointer.clientX}px`,
-    //   //   top: `${pointer.clientY}px`,
-    //   // });
-    // }
-  };
-
-  /**
-   * 削除時(コンテキストメニュー)
-   */
-  protected readonly onDelete = (): void => {
-    this.rowEdt.emit([
-      Util.getRowEdtDel(
-        this.tbl(),
-        Util.getRowIds(this.gridApi.getSelectedRows()),
-      ),
-    ]);
-  };
-
-  /**
-   * 置換時(コンテキストメニュー)
-   */
-  protected readonly onReplace = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      [this.mainRows()],
-      { type: INPUT_OPTION_TYPE.REPLACE, edtPastData: this.edtPastData() },
-    );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+    if ((this.cellClickForbCols() as string[]).includes(event.column.getId())) {
+      // セルクリック禁止列の場合
+      this.rowEdt.emit([
+        Util.getRowEdtAdd(
+          this.tbl(),
+          [
+            {
+              ...event.data,
+              [Const.MAIN_COL.DATE]: Util.getDate(),
+              [Const.MAIN_COL.USE_DATE]: Util.getDate(),
+            },
+          ],
+          [],
+          Util.getRowIdsSet(this.rows()),
+        ),
+      ]);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.REPLACE,
-    );
-    // Emit
-    this.rowEdt.emit(result);
-  };
-
-  /**
-   * 連番付与(コンテキストメニュー)
-   */
-  protected readonly onSerialNumber = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      [this.mainRows()],
-      { type: INPUT_OPTION_TYPE.SERIAL_NUM, edtPastData: this.edtPastData() },
-    );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
-    }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.SERIAL_NUM,
-    );
-    // Emit
-    this.rowEdt.emit(result);
-  };
-
-  /**
-   * まとめて更新(コンテキストメニュー)
-   */
-  protected readonly onUpdate = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      [
-        this.mainRows(),
-        this.stgRows(),
-        this.crdRows(),
-        this.itmRows(),
-        this.rmkRows(),
-      ],
-      { type: INPUT_OPTION_TYPE.UPDATE, edtPastData: this.edtPastData() },
-    );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
-    }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.UPDATE,
-    );
-    // Emit
-    this.rowEdt.emit(result);
-  };
-
-  /**
-   * ステータスリスト押下時
-   */
-  protected readonly onClickStatusContent = (): void => {
-    this.scrIdSet.emit(Const.SCR.STORAGE);
   };
 }
