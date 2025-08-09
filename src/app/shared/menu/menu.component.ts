@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, model } from '@angular/core';
-import { MatMenuModule } from '@angular/material/menu';
 import { Scr } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
-import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import {
+  MenuListComponent,
+  MenuListInput,
+} from 'src/app/shared/menu-list/menu-list.component';
 
 @Component({
   selector: 'app-menu',
-  imports: [SharedCommonModule, MatMenuModule],
+  imports: [MenuListComponent],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -14,9 +16,11 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 export class MenuComponent {
   readonly scrId = model.required<Scr>();
 
-  protected readonly menuList = Util.getMenuList();
+  protected readonly menuInput: MenuListInput = {
+    menuList: Util.getMenuList(),
+  };
 
-  protected readonly onClickMenu = (id: Scr): void => {
-    this.scrId.set(id);
+  protected readonly onClickMenu = (id: string): void => {
+    this.scrId.set(id as Scr);
   };
 }
