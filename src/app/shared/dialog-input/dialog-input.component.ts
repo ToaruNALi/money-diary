@@ -13,9 +13,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { map, Observable, of, startWith } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
-import { FormCtrl, InputType, ValType } from 'src/app/shared/constants/types';
+import { FormCtrl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { DialogCommonModule } from 'src/app/shared/dialog-common.module';
 import { DialogInputUsecase } from 'src/app/shared/dialog-input/dialog-input.usecase';
@@ -28,6 +27,11 @@ import { FormSelectComponent } from 'src/app/shared/forms/form-select/form-selec
 import { FormTextComponent } from 'src/app/shared/forms/form-text/form-text.component';
 import { FormTextareaComponent } from 'src/app/shared/forms/form-textarea/form-textarea.component';
 import { FormToggleComponent } from 'src/app/shared/forms/form-toggle/form-toggle.component';
+import {
+  FORM_INPUT_DEF_DATA,
+  FormInputData,
+  SelectOption,
+} from 'src/app/shared/forms/forms.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 export type DialogInput = {
@@ -44,75 +48,40 @@ export type DialogInput = {
 
 export type DialogInputDatas = (DialogInputData | DialogInputData[])[];
 
-export type DialogInputData = {
-  /** ID ※必須 */
-  id: string;
-  /** ラベル @default '' */
-  label?: string;
-  /** 入力値(リセット時データ) ※必須 */
-  value: ValType;
-  /** 入力欄初期値(クリア時データ) @default '' */
-  initValue?: ValType;
-  /** プレースホルダー @default '' */
-  placeholder?: string;
-  /** Setter @default null */
-  setter?:
-    | ((
-        form: FormRecord<FormCtrl>,
-        input: Required<DialogInput>,
-        options?: { type: SetType; option: DialogOption },
-      ) => void)
-    | null;
-  /** Getter @default null */
-  getter?:
-    | ((form: FormRecord<FormCtrl>, input: Required<DialogInput>) => ValType)
-    | null;
-  /** 入力タイプ @default Const.INPUT_TYPE.TEXT */
-  type?: InputType;
-  /** 必須フラグ @default false */
-  required?: boolean;
-  /**
-   * 非活性フラグ
-   * @description trueの場合Validationチェックが無効化される
-   * @default false
-   */
-  disabled?: boolean;
-  /**
-   * 読取専用フラグ
-   * @description trueの場合Validationチェックが無効化されない
-   * @default false
-   */
-  readonly?: boolean;
-  /** 非表示フラグ @default false */
-  hide?: boolean;
-  /** オートコンプリートフラグ @default false */
-  autocomp?: boolean;
-  /** プルダウンリスト @default [] */
-  options?: DialogOption[];
-  /** 最小値 @default Number.MIN_SAFE_INTEGER */
-  min?: number;
-  /** 最大値 @default Number.MAX_SAFE_INTEGER */
-  max?: number;
-  /** 入力禁止文字 @default [] */
-  forbiddenChars?: (string | RegExp)[];
-  /** オートコンプリート用内部項目 @default of([]) */
-  filteredOptions$?: Observable<DialogOption[]>;
-  /** 結果を返却しないフラグ @default false */
-  notReturn?: boolean;
-  /** コンポーネント内スタイル */
-  style?: Record<string, string>;
-  /** フォームスタイル */
-  formStyle?: Record<string, string>;
-};
+export type DialogInputData = FormInputData &
+  Required<{
+    /** ID ※必須 */
+    id: string;
+    /** 入力値(リセット時データ) ※必須 */
+    value: ValType;
+  }> &
+  Partial<{
+    /** Setter @default null */
+    setter:
+      | ((
+          form: FormRecord<FormCtrl>,
+          input: Required<DialogInput>,
+          options?: { type: SetType; option: SelectOption },
+        ) => void)
+      | null;
+    /** Getter @default null */
+    getter:
+      | ((form: FormRecord<FormCtrl>, input: Required<DialogInput>) => ValType)
+      | null;
+    /** 必須フラグ @default false */
+    required: boolean;
+    /** 非活性フラグ(trueの場合Validationチェックが無効化される) @default false */
+    disabled: boolean;
+    /** 非表示フラグ @default false */
+    hide: boolean;
+    /** 結果を返却しないフラグ @default false */
+    notReturn: boolean;
+    /** フォームスタイル @default {} */
+    formStyle: Record<string, string>;
+  }>;
 
 export type DialogInputOption = {
   sameDataOk?: boolean;
-};
-
-export type DialogOption = {
-  id: string | number;
-  value?: string;
-  lb: string;
 };
 
 export type SetType = 'select' | 'clear';
@@ -182,26 +151,15 @@ export class DialogInputComponent {
   private readonly fb = inject(FormBuilder);
   private readonly usecase = inject(DialogInputUsecase);
   private readonly dialogData: Required<DialogInputData> = {
+    ...FORM_INPUT_DEF_DATA,
     id: '',
-    label: '',
     value: '',
-    initValue: '',
-    placeholder: '',
     setter: null,
     getter: null,
-    type: Const.INPUT_TYPE.TEXT,
     required: false,
     disabled: false,
-    readonly: false,
     hide: false,
-    autocomp: false,
-    options: [],
-    min: Number.MIN_SAFE_INTEGER,
-    max: Number.MAX_SAFE_INTEGER,
-    forbiddenChars: [],
-    filteredOptions$: of([]),
     notReturn: false,
-    style: {},
     formStyle: {},
   } as const;
   private readonly btnOptData: Required<DialogInputButtonOption> = {
@@ -333,14 +291,6 @@ export class DialogInputComponent {
         // 非活性
         this.form.get(data.id)?.disable();
       }
-
-      if (!!data.autocomp && !!data.options) {
-        // オートコンプリート
-        data.filteredOptions$ = this.form.get(data.id)?.valueChanges.pipe(
-          startWith(''),
-          map((value) => this.usecase.getFilterOptions(data.options!, value)),
-        );
-      }
     };
 
     const setValue = (data: DialogInputData) => {
@@ -451,7 +401,7 @@ export class DialogInputComponent {
   protected readonly onInput = (
     type: SetType,
     data: DialogInputData,
-    option: DialogOption,
+    option: SelectOption,
   ): void => {
     const setter = data.setter;
     if (!!setter) {

@@ -1,19 +1,22 @@
-<mat-form-field class="form-field" appearance="outline">
-  <mat-label>{{ reqData().label }}</mat-label>
-  <input
-    matInput
-    [style]="reqData().style"
-    [readonly]="reqData().readonly"
-    [placeholder]="reqData().placeholder"
-    [matDatepicker]="dp"
-    [formControl]="control()"
-  />
-  <app-form-clear-button
-    matSuffix
-    [disabled]="control().disabled || reqData().readonly"
-    [value]="control().value"
-    (clearBtnClick)="onClickClearBtn()"
-  />
-  <mat-datepicker-toggle matIconSuffix [for]="dp" />
-  <mat-datepicker #dp [disabled]="control().disabled || reqData().readonly" />
-</mat-form-field>
+<div style="display: flex; align-items: center">
+  @let disabled = control().disabled || reqData().readonly;
+  <mat-form-field style="flex: auto" class="form-field" appearance="outline">
+    <mat-label>{{ reqData().label }}</mat-label>
+    <input
+      matInput
+      [style]="reqData().style"
+      [readonly]="reqData().readonly"
+      [placeholder]="reqData().placeholder"
+      [matDatepicker]="dp"
+      [formControl]="control()"
+    />
+    <app-form-clear-button
+      matSuffix
+      [disabled]="disabled"
+      [value]="control().value"
+      (clearBtnClick)="onClickClearBtn()"
+    />
+    <mat-datepicker #dp [disabled]="disabled" />
+  </mat-form-field>
+  <mat-datepicker-toggle style="width: 35px" matIconSuffix [for]="dp" />
+</div>

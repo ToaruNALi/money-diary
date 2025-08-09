@@ -7,7 +7,6 @@ import {
   ValidationErrors,
   ValidatorFn,
 } from '@angular/forms';
-import Fuse from 'fuse.js';
 import * as Const from 'src/app/shared/constants/constants';
 import { FormCtrl, InputType, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
@@ -15,38 +14,15 @@ import {
   DIALOG_BUTTON,
   DialogInput,
   DialogInputData,
-  DialogOption,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
+import { SelectOption } from 'src/app/shared/forms/forms.component';
 
 @Injectable({
   providedIn: 'root',
 })
 export class DialogInputUsecase {
   private readonly fb = inject(FormBuilder);
-
-  /**
-   * オートコンプリートリストを返却する
-   * @param options 検索対象リスト
-   * @param value 検索文字列
-   * @returns
-   */
-  readonly getFilterOptions = (
-    options: DialogOption[],
-    value: ValType,
-  ): DialogOption[] => {
-    if (value === null || value === '') {
-      return options;
-    }
-    const fuseOptions = {
-      keys: ['value'],
-      includeScore: true,
-      threshold: 0.4,
-      shouldSort: true,
-    };
-    const fuse = new Fuse(options, fuseOptions);
-    return fuse.search(value.toString()).map((fuse) => fuse.item);
-  };
 
   /**
    * チェックボックス項目用カスタムバリデーター
@@ -164,7 +140,7 @@ export class DialogInputUsecase {
   readonly cvtValueToFormCtrl = (
     value: ValType = null,
     type: InputType | undefined,
-    options: DialogOption[] = [],
+    options: SelectOption[] = [],
   ): FormCtrl => {
     if (type === Const.INPUT_TYPE.CHECK) {
       // Checkbox
@@ -194,7 +170,7 @@ export class DialogInputUsecase {
   readonly cvtValueToFormValue = (
     value: ValType = null,
     type: InputType | undefined,
-    options: DialogOption[] = [],
+    options: SelectOption[] = [],
   ): ValType | Record<string, ValType> => {
     if (type === Const.INPUT_TYPE.CHECK) {
       // Checkbox
