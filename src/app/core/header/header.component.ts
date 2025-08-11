@@ -15,11 +15,17 @@ import { ScrDspData } from 'src/app/shared/constants/types';
 import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 import { FileDownloadComponent } from 'src/app/shared/file-download/file-download.component';
 import { FileUploadComponent } from 'src/app/shared/file-upload/file-upload.component';
+import { PageReloadComponent } from './../../shared/page-reload/page-reload.component';
 import { SharedCommonModule } from './../../shared/shared-common.module';
 
 @Component({
   selector: 'app-header',
-  imports: [SharedCommonModule, FileDownloadComponent, FileUploadComponent],
+  imports: [
+    SharedCommonModule,
+    PageReloadComponent,
+    FileDownloadComponent,
+    FileUploadComponent,
+  ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

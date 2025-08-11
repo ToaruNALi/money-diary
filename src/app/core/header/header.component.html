@@ -6,13 +6,15 @@
 <div style="flex: auto"></div>
 <div class="right-content">
   <!-- 過去データ編集可能フラグ -->
-  <!-- <app-form-toggle [data]="formData()" [form]="form()"></app-form-toggle> -->
+  <!-- <app-form-toggle [data]="formData()" [form]="form()"/> -->
   <!-- History Reset -->
   <!-- <app-history-reset
     class="icon"
     [hist]="hist()"
     (histReset)="histReset.emit()"
-  ></app-history-reset> -->
+  /> -->
+  <!-- ページリロードボタン -->
+  <app-page-reload />
   <!-- ダウンロードボタン -->
   <app-file-download [data]="data()" />
   <!-- アップロードボタン -->
