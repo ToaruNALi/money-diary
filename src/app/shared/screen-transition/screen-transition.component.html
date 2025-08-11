@@ -1,8 +1,11 @@
 <app-swipe
+  [minDistanceX]="threshold"
+  [minDistanceY]="threshold"
   (swipe)="onSwipe($event)"
   (click)="onClick()"
   (touchStart)="onTouchStart()"
   (touchEnd)="onTouchEnd()"
+  (touchMove)="onTouchMove($event)"
 >
   <button mat-icon-button>
     <mat-icon>open_with</mat-icon>

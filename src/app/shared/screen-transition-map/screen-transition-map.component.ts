@@ -19,10 +19,12 @@ import { Scr } from 'src/app/shared/constants/types';
 export class ScreenTransitionMapComponent {
   readonly display = input.required<boolean>();
   readonly scrId = input.required<Scr>();
+  readonly nextScrId = input.required<Scr | null>();
   readonly scrData = input.required<Record<Scr, ScrData>>();
 
   protected readonly map = computed(() => {
     const id = this.scrId();
+    const nextId = this.nextScrId();
     const datas = this.scrData();
 
     let xSize = 0;
@@ -45,6 +47,7 @@ export class ScreenTransitionMapComponent {
       [...new Array(xSize)].fill({
         id: '',
         select: false,
+        nextSelect: false,
         icon: '',
       }),
     );
@@ -54,6 +57,7 @@ export class ScreenTransitionMapComponent {
       retMap[data.py][data.px] = {
         id: scr,
         select: scr === id,
+        nextSelect: scr === nextId,
         icon: info.ic,
       };
     }

@@ -103,7 +103,7 @@ export const FILE_NAME = {
 
 /** 最大値 */
 export const MAX_LEN = {
-  SCR_TRANS_MAP: 20,
+  SCR_TRANS_MAP: 5,
 } as const;
 
 /** 時間[ms] */

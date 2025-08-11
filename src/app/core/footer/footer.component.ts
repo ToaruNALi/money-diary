@@ -34,6 +34,7 @@ import { UndoComponent } from 'src/app/shared/undo/undo.component';
 })
 export class FooterComponent {
   readonly mapDsp = model.required<boolean>();
+  readonly nextScrId = model.required<Scr | null>();
   readonly tblMap = model.required<TblMap>();
   readonly scrInf = input.required<ScrInf>();
   readonly hist = input.required<Hist>();

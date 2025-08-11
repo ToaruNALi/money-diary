@@ -519,6 +519,8 @@ export class StoreUsecase {
     // タイマー設定
     this.storeTmp.addMapDspTimer(
       setTimeout(() => {
+        // 遷移予定画面ID初期化
+        this.storeTmp.setNextScrId(null);
         // 画面ID設定
         this.storeScr.updScrId(scrId);
         // マップ表示

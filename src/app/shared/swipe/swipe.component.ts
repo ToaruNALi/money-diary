@@ -2,17 +2,32 @@ import {
   ChangeDetectionStrategy,
   Component,
   input,
+  linkedSignal,
   output,
   signal,
 } from '@angular/core';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
+export type SwipeOutput = {
+  /** スワイプ距離X軸 */
+  disX: number;
+  /** スワイプ距離Y軸 */
+  disY: number;
+  /** スワイプ */
+  swiped: {
+    up: boolean;
+    down: boolean;
+    left: boolean;
+    right: boolean;
+  };
+};
+
 @Component({
-    selector: 'app-swipe',
-    imports: [SharedCommonModule],
-    templateUrl: './swipe.component.html',
-    styleUrl: './swipe.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+  selector: 'app-swipe',
+  imports: [SharedCommonModule],
+  templateUrl: './swipe.component.html',
+  styleUrl: './swipe.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwipeComponent {
   /** タップ時の誤動作を防ぐためのスワイプ時の処理を実行しない最小距離X */
@@ -24,18 +39,33 @@ export class SwipeComponent {
   protected readonly swipeRight = output<void>();
   protected readonly swipeUp = output<void>();
   protected readonly swipeDown = output<void>();
-  protected readonly swipe = output<{ x: number; y: number }>();
+  protected readonly swipe = output<SwipeOutput>();
   protected readonly click = output<void>();
   protected readonly touchStart = output<void>();
   protected readonly touchEnd = output<void>();
+  protected readonly touchMove = output<SwipeOutput>();
 
-  // private minimumDistance = 30;
   // スワイプ開始時の座標
   private readonly startX = signal<number>(0);
   private readonly startY = signal<number>(0);
   // スワイプ終了時の座標
   private readonly endX = signal<number>(0);
   private readonly endY = signal<number>(0);
+  // スワイプ中かどうか
+  protected readonly swiping = linkedSignal(() => ({
+    up:
+      this.startY() > this.endY() &&
+      Math.abs(this.endY() - this.startY()) > this.minDistanceY(),
+    down:
+      this.startY() < this.endY() &&
+      Math.abs(this.endY() - this.startY()) > this.minDistanceY(),
+    left:
+      this.startX() > this.endX() &&
+      Math.abs(this.endX() - this.startX()) > this.minDistanceX(),
+    right:
+      this.startX() < this.endX() &&
+      Math.abs(this.endX() - this.startX()) > this.minDistanceX(),
+  }));
 
   protected readonly onTouchStart = (e: TouchEvent): void => {
     this.startX.set(e.touches[0].pageX);
@@ -49,72 +79,57 @@ export class SwipeComponent {
   protected readonly onTouchMove = (e: TouchEvent): void => {
     this.endX.set(e.changedTouches[0].pageX);
     this.endY.set(e.changedTouches[0].pageY);
+    this.touchMove.emit({
+      disX: this.endX() - this.startX(),
+      disY: this.endY() - this.startY(),
+      swiped: {
+        ...this.swiping(),
+      },
+    });
   };
 
   protected readonly onTouchEnd = (_e: TouchEvent): void => {
-    const distanceX = this.endX() - this.startX();
-    const distanceY = this.endY() - this.startY();
-
     let swipeFlg = false;
 
-    if (
-      this.startX() < this.endX() &&
-      Math.abs(distanceX) > this.minDistanceX()
-    ) {
-      console.log('Swipe Right');
-      swipeFlg = true;
-      this.swipeRight.emit();
-    }
-
-    if (
-      this.startX() > this.endX() &&
-      Math.abs(distanceX) > this.minDistanceX()
-    ) {
-      console.log('Swipe Left');
-      swipeFlg = true;
-      this.swipeLeft.emit();
-    }
-
-    if (
-      this.startY() < this.endY() &&
-      Math.abs(distanceY) > this.minDistanceY()
-    ) {
-      console.log('Swipe Down');
-      swipeFlg = true;
-      this.swipeDown.emit();
-    }
-
-    if (
-      this.startY() > this.endY() &&
-      Math.abs(distanceY) > this.minDistanceY()
-    ) {
-      console.log('Swipe Up');
+    if (this.swiping().up) {
       swipeFlg = true;
       this.swipeUp.emit();
     }
-
-    if (swipeFlg) {
-      this.swipe.emit({ x: distanceX, y: distanceY });
+    if (this.swiping().down) {
+      swipeFlg = true;
+      this.swipeDown.emit();
     }
-
+    if (this.swiping().left) {
+      swipeFlg = true;
+      this.swipeLeft.emit();
+    }
+    if (this.swiping().right) {
+      swipeFlg = true;
+      this.swipeRight.emit();
+    }
+    if (swipeFlg) {
+      this.swipe.emit({
+        disX: this.endX() - this.startX(),
+        disY: this.endY() - this.startY(),
+        swiped: {
+          ...this.swiping(),
+        },
+      });
+    }
     this.touchEnd.emit();
+    // スワイプ中フラグをリセット
+    this.swiping.set({ up: false, down: false, left: false, right: false });
   };
 
-  protected readonly onClick = (_e: Event): void => {
+  protected readonly onClick = (_: Event): void => {
     this.click.emit();
   };
 
-  protected readonly onPointerDown = (e: PointerEvent): void => {
+  protected readonly onPointerDown = (_: PointerEvent): void => {
     this.touchStart.emit();
   };
 
-  protected readonly onPointerMove = (e: PointerEvent): void => {};
-
-  protected readonly onPointerUp = (_e: PointerEvent): void => {
+  protected readonly onPointerUp = (_: PointerEvent): void => {
     this.touchEnd.emit();
-  };
-
-  protected readonly onContextMenu = (_e: Event): void => {
-    // this.touchEnd.emit();
   };
 }

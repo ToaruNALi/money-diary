@@ -25,6 +25,10 @@
     padding: 1px;
     color: $my-font-color-primary;
 
+    &.next-icon {
+      background-color: #559999aa;
+    }
+
     &.select-icon {
       background-color: #550000aa;
     }

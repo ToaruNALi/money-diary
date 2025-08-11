@@ -3,7 +3,11 @@
     @for (datas of map(); track $index) {
       <div>
         @for (data of datas; track $index) {
-          <mat-icon class="icon" [class.select-icon]="data.select">
+          <mat-icon
+            class="icon"
+            [class.next-icon]="data.nextSelect"
+            [class.select-icon]="data.select"
+          >
             {{ data.icon }}
           </mat-icon>
         }

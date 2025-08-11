@@ -5,13 +5,13 @@
   (scrIdChange)="scrIdChange.emit($event)"
 />
 <!-- Info -->
-<!-- <app-info></app-info> -->
+<!-- <app-info/> -->
 <!-- History Reset -->
 <!-- <app-history-reset
   class="icon"
   [hist]="hist()"
   (histReset)="histReset.emit()"
-></app-history-reset> -->
+/> -->
 <!-- Favorite -->
 <!-- <app-favorite
   class="icon"
@@ -20,11 +20,12 @@
 /> -->
 <!-- TODO: グラフ表示機能作成予定 -->
 <!-- Chart -->
-<app-chart [rows]="mainRows()"></app-chart>
+<app-chart [rows]="mainRows()" />
 <!-- Screen Transition -->
 <app-screen-transition
   class="icon"
   [(mapDsp)]="mapDsp"
+  [(nextScrId)]="nextScrId"
   [scrId]="scrInf().si"
   [scrData]="scrInf().sd"
   (scrIdChange)="scrIdChange.emit($event)"

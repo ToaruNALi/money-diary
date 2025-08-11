@@ -11,6 +11,7 @@ import * as Const from 'src/app/shared/constants/constants';
 import { Scr } from 'src/app/shared/constants/types';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 import { SwipeComponent } from 'src/app/shared/swipe/swipe.component';
+import { SwipeOutput } from './../swipe/swipe.component';
 
 @Component({
   selector: 'app-screen-transition',
@@ -21,6 +22,7 @@ import { SwipeComponent } from 'src/app/shared/swipe/swipe.component';
 })
 export class ScreenTransitionComponent {
   readonly mapDsp = model.required<boolean>();
+  readonly nextScrId = model.required<Scr | null>();
   readonly scrId = input.required<Scr>();
   readonly scrData = input.required<Record<Scr, ScrData>>();
 
@@ -28,19 +30,29 @@ export class ScreenTransitionComponent {
 
   protected readonly scrIdChange = output<Scr | undefined>();
 
-  private readonly threshold = 30 as const;
+  protected readonly threshold = 30 as const;
   private readonly swipeDirection = computed(() =>
     this.swipeReverse() ? -1 : 1,
   );
 
   /**
    * スワイプ時
-   * @param dis
+   * @param event
    */
-  protected readonly onSwipe = (dis: { x: number; y: number }): void => {
+  protected readonly onSwipe = (event: SwipeOutput): void => {
+    const nextScrId = this.getNextScrId(event.disX, event.disY);
+    if (!!nextScrId) {
+      this.scrIdChange.emit(nextScrId as Scr);
+    }
+  };
+
+  private readonly getNextScrId = (
+    disX: number,
+    disY: number,
+  ): string | null => {
     // スワイプ距離がしきい値より大きい場合、画面遷移する
-    const moveX = this.moveDirection(dis.x);
-    const moveY = this.moveDirection(dis.y);
+    const moveX = this.moveDirection(disX);
+    const moveY = this.moveDirection(disY);
 
     const scrNow = this.scrData()[this.scrId()];
 
@@ -49,32 +61,26 @@ export class ScreenTransitionComponent {
 
     if (moveX !== 0 && moveY !== 0) {
       // X,Y方向
-      if (this.matchPos(initX, initY)) {
-        return;
-      }
+      return this.getMatchScrId(initX, initY);
     } else if (moveX !== 0) {
       // X方向
       for (let px = initX; px !== scrNow.px; px = this.movedPos(px, moveX)) {
-        if (this.matchPos(px, initY)) {
-          return;
+        const scr = this.getMatchScrId(px, initY);
+        if (!!scr) {
+          return scr;
         }
       }
     } else if (moveY !== 0) {
       // Y方向
       for (let py = initY; py !== scrNow.py; py = this.movedPos(py, moveY)) {
-        if (this.matchPos(initX, py)) {
-          return;
+        const scr = this.getMatchScrId(initX, py);
+        if (!!scr) {
+          return scr;
         }
       }
     }
-  };
 
-  /**
-   * クリック時
-   */
-  protected readonly onClick = (): void => {
-    // 前画面に遷移
-    this.scrIdChange.emit(undefined);
+    return null;
   };
 
   /**
@@ -112,14 +118,20 @@ export class ScreenTransitionComponent {
    * @param py
    * @returns
    */
-  private readonly matchPos = (px: number, py: number): boolean => {
-    for (const [scr, data] of Object.entries(this.scrData())) {
-      if (data.px === px && data.py === py) {
-        this.scrIdChange.emit(scr as Scr);
-        return true;
-      }
-    }
-    return false;
+  private readonly getMatchScrId = (px: number, py: number): string | null => {
+    return (
+      Object.entries(this.scrData()).find(
+        ([_, data]) => data.px === px && data.py === py,
+      )?.[0] ?? null
+    );
+  };
+
+  /**
+   * クリック時
+   */
+  protected readonly onClick = (): void => {
+    // 前画面に遷移
+    this.scrIdChange.emit(undefined);
   };
 
   /**
@@ -134,5 +146,13 @@ export class ScreenTransitionComponent {
    */
   protected readonly onTouchEnd = (): void => {
     this.mapDsp.set(false);
+  };
+
+  /**
+   * タッチ移動時
+   */
+  protected readonly onTouchMove = (event: SwipeOutput): void => {
+    this.mapDsp.set(true);
+    this.nextScrId.set(this.getNextScrId(event.disX, event.disY) as Scr | null);
   };
 }

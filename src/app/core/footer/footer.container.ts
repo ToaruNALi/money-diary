@@ -8,10 +8,12 @@ import { StoreUsecase } from 'src/app/usecase/store.usecase';
   template: `
     <app-footer
       [mapDsp]="usecase.mapDsp()"
+      [nextScrId]="usecase.storeTmp.nextScrId()"
       [tblMap]="usecase.storeTblInf.tblMap()"
       [scrInf]="usecase.storeScr.scrInf()"
       [hist]="usecase.storeHist.hist()"
       (mapDspChange)="usecase.changeMapDsp($event)"
+      (nextScrIdChange)="usecase.storeTmp.setNextScrId($event)"
       (histReset)="usecase.resetHist()"
       (scrIdChange)="usecase.changeScr($event)"
       (rowEdt)="usecase.edtRows($event)"

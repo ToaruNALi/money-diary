@@ -6,12 +6,14 @@ import {
   withMethods,
   withState,
 } from '@ngrx/signals';
-import { FilterInputModel } from 'src/app/shared/constants/types';
+import { FilterInputModel, Scr } from 'src/app/shared/constants/types';
 
 /** State */
 type TmpState = {
   /** 画面遷移マップ表示フラグ */
   mapDsp: boolean;
+  /** 遷移予定画面ID */
+  nextScrId: Scr | null;
   /** 画面遷移マップ表示タイマー */
   mapDspTimers: any[];
   /** 入力画面フィルタ情報 */
@@ -23,6 +25,7 @@ type TmpState = {
 /** Initial State */
 const initState: TmpState = {
   mapDsp: false,
+  nextScrId: null,
   mapDspTimers: [],
   filterInputModel: 'none',
   edtPastData: true, // false
@@ -40,6 +43,10 @@ export const TmpStore = signalStore(
     /** 画面遷移マップ表示フラグ設定 */
     setMapDsp: (mapDsp: boolean): void => {
       patchState(store, { mapDsp });
+    },
+    /** 遷移予定画面ID設定 */
+    setNextScrId: (nextScrId: Scr | null): void => {
+      patchState(store, { nextScrId });
     },
     /** 画面遷移マップ表示タイマーリセット */
     resetMapDspTimers: (): void => {
