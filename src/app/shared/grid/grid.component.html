@@ -1,6 +1,6 @@
 <!-- グリッド上共通機能 -->
 @if (!!topOpt()) {
-  <app-money-status [list]="gridTopOptDsp()[0].detail"></app-money-status>
+  <app-money-status [list]="gridTopOptDsp()[0].detail" />
 }
 
 <!-- グリッド -->
@@ -46,7 +46,7 @@
             [class.disabled]="opt.disabled"
             [menuInput]="{ icon: opt.icon, menuList: opt.detail }"
             (menuClick)="opt.func(opt, $event)"
-          ></app-menu-list>
+          />
         } @else {
           <!-- 上記以外 -->
           <mat-icon
