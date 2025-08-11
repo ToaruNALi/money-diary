@@ -11,7 +11,15 @@
       rel="stylesheet"
     />
   </head>
-  <body style="margin: 0px; background-color: #141516">
+  <body
+    style="
+      margin: 0px;
+      background-color: #141516;
+      overflow: hidden;
+      overscroll-behavior: contain;
+    "
+  >
+    <!-- overscroll-behavior: contain; → 下スクロールで画面が更新されるのを防ぐ目的 -->
     <app-root></app-root>
   </body>
 </html>
