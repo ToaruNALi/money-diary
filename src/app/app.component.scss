@@ -15,7 +15,7 @@
   left: 0;
   z-index: $my-z-index-header;
   color: $my-font-color-primary;
-  background-color: #0c0c0d;
+  background-color: $my-back-color-header;
   user-select: none;
 }
 
@@ -36,7 +36,7 @@
   left: 0;
   z-index: $my-z-index-footer;
   color: $my-font-color-primary;
-  background-color: #0c0c0d;
+  background-color: $my-back-color-footer;
   user-select: none;
 }
 
