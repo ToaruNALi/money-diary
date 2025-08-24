@@ -3,7 +3,7 @@ import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
-  FilterInputModel,
+  FilterEdt,
   RowEdt,
   Scr,
   Tbl,
@@ -563,15 +563,15 @@ export class StoreUsecase {
 
   /**
    * フィルタモデル設定
-   * @param model
+   * @param edt
    */
-  readonly setFilterInputModel = (model: FilterInputModel): void => {
+  readonly edtFilter = (edt: FilterEdt): void => {
     // フィルタモデル設定
-    this.storeTmp.setFilterInputModel(model);
+    this.storeTmp.edtFilter(edt);
     // 一定時間待機
     setTimeout(() => {
       // フィルタモデルリセット
-      this.storeTmp.setFilterInputModel('none');
+      this.storeTmp.edtFilter({ ...edt, filter: 'none' });
     });
   };
 }

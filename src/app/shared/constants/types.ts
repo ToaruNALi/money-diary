@@ -77,6 +77,11 @@ export type MenuListData = {
   ab?: string;
   ic: string;
 };
+/** フィルター編集 */
+export type FilterEdt = {
+  tbl: Tbl;
+  filter: FilterInputModel;
+};
 /** フィルターモデル */
 export type FilterInputModel = FilterModel | null | 'none';
 

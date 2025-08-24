@@ -75,13 +75,16 @@ export class RemarkComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterInputModelSet.emit({
-      [Const.MAIN_COL.REMARK]: filterRemark,
-      [Const.MAIN_COL.AMOUNT_NUM]: filterAmount,
-      [Const.MAIN_COL.INPUT_MODE]: {
-        filter: Const.INPUT_MODE.ALL_REQ,
-        filterType: 'number',
-        type: 'equal',
+    this.filterEdt.emit({
+      tbl: Const.TBL.MAIN,
+      filter: {
+        [Const.MAIN_COL.REMARK]: filterRemark,
+        [Const.MAIN_COL.AMOUNT_NUM]: filterAmount,
+        [Const.MAIN_COL.INPUT_MODE]: {
+          filter: Const.INPUT_MODE.ALL_REQ,
+          filterType: 'number',
+          type: 'equal',
+        },
       },
     });
     // 入力画面に遷移

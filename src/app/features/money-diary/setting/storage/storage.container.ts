@@ -13,7 +13,7 @@ import * as Const from 'src/app/shared/constants/constants';
       [tbl]="tbl"
       [tblMap]="usecase.storeTblInf.tblMap()"
       (rowEdt)="onEdtRows($event)"
-      (filterInputModelSet)="onSetFilterInputModel($event)"
+      (filterEdt)="onEdtFilter($event)"
       (scrIdSet)="onSetScrId($event)"
     ></app-storage>
   `,

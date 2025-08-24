@@ -20,11 +20,7 @@ import {
   MoneyDiaryInputUsecase,
 } from 'src/app/features/money-diary/money-diary-input/money-diary-input.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import {
-  FilterInputModel,
-  MenuListData,
-  ValType,
-} from 'src/app/shared/constants/types';
+import { MenuListData, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import { SelectOption } from 'src/app/shared/forms/forms.component';
@@ -56,8 +52,7 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(MoneyDiaryInputUsecase);
-  /** フィルターモデル */
-  readonly filterModel = input.required<FilterInputModel>();
+
   /** 過去データ編集可能フラグ */
   readonly edtPastData = input.required<boolean>();
 
@@ -88,7 +83,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   );
   /** 行データ */
   private readonly rows = computed(() => {
-    const filter = this.filterModel();
+    const filter = this.filter();
     if (filter !== 'none') {
       this.gridApi?.setFilterModel(null);
       this.gridApi?.setFilterModel(filter);

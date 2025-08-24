@@ -5,12 +5,7 @@ import {
   inject,
 } from '@angular/core';
 import * as Animation from 'src/app/shared/constants/animations';
-import {
-  FilterInputModel,
-  RowEdt,
-  Scr,
-  Tbl,
-} from 'src/app/shared/constants/types';
+import { FilterEdt, RowEdt, Scr, Tbl } from 'src/app/shared/constants/types';
 import { StoreUsecase } from 'src/app/usecase/store.usecase';
 
 @Component({
@@ -36,10 +31,8 @@ export abstract class MoneyDiaryBaseContainerComponent {
    * フィルター設定
    * @param event
    */
-  protected readonly onSetFilterInputModel = (
-    event: FilterInputModel,
-  ): void => {
-    this.usecase.setFilterInputModel(event);
+  protected readonly onEdtFilter = (event: FilterEdt): void => {
+    this.usecase.edtFilter(event);
   };
 
   /**

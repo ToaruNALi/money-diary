@@ -13,7 +13,7 @@ import * as Const from 'src/app/shared/constants/constants';
       [display]="displayOpt().afterClass"
       [tbl]="tbl"
       [tblMap]="usecase.storeTblInf.tblMap()"
-      [filterModel]="usecase.storeTmp.filterInputModel()"
+      [filterModel]="usecase.storeTmp.filterModel()"
       [edtPastData]="usecase.storeTmp.edtPastData()"
       (rowEdt)="onEdtRows($event)"
       (scrIdSet)="onSetScrId($event)"

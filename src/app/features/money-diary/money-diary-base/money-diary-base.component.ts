@@ -11,6 +11,7 @@ import { GridApi } from 'ag-grid-community';
 import { Row, TblMap } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
+  FilterEdt,
   FilterInputModel,
   RowEdt,
   Scr,
@@ -27,13 +28,15 @@ export abstract class MoneyDiaryBaseComponent {
   readonly tblMap = input.required<TblMap>();
   /** 行データKey */
   readonly tbl = input.required<Tbl>();
+  /** フィルターモデル */
+  readonly filterModel = input<Record<Tbl, FilterInputModel>>();
   /** 表示区分 */
   readonly display = input<string>();
   /** フィルタKey */
   readonly fltKey = model<string>('');
 
   /** フィルターモデル */
-  protected readonly filterInputModelSet = output<FilterInputModel>();
+  protected readonly filterEdt = output<FilterEdt>();
   /** 画面ID */
   protected readonly scrIdSet = output<Scr>();
   /** 行データ更新 */
@@ -58,4 +61,8 @@ export abstract class MoneyDiaryBaseComponent {
     () => this.tblMap()[Const.TBL.SCHEDULE],
   );
   protected readonly memRows = computed(() => this.tblMap()[Const.TBL.MEMO]);
+
+  protected readonly filter = computed(
+    () => this.filterModel()?.[this.tbl()] ?? 'none',
+  );
 }

@@ -55,12 +55,15 @@ export class ItemComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterInputModelSet.emit({
-      [Const.MAIN_COL.ITEM]: filterItem,
-      [Const.MAIN_COL.INPUT_MODE]: {
-        filter: Const.INPUT_MODE.ALL_REQ,
-        filterType: 'number',
-        type: 'equal',
+    this.filterEdt.emit({
+      tbl: Const.TBL.MAIN,
+      filter: {
+        [Const.MAIN_COL.ITEM]: filterItem,
+        [Const.MAIN_COL.INPUT_MODE]: {
+          filter: Const.INPUT_MODE.ALL_REQ,
+          filterType: 'number',
+          type: 'equal',
+        },
       },
     });
     // 入力画面に遷移
