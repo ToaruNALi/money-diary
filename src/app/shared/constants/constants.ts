@@ -207,6 +207,42 @@ export const SERIAL_DATE_FMT_LIST = [
   { id: DATE_FMT.YY_MM_DD, lb: 'Day' },
 ] as const satisfies { id: DateFmt; lb: string }[];
 
+/** 完了ステータス */
+export const COMP_STATUS = {
+  /** 新規 */
+  OPEN: 0,
+  /** 実施中 */
+  DOING: 1,
+  /** 予定 */
+  TODO: 2,
+  /** 一時停止 */
+  PENDING: 3,
+  /** 完了 */
+  DONE: 4,
+  /** キャンセル */
+  CANCELED: 11,
+  /** クローズ */
+  CLOSE: 20,
+} as const;
+type CompStatus = (typeof COMP_STATUS)[keyof typeof COMP_STATUS];
+
+/** 完了ステータス */
+export const COMP_STATUS_LIST = [
+  { id: COMP_STATUS.OPEN, lb: 'Open' },
+  { id: COMP_STATUS.TODO, lb: 'Todo' },
+  { id: COMP_STATUS.DOING, lb: 'Doing' },
+  { id: COMP_STATUS.PENDING, lb: 'Pending' },
+  { id: COMP_STATUS.DONE, lb: 'Done' },
+  { id: COMP_STATUS.CANCELED, lb: 'Canceled' },
+  { id: COMP_STATUS.CLOSE, lb: 'Close' },
+] as const satisfies { id: CompStatus; lb: string }[];
+
+/** 入力モード */
+export const MEMO_MODE = {
+  LIST: 'li',
+  DETAIL: 'dt',
+} as const;
+
 /**************************************************
  * 画面情報
  **************************************************/
@@ -404,6 +440,16 @@ export const SMR_COL = {
 /** Memo カラム */
 export const MEM_COL = {
   ...CMN_COL,
+  DISPLAY_COLUMNS: 'dc',
+  VALID_COLUMNS: 'vc',
+  DETAIL_COUNT: 'ct',
+  MODE: 'md',
+  DATE: 'dt',
+  AMOUNT: 'am',
+  AMOUNT_NUM: 'an',
+  DETAIL: 'dl',
+  STATUS: 'st',
+  COMPLETE_DATE: 'cd',
 } as const;
 
 /** Schedule カラム */
@@ -466,7 +512,18 @@ export const SAVE_COL = {
   [TBL.ITEM]: [...CMN_SAVE_COL, ITM_COL.SUMMARY_COUNT_FLG],
   [TBL.REMARK]: [...CMN_SAVE_COL, RMK_COL.MEMO],
   [TBL.SUMMARY]: [],
-  [TBL.MEMO]: [...CMN_SAVE_COL],
+  [TBL.MEMO]: [
+    ...CMN_SAVE_COL,
+    MEM_COL.DISPLAY_COLUMNS,
+    MEM_COL.VALID_COLUMNS,
+    MEM_COL.MODE,
+    MEM_COL.DATE,
+    MEM_COL.AMOUNT,
+    MEM_COL.AMOUNT_NUM,
+    MEM_COL.DETAIL,
+    MEM_COL.STATUS,
+    MEM_COL.COMPLETE_DATE,
+  ],
   [TBL.SCHEDULE]: [...CMN_SAVE_COL, SCD_COL.SEARCH_MEMO, SCD_COL.MEMO_PLUS_A],
 } as const satisfies Record<Tbl, string[]>;
 
@@ -540,11 +597,20 @@ export const TBL_DEF_VAL = {
   },
   [TBL.MEMO]: {
     ...CMN_DEF_VAL,
+    [MEM_COL.DISPLAY_COLUMNS]: [],
+    [MEM_COL.VALID_COLUMNS]: [],
+    [MEM_COL.MODE]: '',
+    [MEM_COL.DATE]: null,
+    [MEM_COL.AMOUNT]: '',
+    [MEM_COL.AMOUNT_NUM]: Number.NaN,
+    [MEM_COL.DETAIL]: '',
+    [MEM_COL.STATUS]: COMP_STATUS.OPEN,
+    [MEM_COL.COMPLETE_DATE]: null,
   },
   [TBL.SCHEDULE]: {
     ...CMN_DEF_VAL,
     [SCD_COL.SEARCH_MEMO]: '',
-    [SCD_COL.MEMO_PLUS_A]: [] as ValType,
+    [SCD_COL.MEMO_PLUS_A]: [],
   },
 } as const satisfies Record<Tbl, Record<string, ValType>>;
 
@@ -581,6 +647,8 @@ export const SAVE_DEF_VAL = {
   [TBL.MEMO]: {
     ...TBL_DEF_VAL[TBL.MEMO],
     [MEM_COL.INPUT_MODE]: INPUT_MODE.ALL_REQ,
+    [MEM_COL.MODE]: MEMO_MODE.DETAIL,
+    [MEM_COL.STATUS]: COMP_STATUS.CLOSE,
   },
 } as const satisfies Record<Tbl, Record<string, ValType>>;
 
