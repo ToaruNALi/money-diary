@@ -93,6 +93,7 @@ export type DialogInputButtonOption = {
   hide?: boolean;
   disabled?: boolean;
   color?: string;
+  status?: string;
   clickEvent?: (
     form: FormGroup,
     input: Required<DialogInput>,
@@ -169,6 +170,7 @@ export class DialogInputComponent {
     hide: false,
     disabled: false,
     color: 'primary',
+    status: '',
     clickEvent: (): void => {
       throw new Error('Function not implemented.');
     },
@@ -180,12 +182,14 @@ export class DialogInputComponent {
       label: 'Del',
       icon: 'delete',
       color: 'warn',
+      status: DIALOG_STATUS.DEL,
       clickEvent: this.onBtnDelClick,
     },
     {
       id: DIALOG_BUTTON.ADD,
       label: 'Add',
       icon: 'add',
+      status: DIALOG_STATUS.ADD,
       clickEvent: this.onBtnAddClick,
     },
     {
@@ -204,6 +208,7 @@ export class DialogInputComponent {
       id: DIALOG_BUTTON.OK,
       label: 'OK',
       icon: 'check',
+      status: DIALOG_STATUS.UPD,
       clickEvent: this.onBtnOKClick,
     },
     {
@@ -419,7 +424,9 @@ export class DialogInputComponent {
     this.onBtnAllClearClick();
     const value: DialogOutput = {
       datas: this.usecase.createOutputDatas(this.form, this.inputData),
-      status: DIALOG_STATUS.DEL,
+      status:
+        this.inputData.buttonOptions.find((opt) => opt.id === DIALOG_BUTTON.DEL)
+          ?.status ?? DIALOG_STATUS.DEL,
     };
     this.dialogRef.close(value);
   };
@@ -430,7 +437,9 @@ export class DialogInputComponent {
   protected readonly onBtnAddClick = (): void => {
     const value: DialogOutput = {
       datas: this.usecase.createOutputDatas(this.form, this.inputData),
-      status: DIALOG_STATUS.ADD,
+      status:
+        this.inputData.buttonOptions.find((opt) => opt.id === DIALOG_BUTTON.ADD)
+          ?.status ?? DIALOG_STATUS.ADD,
     };
     this.dialogRef.close(value);
   };
@@ -503,7 +512,9 @@ export class DialogInputComponent {
   protected readonly onBtnOKClick = (): void => {
     const value: DialogOutput = {
       datas: this.usecase.createOutputDatas(this.form, this.inputData),
-      status: DIALOG_STATUS.UPD,
+      status:
+        this.inputData.buttonOptions.find((opt) => opt.id === DIALOG_BUTTON.OK)
+          ?.status ?? DIALOG_STATUS.UPD,
     };
     this.dialogRef.close(value);
   };
