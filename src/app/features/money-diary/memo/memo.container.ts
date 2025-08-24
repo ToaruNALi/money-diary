@@ -11,7 +11,7 @@ import * as Const from 'src/app/shared/constants/constants';
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
       [tbl]="tbl"
-      [mainRows]="memRows()"
+      [tblMap]="usecase.storeTblInf.tblMap()"
       (rowEdt)="onEdtRows($event)"
     ></app-memo>
   `,

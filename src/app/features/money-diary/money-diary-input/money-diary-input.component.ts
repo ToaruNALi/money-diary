@@ -56,12 +56,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(MoneyDiaryInputUsecase);
-
-  /** Other Row Datas */
-  readonly stgRows = input.required<Row[]>();
-  readonly crdRows = input.required<Row[]>();
-  readonly itmRows = input.required<Row[]>();
-  readonly rmkRows = input.required<Row[]>();
   /** フィルターモデル */
   readonly filterModel = input.required<FilterInputModel>();
   /** 過去データ編集可能フラグ */
@@ -95,21 +89,10 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** 行データ */
   private readonly rows = computed(() => {
     const filter = this.filterModel();
-    const display = this.display();
-
     if (filter !== 'none') {
       this.gridApi?.setFilterModel(null);
       this.gridApi?.setFilterModel(filter);
     }
-
-    // TODO: 正常に動作しないため一旦コメント化
-    // if (display === 'display' && !this.firstDsp) {
-    //   setTimeout(() => {
-    //     this.firstDsp = true;
-    //     Util.jumpRow(this.gridApi);
-    //   });
-    // }
-
     return this.usecase.getRows(this.mainRows(), this.crdRows());
   });
   /** グリッド上ボタンオプション */
@@ -136,90 +119,48 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    * 置換時(コンテキストメニュー)
    */
   private readonly onReplace = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
       this.gridApi.getSelectedRows(),
       this.tbl(),
-      [this.mainRows()],
+      this.tblMap(),
       { type: INPUT_OPTION_TYPE.REPLACE, edtPastData: this.edtPastData() },
     );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.REPLACE,
-    );
-    // Emit
-    this.rowEdt.emit(result);
   };
 
   /**
    * 連番付与(コンテキストメニュー)
    */
   private readonly onSerialNumber = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
       this.gridApi.getSelectedRows(),
       this.tbl(),
-      [this.mainRows()],
+      this.tblMap(),
       { type: INPUT_OPTION_TYPE.SERIAL_NUM, edtPastData: this.edtPastData() },
     );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.SERIAL_NUM,
-    );
-    // Emit
-    this.rowEdt.emit(result);
   };
 
   /**
    * まとめて更新(コンテキストメニュー)
    */
   private readonly onUpdate = async (): Promise<void> => {
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
       this.gridApi.getSelectedRows(),
       this.tbl(),
-      [
-        this.mainRows(),
-        this.stgRows(),
-        this.crdRows(),
-        this.itmRows(),
-        this.rmkRows(),
-      ],
+      this.tblMap(),
       { type: INPUT_OPTION_TYPE.UPDATE, edtPastData: this.edtPastData() },
     );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      this.gridApi.getSelectedRows(),
-      this.mainRows(),
-      this.tbl(),
-      INPUT_OPTION_TYPE.UPDATE,
-    );
-    // Emit
-    this.rowEdt.emit(result);
   };
 
   /**
@@ -358,38 +299,17 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   protected readonly onClickCell = async (
     event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
-    // 入力チェック
-    const check = this.usecase.checkInputData(event);
-    if (!check) {
-      return;
-    }
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
-      [event.data!],
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
+      [event.data],
       this.tbl(),
-      [
-        this.mainRows(),
-        this.stgRows(),
-        this.crdRows(),
-        this.itmRows(),
-        this.rmkRows(),
-      ],
+      this.tblMap(),
       { edtPastData: this.edtPastData() },
     );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      [event.data!],
-      this.mainRows(),
-      this.tbl(),
-    );
-    // Emit
-    this.rowEdt.emit(result);
   };
 
   /**

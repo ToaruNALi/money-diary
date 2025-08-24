@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
-import { CellClickedEvent } from 'ag-grid-community';
-import { Row } from 'src/app/domain/row-data';
+import { Row, TblMap } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { Tbl, ValType } from 'src/app/shared/constants/types';
+import { Tbl } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
   DIALOG_BUTTON,
@@ -25,51 +24,28 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     structuredClone(rows);
 
   /**
-   * 入力チェック(ダイアログオープン前)
-   * @param event
-   * @returns チェック結果
-   */
-  override readonly checkInputData = (
-    event: CellClickedEvent<Row, ValType>,
-  ): boolean => {
-    if (!event.node.id || !event.data) {
-      // 選択行がない、または、入力データがない場合
-      return false;
-    }
-
-    if (event.data[Const.CMN_COL.ID] === Const.MARK.NO_SELECT.id) {
-      // 未選択項目の場合
-      return false;
-    }
-
-    return true;
-  };
-
-  /**
    * ダイアログ入力データ作成
-   * @param selectRows
+   * @param edtRows
    * @param tbl
-   * @param rows
-   * @param inputDatas
+   * @param tblMap
    * @param inputColId
    * @returns 入力データ
    */
   override readonly createInputData = <MoneyDiaryColId>(
-    selectRows: Row[],
+    edtRows: Row[],
     tbl: Tbl,
-    [rows, inputDatas]: Row[][],
+    tblMap: TblMap,
     inputColId: MoneyDiaryColId,
   ): DialogInput => {
     // 初期データ
-    const row = selectRows[0];
-    const rowVal = structuredClone(row);
-    const rowInitVal = Util.getTblDefRow(tbl);
-    const datas: DialogInputDatas = this.getDialogInputData(rowVal, rowInitVal);
+    const edtRow = structuredClone(edtRows[0]);
+    const tblDefRow = Util.getTblDefRow(tbl);
+    const datas: DialogInputDatas = this.getDialogInputData(edtRow, tblDefRow);
 
     // MoneyDiary で使用中の場合、Delボタン非活性
-    const id = row[Const.CMN_COL.ID];
-    const inUseFlg = inputDatas.some(
-      (data) => data[inputColId as string] === id,
+    const id = edtRow[Const.CMN_COL.ID];
+    const inUseFlg = tblMap[Const.TBL.MAIN].some(
+      (row) => row[inputColId as string] === id,
     );
     const buttonOptions: DialogInputButtonOption[] = [
       {
@@ -79,11 +55,11 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
     ];
 
     // 非選択行、かつ有効なデータを取得
-    const labelList = rows
+    const labelList = tblMap[tbl]
       .filter(
-        (data) => data[Const.CMN_COL.ID] !== id && !!data[Const.CMN_COL.LABEL],
+        (row) => row[Const.CMN_COL.ID] !== id && !!row[Const.CMN_COL.LABEL],
       )
-      .map((data) => data[Const.CMN_COL.LABEL]);
+      .map((row) => row[Const.CMN_COL.LABEL]);
 
     // バリデーションチェック用コールバック関数
     const validatorFn = (control: AbstractControl): ValidationErrors => {
@@ -97,7 +73,7 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
       }
 
       // 選択行のラベルと同じ場合、Addボタン非活性
-      if (label === row[Const.CMN_COL.LABEL]) {
+      if (label === edtRow[Const.CMN_COL.LABEL]) {
         errors[DIALOG_BUTTON.ADD] = true;
       }
 

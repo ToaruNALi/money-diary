@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  input,
   signal,
 } from '@angular/core';
 import { CellClickedEvent, CellContextMenuEvent } from 'ag-grid-community';
@@ -25,11 +24,6 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export abstract class SettingComponent extends MoneyDiaryBaseComponent {
-  /** 入力データ */
-  readonly inputRows = input.required<Row[]>();
-  /** Creditデータ */
-  readonly crdRows = input<Row[]>([]);
-
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
     style: this.style,
@@ -96,32 +90,16 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   protected readonly onClickCell = async (
     event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
-    // 入力チェック
-    const check = this.usecase.checkInputData(event);
-    if (!check) {
-      return;
-    }
-    // ダイアログ入力データ作成
-    const input = this.usecase.createInputData(
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
       [event.data!],
       this.tbl(),
-      [this.mainRows(), this.inputRows()],
+      this.tblMap(),
       this.inputColId,
     );
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
     }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      [event.data!],
-      this.mainRows(),
-      this.tbl(),
-    );
-    // Emit
-    this.rowEdt.emit(result);
   };
 
   /**

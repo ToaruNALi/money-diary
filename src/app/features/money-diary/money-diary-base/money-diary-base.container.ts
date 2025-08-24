@@ -5,7 +5,6 @@ import {
   inject,
 } from '@angular/core';
 import * as Animation from 'src/app/shared/constants/animations';
-import * as Const from 'src/app/shared/constants/constants';
 import {
   FilterInputModel,
   RowEdt,
@@ -24,19 +23,6 @@ export abstract class MoneyDiaryBaseContainerComponent {
 
   protected abstract readonly scrId: Scr;
   protected abstract readonly tbl: Tbl;
-
-  /** TblMap */
-  protected readonly map = computed(() => this.usecase.storeTblInf.tblMap());
-
-  /** 行データMap */
-  protected readonly mainRows = computed(() => this.map()[Const.TBL.MAIN]);
-  protected readonly stgRows = computed(() => this.map()[Const.TBL.STORAGE]);
-  protected readonly crdRows = computed(() => this.map()[Const.TBL.CREDIT]);
-  protected readonly itmRows = computed(() => this.map()[Const.TBL.ITEM]);
-  protected readonly rmkRows = computed(() => this.map()[Const.TBL.REMARK]);
-  protected readonly smrRows = computed(() => this.map()[Const.TBL.SUMMARY]);
-  protected readonly scdRows = computed(() => this.map()[Const.TBL.SCHEDULE]);
-  protected readonly memRows = computed(() => this.map()[Const.TBL.MEMO]);
 
   /**
    * 行データ編集時

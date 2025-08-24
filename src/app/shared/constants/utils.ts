@@ -109,14 +109,14 @@ export const calcResult = (value?: ValType): number => {
       (typeof value === 'string' &&
         Const.INPUT_CHARS.FORMULA_FORBIDDEN.test(value))
     ) {
-      throw new Error();
+      throw new Error('Cannot Calculate');
     }
 
     const num = Math.round(
       (() => {
         if (typeof value === 'number') {
           if (!isValidInt(value)) {
-            throw new Error();
+            throw new Error('Invalid Integer');
           }
           return value;
         }
@@ -492,6 +492,7 @@ export const getSaveRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
         row[col] === defRow[col] ||
         (!row[col] && !defRow[col])
       ) {
+        // TODO: オブジェクトの場合、比較の仕方を考える必要あり
         continue;
       }
 
@@ -516,29 +517,26 @@ export const getSaveRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
 
 /** 読込用データを返却する */
 export const getLoadRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
-  const editInputMode = (row: Row) => {
-    return {
-      ...row,
-      [Const.CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
-    };
-  };
+  const editInputMode = (row: Row) => ({
+    ...row,
+    [Const.CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
+  });
   const editRow = (() => {
     if (tbl === Const.TBL.MAIN) {
-      return (row: Row): Row => {
-        row = {
+      // 家計簿データの場合
+      return (row: Row) =>
+        editInputMode({
           ...row,
           // 計算後数値データ
           [Const.MAIN_COL.AMOUNT_NUM]: calcResult(row[Const.MAIN_COL.AMOUNT]),
           // 日付データ
           [Const.MAIN_COL.DATE]:
             row[Const.MAIN_COL.DATE] || row[Const.MAIN_COL.USE_DATE],
-        };
-        return editInputMode(row);
-      };
+        });
     }
-    return (row: Row) => editInputMode(row);
+    // 上記以外
+    return editInputMode;
   })();
-
   return structuredClone(rows).map((row) =>
     editRow({
       ...getSaveDefRow(tbl),

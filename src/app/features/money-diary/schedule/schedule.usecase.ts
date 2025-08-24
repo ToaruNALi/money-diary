@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import {
   CellClassParams,
-  CellClickedEvent,
   CellStyle,
   ColDef,
   ValueFormatterParams,
@@ -309,32 +308,16 @@ export class ScheduleUsecase extends MoneyDiaryBaseUsecase {
   };
 
   /**
-   * 入力チェック(ダイアログオープン前)
-   * @param event
-   * @returns チェック結果
-   */
-  override readonly checkInputData = (
-    event: CellClickedEvent<Row, ValType>,
-  ): boolean => {
-    if (!event.node.id || !event.data) {
-      // 選択行がない、または、入力データがない場合
-      return false;
-    }
-
-    return true;
-  };
-
-  /**
    * ダイアログ入力データ作成
-   * @param selectRows
+   * @param edtRows
    * @param tbl
    * @returns 入力データ
    */
   override readonly createInputData = (
-    selectRows: Row[],
+    edtRows: Row[],
     tbl: Tbl,
   ): DialogInput => {
-    const row = selectRows[0];
+    const row = edtRows[0];
     // コンボボックスリスト (invalid項目を設定している場合は非活性とする)
     // const tblList = [
     //   Const.ROW_DATA_KEY.STORAGE,

@@ -14,44 +14,22 @@ export class ItemUsecase extends SettingUsecase {
    * @returns 列定義
    */
   override readonly getColDefs = (): ColDef<Row, ValType>[] => [
-    {
-      headerName: 'Id',
-      field: Const.CMN_COL.ID,
-      cellEditor: 'agTextCellEditor',
-      hide: true,
-    },
-    {
-      headerName: 'Item',
-      field: Const.CMN_COL.LABEL,
-      cellEditor: 'agTextCellEditor',
-      rowDrag: true,
-      filter: false,
-      flex: 1,
-      cellStyle: Util.getCellCmnStyle,
-    },
-    {
-      headerName: 'Summary Count',
-      field: Const.ITM_COL.SUMMARY_COUNT_FLG,
-      cellEditor: 'agCheckboxCellEditor',
-    },
-    {
-      headerName: 'Valid',
-      field: Const.CMN_COL.VALID,
-      cellEditor: 'agCheckboxCellEditor',
-      hide: true,
-    },
-    {
-      headerName: 'Upd Date',
-      field: Const.CMN_COL.UPD_DATE_TIME,
-      cellEditor: 'agTextCellEditor',
-      hide: true,
-    },
-    {
-      headerName: 'Update',
-      field: Const.CMN_COL.UPDATE,
-      cellEditor: 'agCheckboxCellEditor',
-      hide: true,
-    },
+    ...this.addCmnColDefs([
+      {
+        headerName: 'Item',
+        field: Const.CMN_COL.LABEL,
+        cellEditor: 'agTextCellEditor',
+        rowDrag: true,
+        filter: false,
+        flex: 1,
+        cellStyle: Util.getCellCmnStyle,
+      },
+      {
+        headerName: 'Summary Count',
+        field: Const.ITM_COL.SUMMARY_COUNT_FLG,
+        cellEditor: 'agCheckboxCellEditor',
+      },
+    ]),
   ];
 
   /**

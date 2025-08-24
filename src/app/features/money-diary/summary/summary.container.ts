@@ -11,9 +11,7 @@ import * as Const from 'src/app/shared/constants/constants';
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
       [tbl]="tbl"
-      [mainRows]="smrRows()"
-      [inputRows]="mainRows()"
-      [itmRows]="itmRows()"
+      [tblMap]="usecase.storeTblInf.tblMap()"
       (rowEdt)="onEdtRows($event)"
     ></app-summary>
   `,

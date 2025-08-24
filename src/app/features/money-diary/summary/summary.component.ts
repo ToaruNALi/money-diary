@@ -3,10 +3,8 @@ import {
   Component,
   computed,
   inject,
-  input,
   signal,
 } from '@angular/core';
-import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { SummaryUsecase } from 'src/app/features/money-diary/summary/summary.usecase';
 import {
@@ -27,11 +25,6 @@ import {
 export class SummaryComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(SummaryUsecase);
-
-  /** Other Row Datas */
-  readonly inputRows = input.required<Row[]>();
-  readonly itmRows = input.required<Row[]>();
-
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
     style: this.style,

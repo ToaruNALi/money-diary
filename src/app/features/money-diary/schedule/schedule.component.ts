@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   inject,
-  input,
   signal,
 } from '@angular/core';
 import { CellClickedEvent } from 'ag-grid-community';
@@ -26,10 +25,6 @@ import { SharedCommonModule } from '../../../shared/shared-common.module';
 export class ScheduleComponent extends MoneyDiaryBaseComponent {
   /** usecase */
   private readonly usecase = inject(ScheduleUsecase);
-
-  /** Other Row Datas */
-  readonly inputRows = input.required<Row[]>();
-
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
     style: this.style,
@@ -38,7 +33,6 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
     rows: this.rows,
     cellClickForbCols: this.cellClickForbCols,
   }));
-
   /** スタイル */
   private readonly style = signal<Record<string, string>>({
     width: '100vw',
@@ -60,27 +54,14 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
   protected readonly onClickCell = async (
     event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
-    // 入力チェック
-    const check = this.usecase.checkInputData(event);
-    if (!check) {
-      return;
-    }
-    // ダイアログ入力データ作成
-    const rows = this.mainRows();
-    const input = this.usecase.createInputData([event.data!], this.tbl());
-    // ダイアログオープン
-    const output = await this.usecase.openDialog(input);
-    if (!output) {
-      return;
-    }
-    // 行編集Emitterデータ作成
-    const result = this.usecase.createResultData(
-      output,
-      [event.data!],
-      rows,
+    // 行データ編集処理
+    const edtInf = await this.usecase.procEditRows(
+      [event.data],
       this.tbl(),
+      this.tblMap(),
     );
-    // Emit
-    this.rowEdt.emit(result);
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
+    }
   };
 }

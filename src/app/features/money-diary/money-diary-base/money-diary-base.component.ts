@@ -1,12 +1,15 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
+  model,
   output,
   Signal,
 } from '@angular/core';
 import { GridApi } from 'ag-grid-community';
-import { Row } from 'src/app/domain/row-data';
+import { Row, TblMap } from 'src/app/domain/row-data';
+import * as Const from 'src/app/shared/constants/constants';
 import {
   FilterInputModel,
   RowEdt,
@@ -20,12 +23,14 @@ import { GridInput } from 'src/app/shared/grid/grid.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export abstract class MoneyDiaryBaseComponent {
-  /** 行データMap Main */
-  readonly mainRows = input.required<Row[]>();
+  /** 全行データ */
+  readonly tblMap = input.required<TblMap>();
   /** 行データKey */
   readonly tbl = input.required<Tbl>();
   /** 表示区分 */
   readonly display = input<string>();
+  /** フィルタKey */
+  readonly fltKey = model<string>('');
 
   /** フィルターモデル */
   protected readonly filterInputModelSet = output<FilterInputModel>();
@@ -41,4 +46,16 @@ export abstract class MoneyDiaryBaseComponent {
   protected firstDsp = false;
   /** Grid Api */
   protected gridApi!: GridApi<Row>;
+
+  protected readonly mainRows = computed(() => this.tblMap()[this.tbl()]);
+  protected readonly inputRows = computed(() => this.tblMap()[Const.TBL.MAIN]);
+  protected readonly stgRows = computed(() => this.tblMap()[Const.TBL.STORAGE]);
+  protected readonly crdRows = computed(() => this.tblMap()[Const.TBL.CREDIT]);
+  protected readonly itmRows = computed(() => this.tblMap()[Const.TBL.ITEM]);
+  protected readonly rmkRows = computed(() => this.tblMap()[Const.TBL.REMARK]);
+  protected readonly smrRows = computed(() => this.tblMap()[Const.TBL.SUMMARY]);
+  protected readonly scdRows = computed(
+    () => this.tblMap()[Const.TBL.SCHEDULE],
+  );
+  protected readonly memRows = computed(() => this.tblMap()[Const.TBL.MEMO]);
 }

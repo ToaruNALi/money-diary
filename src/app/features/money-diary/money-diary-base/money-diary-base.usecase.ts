@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import {
-  CellClickedEvent,
   ColDef,
   ColGroupDef,
   ValueFormatterParams,
   ValueSetterParams,
 } from 'ag-grid-community';
 import { lastValueFrom } from 'rxjs';
-import { Row } from 'src/app/domain/row-data';
+import { Row, TblMap } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import { RowEdt, Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
@@ -18,6 +17,7 @@ import {
   DialogOutput,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
+import { SelectOption } from 'src/app/shared/forms/forms.component';
 import {
   DIALOG_STATUS,
   DialogStatus,
@@ -31,10 +31,51 @@ export abstract class MoneyDiaryBaseUsecase {
 
   /**
    * 列定義取得
-   * @param ...rows
+   * @param ...data
    * @returns 列定義
    */
-  abstract readonly getColDefs: (...rows: Row[][]) => ColDef<Row, ValType>[];
+  abstract readonly getColDefs: (...data: any) => ColDef<Row, ValType>[];
+
+  /**
+   * 共通列定義追加
+   * @param colDefs
+   * @returns 列定義
+   */
+  protected readonly addCmnColDefs = (
+    colDefs: ColDef<Row, ValType>[],
+  ): ColDef<Row, ValType>[] => [
+    {
+      headerName: 'Id',
+      field: Const.CMN_COL.ID,
+      cellEditor: 'agTextCellEditor',
+      hide: true,
+    },
+    ...colDefs,
+    {
+      headerName: 'Valid',
+      field: Const.CMN_COL.VALID,
+      cellEditor: 'agCheckboxCellEditor',
+      hide: true,
+    },
+    {
+      headerName: 'Upd Date',
+      field: Const.CMN_COL.UPD_DATE_TIME,
+      cellEditor: 'agTextCellEditor',
+      hide: true,
+    },
+    {
+      headerName: 'Input Mode',
+      field: Const.CMN_COL.INPUT_MODE,
+      cellEditor: 'agNumberCellEditor',
+      hide: true,
+    },
+    {
+      headerName: 'Update',
+      field: Const.CMN_COL.UPDATE,
+      cellEditor: 'agCheckboxCellEditor',
+      hide: true,
+    },
+  ];
 
   /**
    * 更新値 Setter
@@ -70,11 +111,29 @@ export abstract class MoneyDiaryBaseUsecase {
   };
 
   /**
+   * チェックボックス Formatter
+   * @param options
+   * @param id
+   * @returns チェックボックス Label
+   */
+  protected readonly chkboxFormatter = (
+    options: SelectOption[] = [],
+    ids: ValType = [],
+  ): string => {
+    if (Array.isArray(ids)) {
+      return ids
+        .map((id) => options.find((opt) => opt.id === id)?.lb ?? '')
+        .toString();
+    }
+    return '';
+  };
+
+  /**
    * セレクトボックス取得
    * @param rows
    * @returns セレクトボックス
    */
-  protected readonly getList = (rows: Row[]): ValType[] => {
+  protected readonly getList = (rows: Row[] = []): ValType[] => {
     return structuredClone(rows)
       .filter((row) => !!row[Const.CMN_COL.VALID] && !!row[Const.CMN_COL.LABEL])
       .map((row) => row[Const.CMN_COL.ID]);
@@ -86,7 +145,10 @@ export abstract class MoneyDiaryBaseUsecase {
    * @param id
    * @returns セレクトボックス Label
    */
-  protected readonly listFormatter = (rows: Row[], id?: ValType): string => {
+  protected readonly listFormatter = (
+    rows: Row[] = [],
+    id?: ValType,
+  ): string => {
     const row = rows.find((row) => row[Const.CMN_COL.ID] === id);
     const label = row?.[Const.CMN_COL.LABEL] ?? Const.MARK.NO_SELECT.label;
     if (typeof label !== 'string') {
@@ -117,28 +179,60 @@ export abstract class MoneyDiaryBaseUsecase {
   };
 
   /**
-   * 入力チェック(ダイアログオープン前)
-   * @param event
+   * 行データ編集処理
+   * @param edtRows
+   * @param tbl
+   * @param tblMap
    * @param option
+   * @returns 正常: RowEdt[], 異常: false
+   */
+  readonly procEditRows = async (
+    edtRows: (Row | undefined)[] = [],
+    tbl: Tbl,
+    tblMap: TblMap,
+    option?: any,
+  ): Promise<RowEdt[] | false> => {
+    // 入力チェック
+    if (!this.chkInputRows(edtRows)) {
+      return false;
+    }
+    // ダイアログ入力データ作成
+    const input = this.createInputData(edtRows, tbl, tblMap, option);
+    // ダイアログオープン
+    const output = await this.openDialog(input);
+    if (!output) {
+      return false;
+    }
+    // 行編集Emitterデータ作成
+    return this.createResultData(output, edtRows, tbl, tblMap, option);
+  };
+
+  /**
+   * 入力チェック(ダイアログオープン前)
+   * @param rows
    * @returns チェック結果
    */
-  abstract readonly checkInputData: (
-    event: CellClickedEvent<Row, ValType>,
-    option?: any,
-  ) => boolean;
+  private readonly chkInputRows = (
+    rows: (Row | undefined)[] = [],
+  ): rows is Row[] => {
+    // rows,row：undefinedでない、かつ未選択項目が含まれていない場合
+    return rows.every(
+      (row) => !!row && row[Const.CMN_COL.ID] !== Const.MARK.NO_SELECT.id,
+    );
+  };
 
   /**
    * ダイアログ入力データ作成
-   * @param selectRows
+   * @param edtRows
    * @param tbl
-   * @param rowsList
+   * @param tblMap
    * @param option
    * @returns 入力データ
    */
-  abstract readonly createInputData: (
-    selectRows: Row[],
+  protected abstract readonly createInputData: (
+    edtRows: Row[],
     tbl: Tbl,
-    rowsList: Row[][],
+    tblMap: TblMap,
     option?: any,
   ) => DialogInput;
 
@@ -147,7 +241,7 @@ export abstract class MoneyDiaryBaseUsecase {
    * @param input
    * @returns 出力データ
    */
-  readonly openDialog = async (
+  private readonly openDialog = async (
     input: DialogInput,
   ): Promise<DialogOutput | undefined> => {
     // config
@@ -168,41 +262,41 @@ export abstract class MoneyDiaryBaseUsecase {
   /**
    * 行編集Emitterデータ作成
    * @param output
-   * @param updRows
-   * @param rows
+   * @param edtRows
    * @param tbl
+   * @param tblMap
    * @param option
    * @returns 編集用データ
    */
-  readonly createResultData = (
+  private readonly createResultData = (
     output: DialogOutput,
-    updRows: Row[],
-    rows: Row[],
+    edtRows: Row[],
     tbl: Tbl,
+    tblMap: TblMap,
     option?: any,
   ): RowEdt[] => {
     // 入力項目反映
-    updRows = this.reflectRows(updRows, output.datas, option);
+    edtRows = this.reflectRows(edtRows, output.datas, option);
 
     // 行ID初期設定
-    const rowIds = Util.getRowIdsSet(rows);
+    const rowIds = Util.getRowIdsSet(tblMap[tbl]);
     const rowEdt: RowEdt[] = [];
 
     switch (output.status) {
       // 更新
       case DIALOG_STATUS.UPD:
-        rowEdt.push(Util.getRowEdtUpd(tbl, updRows));
+        rowEdt.push(Util.getRowEdtUpd(tbl, edtRows));
         break;
       // 追加
       case DIALOG_STATUS.ADD:
-        rowEdt.push(Util.getRowEdtAdd(tbl, updRows, [], rowIds));
+        rowEdt.push(Util.getRowEdtAdd(tbl, edtRows, [], rowIds));
         break;
       // 削除
       case DIALOG_STATUS.DEL:
         rowEdt.push(
           Util.getRowEdtDel(
             tbl,
-            updRows.map((row) => row[Const.CMN_COL.ID]),
+            edtRows.map((row) => row[Const.CMN_COL.ID]),
             rowIds,
           ),
         );
@@ -210,13 +304,13 @@ export abstract class MoneyDiaryBaseUsecase {
       // その他
       default:
         rowEdt.push(
-          ...this.getRowEdts(output.status, tbl, updRows, rows, rowIds),
+          ...this.getRowEdts(output.status, edtRows, tbl, tblMap, rowIds),
         );
         break;
     }
 
     // 未選択データ追加チェック
-    if (!this.checkNoSelData(rows)) {
+    if (!this.checkNoSelData(tblMap[tbl])) {
       // 未選択データ追加
       rowEdt.push(Util.getRowEdtAddNoSel(tbl));
     }
@@ -226,29 +320,29 @@ export abstract class MoneyDiaryBaseUsecase {
 
   /**
    * 入力項目反映(行編集Emitterデータ作成)
-   * @param selRows
+   * @param edtRows
    * @param outDatas
    * @param option
    * @returns 行データ項目追加後データ
    * @default reflectRowsDef
    */
   protected readonly reflectRows = (
-    selRows: Row[],
+    edtRows: Row[],
     outDatas: DialogOutputData[],
     option?: any,
-  ): Row[] => this.reflectRowsDef(selRows, outDatas);
+  ): Row[] => this.reflectRowsDef(edtRows, outDatas);
 
   /**
    * 入力項目反映デフォルト処理
-   * @param selRows
+   * @param edtRows
    * @param outDatas
    * @returns 行データ項目追加後データ
    */
   protected readonly reflectRowsDef = (
-    selRows: Row[],
+    edtRows: Row[],
     outDatas: DialogOutputData[],
   ): Row[] => {
-    const newRows = structuredClone(selRows);
+    const newRows = structuredClone(edtRows);
     for (const row of newRows) {
       for (const outData of outDatas) {
         row[outData.id] = outData.value;
@@ -260,17 +354,17 @@ export abstract class MoneyDiaryBaseUsecase {
   /**
    * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
    * @param status
+   * @param edtRows
    * @param tbl
-   * @param updRows
-   * @param rows
+   * @param tblMap
    * @param rowIds
    * @returns
    */
   protected readonly getRowEdts = (
     status: DialogStatus,
+    edtRows: Row[],
     tbl: Tbl,
-    updRows: Row[],
-    rows: Row[] = [],
+    tblMap: TblMap,
     rowIds = new Set<ValType>(),
   ): RowEdt[] => {
     return [];
