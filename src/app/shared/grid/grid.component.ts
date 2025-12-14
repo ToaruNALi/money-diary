@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -17,7 +18,6 @@ import {
   CellDoubleClickedEvent,
   CellValueChangedEvent,
   ColDef,
-  ColGroupDef,
   ColumnHeaderContextMenuEvent,
   FilterChangedEvent,
   FilterModel,
@@ -46,19 +46,19 @@ import * as Const from 'src/app/shared/constants/constants';
 import {
   MenuListData,
   RowEdt,
-  SortOpt,
   Tbl,
   ValType,
 } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
+  DialogFilterComponent,
+  DialogFilterInput,
+} from 'src/app/shared/dialog-filter/dialog-filter.component';
+import {
   DialogSearchComponent,
   DialogSearchInput,
 } from 'src/app/shared/dialog-search/dialog-search.component';
-import {
-  MoneyStatus,
-  MoneyStatusComponent,
-} from 'src/app/shared/money-status/money-status.component';
+import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 import { MenuListComponent } from '../menu-list/menu-list.component';
 
@@ -68,56 +68,62 @@ export type GridInput = {
   style: Signal<Record<string, string>>;
   /** 行データKey */
   tbl: Signal<Tbl>;
+  /** データKey */
+  rowsKey?: Signal<string>;
   /** 列定義 */
   colDefs: Signal<ColDef<Row, ValType>[]>;
   /** 行データ */
   rows: Signal<Row[]>;
   /** Grid上ボタンオプション */
-  topOpt?: Signal<GridOptInput<GridTopOptKey>[]>;
+  topOpt?: Signal<GridOptInput<GridTop>>;
   /** Grid下ボタンオプション */
-  btmOpt?: Signal<GridOptInput<GridBtmOptKey>[]>;
+  btmOpt?: Signal<GridOptInput<GridBtm>>;
   /** セルクリック禁止列 */
   cellClickForbCols?: Signal<string[]>;
   /** 行ID取得関数 */
   rowId?: Signal<(params: GetRowIdParams<Row>) => string>;
   /** 行スタイル */
-  rowStyle?: Signal<(params: RowClassParams<Row>) => RowStyle>;
+  rowStyle?: Signal<
+    (params: RowClassParams<Row>, rowStyle: RowStyle) => RowStyle | undefined
+  >;
 };
-
-export type GridTopOpt = {
-  selStatus?: (
-    rows: Row[],
-    colDefs: (ColDef<Row, any> | ColGroupDef<Row>)[],
-  ) => MoneyStatus[];
+export type GridTop = 'top';
+export type GridBtm = 'btm';
+type GridOptType = GridTop | GridBtm;
+type GridOptKey<T = GridOptType> = T extends GridTop
+  ? 'selSts'
+  :
+      | 'back'
+      | 'addRow'
+      | 'sort'
+      | 'fltOff'
+      | 'chgFlt'
+      | 'chgSel'
+      | 'quickFlt'
+      | 'search'
+      | 'jmpFirstCol'
+      | 'jmpLastCol'
+      | 'jmpFirstRow'
+      | 'jmpLastRow'
+      | 'menuList'
+      | 'rowDrg';
+type GridOptParam = {
+  valid: boolean;
+  hide: boolean;
+  disabled: boolean;
+  sts: number;
+  iconList: string[];
+  value: string;
+  dspOdr: number;
+  detail: any;
+  func: (...opt: any) => any;
 };
-export type GridTopOptKey = 'selSts';
-export type GridBtmOptKey =
-  | 'addRow'
-  | 'sort'
-  | 'fltOff'
-  | 'chgFlt'
-  | 'chgSel'
-  | 'quickFlt'
-  | 'jmpFirstCol'
-  | 'jmpLastCol'
-  | 'jmpFirstRow'
-  | 'jmpLastRow'
-  | 'custom1'
-  | 'custom2'
-  | 'menuList';
-export type GridOptInput<T = GridTopOptKey | GridBtmOptKey, U = any> = {
-  key: T;
-  valid?: boolean;
-  hide?: boolean | ((api: GridApi) => boolean);
-  disabled?: boolean | ((api: GridApi) => boolean);
-  sts?: number;
-  iconList?: string[];
-  detail?: U;
-  func?: (...opt: any) => any;
-};
-type GridOpt<T = GridTopOptKey | GridBtmOptKey, U = any> = Required<
-  GridOptInput<T, U>
-> & {
+export type GridOptInput<T = GridOptType> = Partial<
+  Record<GridOptKey<T>, Partial<GridOptParam>>
+>;
+type GridOpt<T = GridOptType> = Record<GridOptKey<T>, GridOptParam>;
+type GridOptDsp<T = GridOptType> = GridOptParam & {
+  key: GridOptKey<T>;
   icon: string;
 };
 
@@ -134,6 +140,218 @@ type GridOpt<T = GridTopOptKey | GridBtmOptKey, U = any> = Required<
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridComponent {
+  constructor() {
+    effect(() =>
+      ((searchVal, _updRow, _chgFilter) => {
+        this.procSearchVal(searchVal);
+      })(
+        this.signalSearchVal(),
+        this.signalUpdRows(),
+        this.signalChgFilterAndSort(),
+      ),
+    );
+  }
+
+  /**
+   * 検索値変更時処理
+   * @param val
+   */
+  private readonly procSearchVal = (val: string): void => {
+    if (!this.gridApi) {
+      return;
+    }
+
+    if (!val) {
+      // 検索欄が空の場合、行スタイルと検索件数をクリア
+      this.signalSearchCnt.reset();
+      this.rowStyleInput.set(
+        (_params: RowClassParams<Row>, rowStyle: RowStyle) => rowStyle,
+      );
+      this.gridApi.redrawRows();
+      return;
+    }
+
+    const nowRowIdx = this.gridApi.getFocusedCell()?.rowIndex ?? -1;
+    const rowCnt = this.gridApi.getDisplayedRowCount();
+    const minInf = { rowIdx: rowCnt, row: {} };
+    const nextInf = { rowIdx: rowCnt, row: {} };
+    const matchArr: number[] = [];
+
+    this.gridApi.forEachNode((node) => {
+      if (!node.displayed || !node.data || node.rowIndex === null) {
+        // データなし、非表示、行インデックスなしの場合、処理なし
+        return;
+      }
+      if (
+        Object.values(node.data).some((row) => !!row?.toString().includes(val))
+      ) {
+        // 検索条件と一致する場合
+        matchArr.push(node.rowIndex);
+
+        if (node.rowIndex < nowRowIdx) {
+          if (node.rowIndex < minInf.rowIdx) {
+            minInf.rowIdx = node.rowIndex;
+            minInf.row = node.data;
+          }
+        } else {
+          if (node.rowIndex < nextInf.rowIdx) {
+            nextInf.rowIdx = node.rowIndex;
+            nextInf.row = node.data;
+          }
+        }
+      }
+    });
+
+    const rowInf = (() => {
+      if (nextInf.rowIdx < rowCnt) {
+        return nextInf;
+      } else if (minInf.rowIdx < rowCnt) {
+        return minInf;
+      }
+      return { rowIdx: -1, row: {} };
+    })();
+
+    // 検索件数設定
+    matchArr.sort((a, b) => a - b);
+    this.signalSearchCnt.setAll(
+      rowInf.rowIdx,
+      rowInf.row,
+      matchArr.findIndex((idx) => idx === rowInf.rowIdx) + 1,
+      matchArr.length,
+    );
+
+    if (rowInf.rowIdx === -1) {
+      // 行移動
+      Util.jumpRow(this.gridApi, rowInf.rowIdx);
+    }
+
+    // 行スタイル設定
+    this.rowStyleInput.set(
+      (params: RowClassParams<Row>, rowStyle: RowStyle) => {
+        if (params.rowIndex === rowInf.rowIdx) {
+          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH_FOCUS;
+        } else if (matchArr.includes(params.rowIndex)) {
+          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH;
+        }
+        return rowStyle;
+      },
+    );
+    this.gridApi.redrawRows();
+  };
+
+  /**
+   * 検索実行
+   * @param val 検索値
+   * @param dir 検索方向 (true:次方向、false:前方向)
+   */
+  private readonly procSearch = (val: string, dir: boolean): void => {
+    if (!this.gridApi || !val) {
+      return;
+    }
+
+    const nowRowInf = this.signalSearchCnt();
+    const rowCnt = this.gridApi.getDisplayedRowCount();
+    const [otherInf, nextInf] = (() => {
+      if (dir) {
+        return [
+          { rowIdx: rowCnt, row: {} },
+          { rowIdx: rowCnt, row: {} },
+        ];
+      }
+      return [
+        { rowIdx: -1, row: {} },
+        { rowIdx: -1, row: {} },
+      ];
+    })();
+    const matchArr: number[] = [];
+
+    this.gridApi.forEachNode((node) => {
+      if (!node.displayed || !node.data || node.rowIndex === null) {
+        // データなし、非表示、行インデックスなしの場合、処理なし
+        return;
+      }
+      if (
+        Object.values(node.data).some((row) => !!row?.toString().includes(val))
+      ) {
+        // 検索条件と一致する場合
+        matchArr.push(node.rowIndex);
+
+        if (dir) {
+          if (node.rowIndex <= nowRowInf.rowIdx) {
+            if (node.rowIndex < otherInf.rowIdx) {
+              otherInf.rowIdx = node.rowIndex;
+              otherInf.row = node.data;
+            }
+          } else {
+            if (node.rowIndex < nextInf.rowIdx) {
+              nextInf.rowIdx = node.rowIndex;
+              nextInf.row = node.data;
+            }
+          }
+        } else {
+          if (node.rowIndex >= nowRowInf.rowIdx) {
+            if (node.rowIndex > otherInf.rowIdx) {
+              otherInf.rowIdx = node.rowIndex;
+              otherInf.row = node.data;
+            }
+          } else {
+            if (node.rowIndex > nextInf.rowIdx) {
+              nextInf.rowIdx = node.rowIndex;
+              nextInf.row = node.data;
+            }
+          }
+        }
+      }
+    });
+
+    const rowInf = (() => {
+      if (dir) {
+        if (nextInf.rowIdx < rowCnt) {
+          return nextInf;
+        } else if (otherInf.rowIdx < rowCnt) {
+          return otherInf;
+        }
+      } else {
+        if (nextInf.rowIdx > -1) {
+          return nextInf;
+        } else if (otherInf.rowIdx > -1) {
+          return otherInf;
+        }
+      }
+      return nowRowInf;
+    })();
+
+    // 検索件数設定
+    matchArr.sort((a, b) => a - b);
+    this.signalSearchCnt.setIdxAndCnt(
+      rowInf.rowIdx,
+      rowInf.row,
+      matchArr.findIndex((idx) => idx === rowInf.rowIdx) + 1,
+    );
+
+    // 行移動
+    Util.jumpRow(this.gridApi, rowInf.rowIdx);
+
+    const colId =
+      Object.entries(rowInf.row).find(
+        ([_, row]) => !!row?.toString().includes(val),
+      )?.[0] ?? Const.CMN_COL.LABEL;
+    this.gridApi.setFocusedCell(rowInf.rowIdx, colId);
+
+    // 行スタイル設定
+    this.rowStyleInput.set(
+      (params: RowClassParams<Row>, rowStyle: RowStyle) => {
+        if (params.rowIndex === rowInf.rowIdx) {
+          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH_FOCUS;
+        } else if (matchArr.includes(params.rowIndex)) {
+          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH;
+        }
+        return rowStyle;
+      },
+    );
+    this.gridApi.redrawRows();
+  };
+
   /** ダイアログ */
   private readonly dialog = inject(MatDialog);
 
@@ -181,6 +399,7 @@ export class GridComponent {
   protected readonly gridOptions = signal<GridOptions<Row>>({
     multiSortKey: 'ctrl', // 複数列ソート用キー: ctrl
     tooltipShowDelay: 0,
+    suppressRowDrag: true, // 行ドラッグアイコン非表示
     rowDragManaged: true, // 行ドラッグ可能
     suppressMoveWhenRowDragging: true, // 行ドラッグ抑制
     rowDragMultiRow: true, // 複数行ドラッグ
@@ -190,6 +409,7 @@ export class GridComponent {
     suppressMovableColumns: true, // 列移動不可
     suppressMoveWhenColumnDragging: true, // 列移動抑制
     suppressDragLeaveHidesColumns: true, // 列削除無効
+    enableCellSpan: true, // 同じ値を持つセルを結合する
     // 列タイプ
     columnTypes: {
       dateCol: {
@@ -285,16 +505,23 @@ export class GridComponent {
 
   protected readonly style = computed(() => this.gridInput().style());
   protected readonly tbl = computed(() => this.gridInput().tbl());
+  protected readonly rowsKey = computed(
+    () => this.gridInput().rowsKey?.() ?? '',
+  );
   protected readonly colDefs = computed(() => this.gridInput().colDefs());
   protected readonly rows = computed(() => this.gridInput().rows());
   protected readonly topOpt = computed(() => this.gridInput().topOpt?.());
   protected readonly btmOpt = computed(() => this.gridInput().btmOpt?.());
+  protected readonly rowIdInput = computed(() => this.gridInput().rowId?.());
+  protected readonly rowStyleInput = linkedSignal(() =>
+    this.gridInput().rowStyle?.(),
+  );
   protected readonly cellClickForbCols = computed(
     () => this.gridInput().cellClickForbCols?.() ?? [],
   );
   protected readonly rowId = computed(
     () =>
-      this.gridInput().rowId?.() ??
+      this.rowIdInput() ??
       ((params: GetRowIdParams<Row>) => {
         const id = params.data[Const.CMN_COL.ID];
         if (!id || typeof id !== 'string') {
@@ -304,21 +531,19 @@ export class GridComponent {
       }),
   );
   protected readonly rowStyle = computed(
-    () =>
-      this.gridInput().rowStyle?.() ??
-      ((params: RowClassParams<Row>) => {
-        const style: RowStyle = {};
-        const mode = params.data?.[Const.CMN_COL.INPUT_MODE];
+    () => (params: RowClassParams<Row>) => {
+      const style: RowStyle = {};
+      const mode = params.data?.[Const.CMN_COL.INPUT_MODE];
 
-        if (mode === Const.INPUT_MODE.NONE) {
-          // 空データ
-          style['backgroundColor'] = Const.ROW_CLR.NONE;
-        } else if (mode === Const.INPUT_MODE.SOME_REQ) {
-          // エラーデーア
-          style['backgroundColor'] = Const.ROW_CLR.ERROR;
-        }
-        return style;
-      }),
+      if (mode === Const.INPUT_MODE.NONE) {
+        // 空データ
+        style['backgroundColor'] = Const.ROW_CLR.NONE;
+      } else if (mode === Const.INPUT_MODE.SOME_REQ) {
+        // エラーデーア
+        style['backgroundColor'] = Const.ROW_CLR.ERROR;
+      }
+      return this.rowStyleInput()?.(params, style) ?? style;
+    },
   );
 
   /********************
@@ -351,67 +576,138 @@ export class GridComponent {
   /** セル長押し */
   protected readonly cellContextMenu = output<CellContextMenuEvent>();
   /** ヘッダー長押し */
-  protected readonly columnHeaderLongClick =
+  protected readonly columnHeaderContextMenu =
     output<ColumnHeaderContextMenuEvent>();
+  /** 行追加 */
+  protected readonly rowAdd = output<void>();
+
+  /********************
+   * 変更検知用 Signal
+   ********************/
+  private readonly signalUpdRows = signal(false);
+  private readonly signalChgSel = signal(false);
+  private readonly signalChgFilterAndSort = signal(false);
+  private readonly signalSearchVal = signal('');
+  private readonly signalSearchCnt = (() => {
+    const initCnt = { rowIdx: -1, row: {}, cnt: 0, max: 0 };
+    const counter = signal({ ...initCnt });
+    return Object.assign(counter.asReadonly(), {
+      reset: () => counter.set({ ...initCnt }),
+      setAll: (rowIdx: number, row: Row, cnt: number, max: number) =>
+        counter.set({
+          rowIdx,
+          row,
+          cnt,
+          max,
+        }),
+      setIdxAndCnt: (rowIdx: number, row: Row, cnt: number) =>
+        counter.update((inf) => ({ ...inf, rowIdx, row, cnt })),
+    });
+  })();
+
+  /********************
+   * Grid Common Option
+   ********************/
+  // 共通初期設定
+  private readonly createGridOpt = <T = GridOptType>(
+    optInput: GridOptInput<T> = {},
+    optDef: GridOpt<T>,
+  ): GridOpt<T> => {
+    const retGridOpt = {} as GridOpt<T>;
+    for (const _ in optDef) {
+      const key = _ as GridOptKey<T>;
+      retGridOpt[key] = {
+        ...optDef[key],
+        ...optInput[key],
+      };
+    }
+    return { ...retGridOpt };
+  };
+
+  // 共通表示設定
+  private readonly createGridOptDsp = <T = GridOptType>(
+    opt: GridOpt<T>,
+  ): GridOptDsp<T>[] =>
+    Object.entries(opt)
+      .map(([_key, _param]) => {
+        const key = _key as GridOptKey<T>;
+        const param = _param as GridOptParam;
+        return {
+          key,
+          icon: param.iconList[param.sts],
+          ...param,
+        };
+      })
+      .sort((a, b) => a.dspOdr - b.dspOdr);
 
   /********************
    * Grid Top Option
    ********************/
-  private readonly gridTopOptInputDef = [
-    {
-      key: 'selSts',
+  // デフォルト値
+  private readonly gridTopOptParamDef = {
+    selSts: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: [''],
+      value: '',
+      dspOdr: 0,
       detail: '',
       func: (_: any) => {},
     },
-  ] as const satisfies Required<GridOptInput<GridTopOptKey>>[];
+  } as const satisfies GridOpt<GridTop>;
 
-  private readonly gridTopOpt = linkedSignal<
-    Required<GridOptInput<GridTopOptKey>>[]
-  >(
-    () =>
-      (this.topOpt()?.map((opt) => ({
-        ...(this.gridTopOptInputDef.find((def) => def.key === opt.key) ?? {}),
-        ...opt,
-      })) ?? []) as Required<GridOptInput<GridTopOptKey>>[],
+  // 初期設定
+  private readonly gridTopOpt = linkedSignal<GridOpt<GridTop>>(() =>
+    this.createGridOpt(this.topOpt(), this.gridTopOptParamDef),
   );
 
-  protected readonly gridTopOptDsp = computed<GridOpt<GridTopOptKey>[]>(() => {
-    return this.gridTopOpt().map((opt) => ({
-      ...opt,
-      icon: opt.iconList[opt.sts],
-    }));
+  // 更新
+  private readonly gridTopOptUpd = computed<GridOpt<GridTop>>(() => {
+    // 行データ更新時
+    this.signalUpdRows();
+    // セル選択更新時
+    this.signalChgSel();
+
+    const gridOpt = this.gridTopOpt();
+    const rows = this.gridApi?.getSelectedRows() ?? [];
+    const colDefs = this.gridApi?.getColumnDefs() ?? [];
+
+    return {
+      ...gridOpt,
+      selSts: {
+        ...gridOpt.selSts,
+        detail: gridOpt.selSts.func(rows, colDefs),
+      },
+    };
   });
+
+  // 表示
+  protected readonly gridTopOptDsp = computed<GridOptDsp<GridTop>[]>(() =>
+    this.createGridOptDsp(this.gridTopOptUpd()),
+  );
 
   /********************
    * Grid Btm Option
    ********************/
-  private readonly updSts = (key: GridBtmOptKey, sts?: number): void => {
-    this.gridBtmOpt.update((list) => {
-      const opt = list.find((opt) => opt.key === key);
-      if (!!opt) {
-        if (sts === undefined) {
-          if (opt.sts < opt.iconList.length - 1) {
-            opt.sts++;
-          } else {
-            opt.sts = 0;
-          }
-        } else {
-          opt.sts = sts;
-        }
-      }
-      return [...list];
-    });
+  private readonly updSts = (key: GridOptKey<GridBtm>, sts?: number): void => {
+    this.gridBtmOpt.update((opt) => ({
+      ...opt,
+      [key]: {
+        ...opt[key],
+        sts:
+          sts !== undefined
+            ? sts
+            : (opt[key].sts + 1) % opt[key].iconList.length,
+      },
+    }));
   };
 
-  private readonly onAddRow = (_opt: GridOpt<GridBtmOptKey>): void => {
-    this.rowEdt.emit([Util.getRowEdtAddNew(this.tbl(), this.rows())]);
+  private readonly onAddRow = (_opt: GridOptDsp<GridBtm>): void => {
+    this.rowAdd.emit();
   };
-  private readonly onSort = (opt: GridOpt<GridBtmOptKey, SortOpt[]>): void => {
+  private readonly onSort = (opt: GridOptDsp<GridBtm>): void => {
     const oldRows = this.rows();
     const newRows = Util.sortRow(oldRows, opt.detail);
     if (Util.equalObject(oldRows, newRows)) {
@@ -441,17 +737,18 @@ export class GridComponent {
     }
 
     edtInf.push(
-      Util.getRowEdtUpd(this.tbl(), updRows, false),
+      Util.getRowEdtUpd(this.tbl(), updRows, undefined, false, this.rowsKey()),
       Util.getRowEdtDrg(
         this.tbl(),
         Util.getRowIds(updRows),
         addIds as ValType[],
+        this.rowsKey(),
       ),
     );
 
     this.rowEdt.emit(edtInf);
   };
-  private readonly onFltOff = (_opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly onFltOff = (_opt: GridOptDsp<GridBtm>): void => {
     // フィルタ解除
     this.gridApi.setFilterModel(null);
     // ソート解除
@@ -461,7 +758,7 @@ export class GridComponent {
     // クイックフィルタ解除
     this.gridApi.setGridOption('quickFilterText', '');
   };
-  private readonly onChgFlt = (opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly onChgFlt = (opt: GridOptDsp<GridBtm>): void => {
     // フィルタモデル設定
     const hardcodedFilter: FilterModel = {
       [Const.CMN_COL.INPUT_MODE]: {
@@ -474,7 +771,7 @@ export class GridComponent {
     // フィルタ切替状態更新
     this.updSts(opt.key);
   };
-  private readonly onChgSel = (_opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly onChgSel = (_opt: GridOptDsp<GridBtm>): void => {
     if (this.gridApi.getSelectedRows().length > 0) {
       // 選択行が1件以上の場合、選択解除
       this.gridApi.deselectAll();
@@ -483,12 +780,12 @@ export class GridComponent {
       this.gridApi.selectAll('filtered');
     }
   };
-  private readonly quickFlt = (opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly quickFlt = (opt: GridOptDsp<GridBtm>): void => {
     // ダイアログオープン
     const dialogRef = this.dialog.open<
-      DialogSearchComponent,
-      DialogSearchInput
-    >(DialogSearchComponent, {
+      DialogFilterComponent,
+      DialogFilterInput
+    >(DialogFilterComponent, {
       data: {
         val: this.gridApi.getGridOption('quickFilterText') ?? '',
         opts: opt.detail(),
@@ -502,176 +799,267 @@ export class GridComponent {
       this.gridApi.setGridOption('quickFilterText', res);
     });
   };
-  private readonly onJmpFirstCol = (_opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly onSearch = (opt: GridOptDsp<GridBtm>): void => {
+    // ダイアログオープン
+    const dialogRef = this.dialog.open<
+      DialogSearchComponent,
+      DialogSearchInput
+    >(DialogSearchComponent, {
+      data: {
+        val: this.signalSearchVal() ?? '',
+        searchInf: this.signalSearchCnt,
+        opts: opt.detail(),
+      },
+    });
+    // 検索値変更
+    dialogRef.componentInstance.emitter.subscribe((res) => {
+      res = res
+        .replace(Const.INPUT_CHARS.AUTOCOMP_REPLACE, ' ')
+        .replace(/\s+/g, ' ');
+      this.signalSearchVal.set(res);
+    });
+    // 検索実行
+    dialogRef.componentInstance.clickEmitter.subscribe((res) => {
+      this.procSearch(this.signalSearchVal(), res);
+    });
+  };
+  private readonly onJmpFirstCol = (_opt: GridOptDsp<GridBtm>): void => {
     Util.jumpCol(this.gridApi, 0);
   };
-  private readonly onJmpLastCol = (_opt: GridOpt<GridBtmOptKey>): void => {
+  private readonly onJmpLastCol = (_opt: GridOptDsp<GridBtm>): void => {
     Util.jumpCol(this.gridApi);
   };
-  private readonly onJmpFirstRow = (_opt: GridOpt<GridBtmOptKey>): void => {
-    Util.jumpRow(this.gridApi, 0);
+  private readonly onJmpFirstRow = (_opt: GridOptDsp<GridBtm>): void => {
+    if (!!this.signalSearchVal()) {
+      // 検索値あり
+      this.procSearch(this.signalSearchVal(), false);
+    } else {
+      // 検索値なし
+      Util.jumpRow(this.gridApi, 0);
+    }
   };
-  private readonly onJmpLastRow = (_opt: GridOpt<GridBtmOptKey>): void => {
-    Util.jumpRow(this.gridApi);
+  private readonly onJmpLastRow = (_opt: GridOptDsp<GridBtm>): void => {
+    if (!!this.signalSearchVal()) {
+      // 検索値あり
+      this.procSearch(this.signalSearchVal(), true);
+    } else {
+      // 検索値なし
+      Util.jumpRow(this.gridApi);
+    }
   };
   private readonly onClickMenu = (
-    opt: GridOpt<GridBtmOptKey>,
+    opt: GridOptDsp<GridBtm>,
     id: string,
   ): void => {
     (opt.detail as (MenuListData & { func: () => {} })[])
       .find((dt) => dt.id === id)
       ?.func();
   };
+  private readonly onClickRowDrag = (_opt: GridOptDsp<GridBtm>): void => {
+    this.gridApi.setGridOption(
+      'suppressRowDrag',
+      !this.gridApi.getGridOption('suppressRowDrag'),
+    );
+  };
 
-  private readonly gridBtmOptInputDef = [
-    {
-      key: 'addRow',
+  // デフォルト値
+  private readonly gridBtmOptParamDef = {
+    back: {
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['reply'],
+      value: '',
+      dspOdr: 0,
+      detail: [],
+      func: () => {},
+    },
+    addRow: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['add'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onAddRow,
     },
-    {
-      key: 'sort',
+    sort: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['sort'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onSort,
     },
-    {
-      key: 'fltOff',
+    fltOff: {
       valid: false,
       hide: false,
       disabled: true, // 始めは非活性
       sts: 0,
       iconList: ['filter_list_off'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onFltOff,
     },
-    {
-      key: 'chgSel',
+    chgSel: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['select_all', 'deselect'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onChgSel,
     },
-    {
-      key: 'quickFlt',
+    quickFlt: {
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['filter_list'],
+      value: '',
+      dspOdr: 0,
+      detail: () => [],
+      func: this.quickFlt,
+    },
+    search: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['search'],
+      value: '',
+      dspOdr: 0,
       detail: () => [],
-      func: this.quickFlt,
+      func: this.onSearch,
     },
-    {
-      key: 'chgFlt',
+    chgFlt: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['warning', 'check_circle'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onChgFlt,
     },
-    {
-      key: 'jmpFirstCol',
+    jmpFirstCol: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['arrow_left'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onJmpFirstCol,
     },
-    {
-      key: 'jmpLastCol',
+    jmpLastCol: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['arrow_right'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onJmpLastCol,
     },
-    {
-      key: 'jmpFirstRow',
+    jmpFirstRow: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['arrow_drop_up'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onJmpFirstRow,
     },
-    {
-      key: 'jmpLastRow',
+    jmpLastRow: {
       valid: false,
       hide: false,
       disabled: false,
       sts: 0,
       iconList: ['arrow_drop_down'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onJmpLastRow,
     },
-    {
-      key: 'custom1',
-      valid: false,
-      hide: false,
-      disabled: false,
-      sts: 0,
-      iconList: ['looks_1'],
-      detail: [],
-      func: (_opt: GridOpt<GridBtmOptKey>) => {},
-    },
-    {
-      key: 'custom2',
-      valid: false,
-      hide: false,
-      disabled: false,
-      sts: 0,
-      iconList: ['looks_2'],
-      detail: [],
-      func: (_opt: GridOpt<GridBtmOptKey>) => {},
-    },
-    {
-      key: 'menuList',
+    menuList: {
       valid: false,
       hide: false,
       disabled: true, // 始めは非活性
       sts: 0,
       iconList: ['more_vert'],
+      value: '',
+      dspOdr: 0,
       detail: [],
       func: this.onClickMenu,
     },
-  ] as const satisfies Required<GridOptInput<GridBtmOptKey>>[];
+    rowDrg: {
+      valid: false,
+      hide: false,
+      disabled: false,
+      sts: 0,
+      iconList: ['drag_handle'],
+      value: '',
+      dspOdr: 0,
+      detail: [],
+      func: this.onClickRowDrag,
+    },
+  } as const satisfies GridOpt<GridBtm>;
 
-  private readonly gridBtmOpt = linkedSignal<
-    Required<GridOptInput<GridBtmOptKey>>[]
-  >(
-    () =>
-      (this.btmOpt()?.map((opt) => ({
-        ...(this.gridBtmOptInputDef.find((def) => def.key === opt.key) ?? {}),
-        ...opt,
-      })) ?? []) as Required<GridOptInput<GridBtmOptKey>>[],
+  // 初期設定
+  private readonly gridBtmOpt = linkedSignal<GridOpt<GridBtm>>(() =>
+    this.createGridOpt(this.btmOpt(), this.gridBtmOptParamDef),
   );
 
-  protected readonly gridBtmOptDsp = computed<GridOpt<GridBtmOptKey>[]>(() => {
-    return this.gridBtmOpt().map((opt) => ({
-      ...opt,
-      icon: opt.iconList[opt.sts],
-    }));
+  // 更新
+  private readonly gridBtmOptUpd = computed<GridOpt<GridBtm>>(() => {
+    // 行データ更新時
+    this.signalUpdRows();
+    // セル選択更新時
+    this.signalChgSel();
+    // フィルタ・ソート更新時
+    this.signalChgFilterAndSort();
+
+    const gridOpt = this.gridBtmOpt();
+    const rows = this.gridApi?.getSelectedRows() ?? [];
+
+    return {
+      ...gridOpt,
+      chgSel: {
+        ...gridOpt.chgSel,
+        sts: rows.length === 0 ? 0 : 1,
+      },
+      menuList: {
+        ...gridOpt.menuList,
+        disabled: rows.length === 0,
+      },
+      fltOff: {
+        ...gridOpt.fltOff,
+        disabled:
+          !this.gridApi?.isAnyFilterPresent() &&
+          !this.gridApi?.getColumnState().some((col) => !!col.sort),
+      },
+    };
   });
+
+  // 表示
+  protected readonly gridBtmOptDsp = computed<GridOptDsp<GridBtm>[]>(() =>
+    this.createGridOptDsp(this.gridBtmOptUpd()),
+  );
 
   /********************
    * イベント処理
@@ -691,33 +1079,10 @@ export class GridComponent {
   protected readonly onChangeSelection = (
     event: SelectionChangedEvent,
   ): void => {
-    // 選択行の取得
     const rows = event.api.getSelectedRows() ?? [];
-    // 列情報の取得
-    const colDefs = event.api.getColumnDefs() ?? [];
+    this.gridApi.setGridOption('suppressRowDrag', rows.length === 0);
 
-    this.gridBtmOpt.update((list) => {
-      for (const opt of list) {
-        if (opt.key === 'chgSel') {
-          // 選択状態更新
-          opt.sts = rows.length === 0 ? 0 : 1;
-        } else if (opt.key === 'menuList') {
-          // メニューリストボタンの活性状態更新
-          opt.disabled = rows.length === 0;
-        }
-      }
-      return [...list];
-    });
-    this.gridTopOpt.update((list) => {
-      for (const opt of list) {
-        if (opt.key === 'selSts') {
-          // ステータスリスト更新
-          opt.detail = opt.func(rows, colDefs);
-        }
-      }
-      return [...list];
-    });
-
+    this.signalChgSel.update((flg) => !flg);
     this.selectionChange.emit(event);
   };
   /**
@@ -739,37 +1104,9 @@ export class GridComponent {
    * @param event
    */
   protected readonly onUpdRows = (
-    event: RowDataUpdatedEvent<Row, ValType>,
+    _event: RowDataUpdatedEvent<Row, ValType>,
   ): void => {
-    // 選択行の取得
-    const rows = event.api.getSelectedRows() ?? [];
-    // 列情報の取得
-    const colDefs = event.api.getColumnDefs() ?? [];
-
-    this.gridBtmOpt.update((list) => {
-      for (const opt of list) {
-        if (opt.key === 'chgSel') {
-          // 選択状態更新
-          opt.sts = rows.length === 0 ? 0 : 1;
-        } else if (opt.key === 'addRow') {
-          // 追加ボタンの有効状態更新
-          opt.hide = this.rows().length > 0;
-        } else if (opt.key === 'menuList') {
-          // メニューリストボタンの活性状態更新
-          opt.disabled = rows.length === 0;
-        }
-      }
-      return [...list];
-    });
-    this.gridTopOpt.update((list) => {
-      for (const opt of list) {
-        if (opt.key === 'selSts') {
-          // ステータスリスト更新
-          opt.detail = opt.func(rows, colDefs);
-        }
-      }
-      return [...list];
-    });
+    this.signalUpdRows.update((flg) => !flg);
   };
   /**
    * モデル更新時
@@ -777,7 +1114,7 @@ export class GridComponent {
    */
   protected readonly onUpdateModel = (event: ModelUpdatedEvent): void => {
     // 行背景色を更新
-    event.api.redrawRows();
+    // event.api.redrawRows();
   };
 
   /** ドラッグ対象行INDEX */
@@ -821,11 +1158,12 @@ export class GridComponent {
     });
 
     edtInf.push(
-      Util.getRowEdtUpd(this.tbl(), updRows),
+      Util.getRowEdtUpd(this.tbl(), updRows, undefined, true, this.rowsKey()),
       Util.getRowEdtDrg(
         this.tbl(),
         Util.getRowIds(updRows),
         addIds as ValType[],
+        this.rowsKey(),
       ),
     );
 
@@ -843,22 +1181,8 @@ export class GridComponent {
    * @param event
    */
   protected readonly onChangeFilterAndSort = (
-    event: FilterChangedEvent | SortChangedEvent,
+    _event: FilterChangedEvent | SortChangedEvent,
   ): void => {
-    // ログ出力
-    Util.outputLog(event.api.getFilterModel());
-    this.gridBtmOpt.update((list) => {
-      for (const opt of list) {
-        if (opt.key === 'fltOff') {
-          // フィルタリセットボタン活性状態更新
-          const fltState = event.api.isAnyFilterPresent();
-          const sortState = event.api
-            .getColumnState()
-            .some((col) => !!col.sort);
-          opt.disabled = !fltState && !sortState;
-        }
-      }
-      return [...list];
-    });
+    this.signalChgFilterAndSort.update((flg) => !flg);
   };
 }

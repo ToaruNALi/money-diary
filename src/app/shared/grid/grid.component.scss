@@ -28,10 +28,10 @@
   input,
   mat-icon {
     margin-right: 8px;
+  }
 
-    &.hidden {
-      display: none;
-    }
+  .hidden {
+    display: none;
   }
 
   .disabled {
