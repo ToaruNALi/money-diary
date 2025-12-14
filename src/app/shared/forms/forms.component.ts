@@ -10,7 +10,11 @@ import { AbstractControl, FormControl } from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { map, Observable, of, startWith, take } from 'rxjs';
 import * as Const from 'src/app/shared/constants/constants';
-import { InputType, ValType } from 'src/app/shared/constants/types';
+import {
+  InputRestrictions,
+  InputType,
+  ValType,
+} from 'src/app/shared/constants/types';
 
 /** FormComponent 入力タイプ */
 export type FormInputData = Partial<{
@@ -33,7 +37,7 @@ export type FormInputData = Partial<{
   /** 最大値 @default Number.MAX_SAFE_INTEGER */
   max: number;
   /** 入力禁止文字 @default [] */
-  forbiddenChars: (string | RegExp)[];
+  forbiddenChars: InputRestrictions[];
   /** オートコンプリート用内部項目 @default of([]) */
   filteredOptions$: Observable<SelectOption[]>;
   /** コンポーネント内スタイル @default {} */
