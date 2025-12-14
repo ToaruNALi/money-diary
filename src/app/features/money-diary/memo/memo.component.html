@@ -1,11 +1,9 @@
-<button mat-icon-button [style.display]="dspBackBtn()" (click)="onClickBack()">
-  <mat-icon>reply</mat-icon>
-</button>
 <div class="content">
   <app-grid
     [gridInput]="gridInput()"
     (rowEdt)="rowEdt.emit($event)"
     (gridReady)="onReadyGrid($event)"
     (cellClick)="onClickCell($event)"
+    (rowAdd)="onClickCell()"
   />
 </div>

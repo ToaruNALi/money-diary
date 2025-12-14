@@ -11,8 +11,12 @@ import * as Const from 'src/app/shared/constants/constants';
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
       [tbl]="tbl"
-      [tblMap]="usecase.storeTblInf.tblMap()"
-      (rowEdt)="onEdtRows($event)"
+      [tblMap]="usecase.storeTblInf.tblInf.rd()"
+      [colData]="usecase.storeTblInf.tblInf.cd()"
+      [rowsKeyList]="usecase.storeTblInf.tblInf.rk()"
+      (rowEdt)="usecase.edtRows($event)"
+      (colChange)="usecase.updCol($event)"
+      (rowsKeyChange)="usecase.updRowsKey($event)"
     ></app-memo>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
