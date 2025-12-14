@@ -9,10 +9,10 @@ import {
   NativeDateAdapter,
   provideNativeDateAdapter,
 } from '@angular/material/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import {
   NavigationError,
   provideRouter,
-  withHashLocation,
   withNavigationErrorHandler,
 } from '@angular/router';
 import { routes } from 'src/app/app.routes';
@@ -36,9 +36,14 @@ export const appConfig: ApplicationConfig = {
       withNavigationErrorHandler((err: NavigationError) =>
         inject(CustomErrorHandler).handle(err),
       ), // エラー設定
-      withHashLocation(), // サーバ上でリロードした際の Not Found にならない対策
+      // withHashLocation(), // サーバ上でリロードした際の Not Found にならない対策
     ),
     provideZonelessChangeDetection(), // Zone Less
+    provideAnimations(), // TODO: 置き換え必要
+    /**
+     * 置き換え方法は下記
+     * https://angular.jp/guide/animations/migration
+     */
     provideNativeDateAdapter(),
     { provide: DateAdapter, useClass: MyDateAdapter }, // カレンダー日付表記修正
     { provide: MAT_DATE_LOCALE, useValue: 'ja-JP' }, // カレンダー表記日本語化
