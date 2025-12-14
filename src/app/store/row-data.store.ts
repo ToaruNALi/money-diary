@@ -11,22 +11,43 @@ import {
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
-import { Row, TblMap } from 'src/app/domain/row-data';
-import { Tbl } from 'src/app/shared/constants/types';
+import { Row, TblInf, TblMap } from 'src/app/domain/row-data';
+import * as Const from 'src/app/shared/constants/constants';
+import {
+  ColEdt,
+  FilterInputModel,
+  RowsKeyEdt,
+  Tbl,
+} from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import { ApiService } from 'src/app/shared/services/api.service';
+import { FilterEdt } from './../shared/constants/types';
 
 /** State */
 type TblInfState = {
   loading: boolean;
-  tblMap: TblMap;
+  tblInf: TblInf;
   err?: any;
+};
+
+const initFn = <T>(initVal: T): Record<Tbl, T> => {
+  const rec = {} as Record<Tbl, T>;
+  for (const key of Object.values(Const.TBL)) {
+    const tbl = key as Tbl;
+    rec[tbl] = initVal;
+  }
+  return rec;
 };
 
 /** Initial State */
 const initState: TblInfState = {
   loading: false,
-  tblMap: {} as TblMap,
+  tblInf: {
+    fm: initFn<FilterInputModel>('none'),
+    rk: initFn<string>(''),
+    rd: initFn<Row[]>([]),
+    cd: initFn<Row[]>([]),
+  },
 };
 
 /** Signal Store */
@@ -39,14 +60,29 @@ export const TblInfStore = signalStore(
   // Method
   withMethods((store, apiService = inject(ApiService)) => ({
     /*+ 行データMap設定(※Loadのみ利用すること) */
-    setTblMapOnLoad: (map: TblMap): void => {
-      patchState(store, setTblMapOnLoad(map));
-      apiService.saveTblMap(store.tblMap()).subscribe();
+    setTblInf: (tblInf: TblInf): void => {
+      patchState(store, setTblInf(tblInf));
+      apiService.saveTblInf(store.tblInf());
     },
     /** 行データ更新 */
     updRows: (tbl: Tbl, rows: Row[]): void => {
       patchState(store, updRows(tbl, rows));
-      apiService.saveRows(tbl, store.tblMap()[tbl]).subscribe();
+      apiService.saveTblInf(store.tblInf());
+    },
+    /** フィルタモデル更新 */
+    updFilterModel: ({ tbl, filter }: FilterEdt): void => {
+      patchState(store, updFilterModel(tbl, filter));
+      // apiService.saveTblInf(store.tblInf());
+    },
+    /** テーブルデータKey設定 */
+    updRowsKey: ({ tbl, key }: RowsKeyEdt): void => {
+      patchState(store, updRowsKey(tbl, key));
+      apiService.saveTblInf(store.tblInf());
+    },
+    /** 列データKey設定 */
+    updCol: ({ tbl, cols }: ColEdt): void => {
+      patchState(store, updCol(tbl, cols));
+      apiService.saveTblInf(store.tblInf());
     },
   })),
   // Event
@@ -55,9 +91,9 @@ export const TblInfStore = signalStore(
       pipe(
         tap(() => patchState(store, { loading: true })),
         switchMap(() =>
-          apiService.loadTblMap().pipe(
+          apiService.loadTblInf().pipe(
             tapResponse({
-              next: (data) => store.setTblMapOnLoad(data),
+              next: (data) => store.setTblInf(data),
               error: (err) => patchState(store, { err }),
               finalize: () => patchState(store, { loading: false }),
             }),
@@ -68,23 +104,75 @@ export const TblInfStore = signalStore(
   })),
 );
 
-const setTblMapOnLoad =
-  (map: TblMap): PartialStateUpdater<{ tblMap: TblMap }> =>
-  (_state) => {
-    const result = {} as TblMap;
-    for (const [key, rows] of Object.entries(map)) {
+const setTblInf =
+  (tblInf: TblInf): PartialStateUpdater<{ tblInf: TblInf }> =>
+  (state) => {
+    const tblMap = {} as TblMap;
+    for (const [key, rows] of Object.entries(tblInf.rd)) {
       const tbl = key as Tbl;
-      result[tbl] = Util.getLoadRows(tbl, rows);
+      tblMap[tbl] = Util.getLoadRows(tbl, rows);
     }
-    return { tblMap: result };
+    tblInf.rd = tblMap;
+
+    return {
+      tblInf: {
+        ...state.tblInf,
+        ...tblInf,
+      },
+    };
   };
 
 /** 行データ更新 Updater */
 const updRows =
-  (tbl: Tbl, rows: Row[]): PartialStateUpdater<{ tblMap: TblMap }> =>
+  (tbl: Tbl, rows: Row[]): PartialStateUpdater<{ tblInf: TblInf }> =>
   (state) => ({
-    tblMap: {
-      ...state.tblMap,
-      [tbl]: structuredClone(rows),
+    tblInf: {
+      ...state.tblInf,
+      rd: {
+        ...state.tblInf.rd,
+        [tbl]: structuredClone(rows),
+      },
+    },
+  });
+
+/** フィルターモデル更新 */
+const updFilterModel =
+  (
+    tbl: Tbl,
+    filter: FilterInputModel,
+  ): PartialStateUpdater<{ tblInf: TblInf }> =>
+  (state) => ({
+    tblInf: {
+      ...state.tblInf,
+      fm: {
+        ...state.tblInf.fm,
+        [tbl]: structuredClone(filter),
+      },
+    },
+  });
+
+/** データKey更新 */
+const updRowsKey =
+  (tbl: Tbl, key: string): PartialStateUpdater<{ tblInf: TblInf }> =>
+  (state) => ({
+    tblInf: {
+      ...state.tblInf,
+      rk: {
+        ...state.tblInf.rk,
+        [tbl]: structuredClone(key),
+      },
+    },
+  });
+
+/** 列データ更新 Updater */
+const updCol =
+  (tbl: Tbl, cols: Row[]): PartialStateUpdater<{ tblInf: TblInf }> =>
+  (state) => ({
+    tblInf: {
+      ...state.tblInf,
+      cd: {
+        ...state.tblInf.cd,
+        [tbl]: structuredClone(cols),
+      },
     },
   });

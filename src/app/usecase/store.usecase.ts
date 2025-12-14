@@ -3,10 +3,11 @@ import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { Row } from 'src/app/domain/row-data';
 import * as Const from 'src/app/shared/constants/constants';
 import {
+  ColEdt,
   FilterEdt,
   RowEdt,
+  RowsKeyEdt,
   Scr,
-  Tbl,
   ValType,
 } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
@@ -122,7 +123,7 @@ export class StoreUsecase {
    */
   readonly allData = computed(() => {
     return {
-      rm: this.storeTblInf.tblMap(),
+      ti: this.storeTblInf.tblInf(),
       si: this.storeScr.scrInf(),
       rh: this.storeHist.hist(),
     } as MoneyDiaryData;
@@ -133,7 +134,7 @@ export class StoreUsecase {
    * @param data
    */
   readonly setAllData = (data: MoneyDiaryData): void => {
-    this.storeTblInf.setTblMapOnLoad(data.rm);
+    this.storeTblInf.setTblInf(data.ti);
     this.storeScr.setScrInf(data.si);
     this.storeHist.setHist(data.rh);
   };
@@ -167,6 +168,12 @@ export class StoreUsecase {
     if (scrId !== this.storeScr.scrInf.si()) {
       this.changeScr(scrId);
     }
+    // テーブルデータKey
+    const rowKey = histData.at(-1)?.rk ?? '';
+    this.storeTblInf.updRowsKey({
+      tbl,
+      key: rowKey,
+    });
     setTimeout(() => {
       // 画面遷移後に行データ編集
       this.setRowEdt(histData);
@@ -196,14 +203,11 @@ export class StoreUsecase {
     addHistFlg: boolean = false,
   ): void => {
     for (const edt of rowEdt) {
-      const rows = this.storeTblInf.tblMap()[edt.tbl];
+      const rows = this.storeTblInf.tblInf.rd()[edt.tbl];
       if (edt.type === Const.TBL_EDIT_TYPE.ADD) {
         // 追加
         if (addHistFlg) {
-          this.storeHist.updRowEdt(
-            this.getRowEdtAddUndo(edt.tbl, edt.rows),
-            edt,
-          );
+          this.storeHist.updRowEdt(this.getRowEdtAddUndo(edt, edt.rows), edt);
         }
         this.storeTblInf.updRows(
           edt.tbl,
@@ -213,7 +217,7 @@ export class StoreUsecase {
         // 更新
         if (addHistFlg) {
           this.storeHist.updRowEdt(
-            this.getRowEdtUpdUndo(edt.tbl, edt.rows, rows),
+            this.getRowEdtUpdUndo(edt, edt.rows, rows),
             edt,
           );
         }
@@ -222,7 +226,7 @@ export class StoreUsecase {
         // 削除
         if (addHistFlg) {
           this.storeHist.updRowEdt(
-            this.getRowEdtDelUndo(edt.tbl, edt.delIds, rows),
+            this.getRowEdtDelUndo(edt, edt.delIds, rows),
             edt,
           );
         }
@@ -231,7 +235,7 @@ export class StoreUsecase {
         // 移動
         if (addHistFlg) {
           this.storeHist.updRowEdt(
-            this.getRowEdtDrgUndo(edt.tbl, edt.delIds, rows),
+            this.getRowEdtDrgUndo(edt, edt.delIds, rows),
             edt,
           );
         }
@@ -242,46 +246,47 @@ export class StoreUsecase {
       }
     }
 
-    if (addHistFlg) {
-      const tblSet = new Set<Tbl>();
-      for (const edt of rowEdt) {
-        if (tblSet.has(edt.tbl)) {
-          continue;
-        }
+    // TODO: 空データをテーブルデータに含めないようにしたため、この処理は不要
+    // if (addHistFlg) {
+    //   const tblSet = new Set<Tbl>();
+    //   for (const edt of rowEdt) {
+    //     if (tblSet.has(edt.tbl)) {
+    //       continue;
+    //     }
 
-        tblSet.add(edt.tbl);
-        const rows = this.storeTblInf.tblMap()[edt.tbl];
-        if (Util.checkNoneData(rows)) {
-          continue;
-        }
+    //     tblSet.add(edt.tbl);
+    //     const rows = this.storeTblInf.tblInf.rd()[edt.tbl];
+    //     if (Util.checkNoneData(rows)) {
+    //       continue;
+    //     }
 
-        const addEdt = Util.getRowEdtAddNew(edt.tbl, rows);
-        if (addEdt.type !== Const.TBL_EDIT_TYPE.ADD) {
-          continue;
-        }
+    //     const addEdt = Util.getRowEdtAddNew(edt.tbl, rows);
+    //     if (addEdt.type !== Const.TBL_EDIT_TYPE.ADD) {
+    //       continue;
+    //     }
 
-        this.storeHist.updRowEdt(
-          this.getRowEdtAddUndo(addEdt.tbl, addEdt.rows),
-          addEdt,
-        );
-        this.storeTblInf.updRows(
-          addEdt.tbl,
-          this.getRowAdd(addEdt.rows, addEdt.addIds, rows),
-        );
-      }
-    }
+    //     this.storeHist.updRowEdt(
+    //       this.getRowEdtAddUndo(addEdt, addEdt.rows),
+    //       addEdt,
+    //     );
+    //     this.storeTblInf.updRows(
+    //       addEdt.tbl,
+    //       this.getRowAdd(addEdt.rows, addEdt.addIds, rows),
+    //     );
+    //   }
+    // }
   };
 
-  private readonly getRowEdtAddUndo = (edtTbl: Tbl, edtRows: Row[]): RowEdt => {
+  private readonly getRowEdtAddUndo = (edt: RowEdt, edtRows: Row[]): RowEdt => {
     return {
+      ...edt,
       type: Const.TBL_EDIT_TYPE.DEL,
-      tbl: edtTbl,
       delIds: edtRows.map((row) => row[Const.CMN_COL.ID]),
     };
   };
 
   private readonly getRowEdtUpdUndo = (
-    edtTbl: Tbl,
+    edt: RowEdt,
     edtRows: Row[],
     stateRows: Row[],
   ): RowEdt => {
@@ -296,14 +301,14 @@ export class StoreUsecase {
     }
     // undo用更新データ作成
     return {
+      ...edt,
       type: Const.TBL_EDIT_TYPE.UPD,
-      tbl: edtTbl,
       rows: updRows,
     };
   };
 
   private readonly getRowEdtDelUndo = (
-    edtTbl: Tbl,
+    edt: RowEdt,
     edtDelIds: ValType[],
     stateRows: Row[],
   ): RowEdt => {
@@ -339,15 +344,15 @@ export class StoreUsecase {
     }
     // undo用追加データ作成
     return {
+      ...edt,
       type: Const.TBL_EDIT_TYPE.ADD,
-      tbl: edtTbl,
       rows: addRows,
       addIds,
     };
   };
 
   private readonly getRowEdtDrgUndo = (
-    edtTbl: Tbl,
+    edt: RowEdt,
     edtDelIds: ValType[],
     stateRows: Row[],
   ): RowEdt => {
@@ -383,8 +388,8 @@ export class StoreUsecase {
     }
     // undo用移動データ作成
     return {
+      ...edt,
       type: Const.TBL_EDIT_TYPE.DRG,
-      tbl: edtTbl,
       delIds,
       addIds,
     };
@@ -562,16 +567,34 @@ export class StoreUsecase {
   };
 
   /**
-   * フィルタモデル設定
-   * @param edt
+   * フィルタモデル更新
+   * @param filterEdt
    */
-  readonly edtFilter = (edt: FilterEdt): void => {
+  readonly updFilterModel = (filterEdt: FilterEdt): void => {
     // フィルタモデル設定
-    this.storeTmp.edtFilter(edt);
+    this.storeTblInf.updFilterModel(filterEdt);
     // 一定時間待機
     setTimeout(() => {
       // フィルタモデルリセット
-      this.storeTmp.edtFilter({ ...edt, filter: 'none' });
+      this.storeTblInf.updFilterModel({ ...filterEdt, filter: 'none' });
     });
+  };
+
+  /**
+   * データKey更新
+   * @param rowsKeyEdt
+   */
+  readonly updRowsKey = (rowsKeyEdt: RowsKeyEdt): void => {
+    // データKey更新
+    this.storeTblInf.updRowsKey(rowsKeyEdt);
+  };
+
+  /**
+   * 列データ更新
+   * @param colEdt
+   */
+  readonly updCol = (colEdt: ColEdt): void => {
+    // データKey更新
+    this.storeTblInf.updCol(colEdt);
   };
 }

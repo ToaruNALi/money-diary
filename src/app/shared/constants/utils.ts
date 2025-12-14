@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { isHoliday } from '@holiday-jp/holiday_jp';
 import { CellClassParams, CellStyle, GridApi } from 'ag-grid-community';
 import * as DateUtil from 'date-fns';
@@ -106,8 +107,7 @@ export const calcResult = (value?: ValType): number => {
       value === null ||
       value === '' ||
       typeof value === 'boolean' ||
-      (typeof value === 'string' &&
-        Const.INPUT_CHARS.FORMULA_FORBIDDEN.test(value))
+      Array.isArray(value)
     ) {
       throw new Error('Cannot Calculate');
     }
@@ -586,13 +586,21 @@ export const getRowIds = (rows: Row[]): ValType[] => {
 export const getRowEdtUpd = (
   tbl: Tbl,
   updRows: Row[],
-  updFlg = true,
+  rowIds = new Set<ValType>(),
+  updFlg = true, // 更新フラグに設定する値
+  rk = '',
 ): RowEdt => {
+  if (!updRows[0][Const.CMN_COL.ID]) {
+    // 更新データ数=1 かつ 行IDが未設定の場合、行追加を行う
+    return getRowEdtAdd(tbl, updRows, [], rowIds, rk);
+  }
   return {
     type: Const.TBL_EDIT_TYPE.UPD,
     tbl,
+    rk,
     rows: updRows.map((row) => ({
       ...row,
+      [Const.CMN_COL.ID]: row[Const.CMN_COL.ID],
       [Const.CMN_COL.UPDATE]: updFlg,
       [Const.CMN_COL.UPD_DATE_TIME]: getDate(
         undefined,
@@ -608,6 +616,7 @@ const getRowEdtAddCmn = (
   tbl: Tbl,
   addRows: Row[],
   addIds: ValType[] = [],
+  rk = '',
 ): RowEdt => {
   addRows = structuredClone(addRows);
   addIds = [...addIds];
@@ -619,6 +628,7 @@ const getRowEdtAddCmn = (
   return {
     type: Const.TBL_EDIT_TYPE.ADD,
     tbl,
+    rk,
     rows: addRows,
     addIds,
   };
@@ -630,6 +640,7 @@ export const getRowEdtAdd = (
   addRows: Row[],
   addIds: ValType[] = [],
   rowIds = new Set<ValType>(),
+  rk = '',
 ): RowEdt => {
   return getRowEdtAddCmn(
     tbl,
@@ -646,20 +657,22 @@ export const getRowEdtAdd = (
       })),
     ],
     addIds,
+    rk,
   );
 };
 
 /** 行編集追加情報(空データ)を返却する */
-export const getRowEdtAddNew = (tbl: Tbl, rows: Row[]): RowEdt => {
+export const getRowEdtAddNew = (tbl: Tbl, rows: Row[], rk = ''): RowEdt => {
   return getRowEdtAddCmn(
     tbl,
     [{ ...getTblInitRow(tbl, rows) }],
     [Const.TBL_ADD_POS.MAX],
+    rk,
   );
 };
 
 /** 行編集追加情報(未選択データ)を返却する */
-export const getRowEdtAddNoSel = (tbl: Tbl): RowEdt => {
+export const getRowEdtAddNoSel = (tbl: Tbl, rk = ''): RowEdt => {
   return getRowEdtAddCmn(
     tbl,
     [
@@ -671,6 +684,7 @@ export const getRowEdtAddNoSel = (tbl: Tbl): RowEdt => {
       },
     ],
     [Const.TBL_ADD_POS.MIN],
+    rk,
   );
 };
 
@@ -679,6 +693,7 @@ export const getRowEdtDel = (
   tbl: Tbl,
   delIds: ValType[],
   rowIds = new Set<ValType>(),
+  rk = '',
 ): RowEdt => {
   delIds = [...delIds];
   for (const delId of delIds) {
@@ -688,6 +703,7 @@ export const getRowEdtDel = (
   return {
     type: Const.TBL_EDIT_TYPE.DEL,
     tbl,
+    rk,
     delIds,
   };
 };
@@ -697,6 +713,7 @@ export const getRowEdtDrg = (
   tbl: Tbl,
   delIds: ValType[],
   addIds: ValType[],
+  rk = '',
 ): RowEdt => {
   delIds = [...delIds].filter((id) => !!id);
   addIds = [...addIds].filter((id) => !!id);
@@ -710,6 +727,7 @@ export const getRowEdtDrg = (
   return {
     type: Const.TBL_EDIT_TYPE.DRG,
     tbl,
+    rk,
     delIds,
     addIds,
   };
@@ -721,4 +739,29 @@ export const outputLog = (val: any): void => {
     // 開発時のみログ出力
     console.log(val);
   }
+};
+
+const clickCnt = signal(0);
+/**
+ * クリック処理
+ * @param clickTime 受付時間
+ * @param ...callback コールバックメソッド
+ */
+export const procClick = (
+  clickTime: number,
+  ...callback: (() => void)[]
+): void => {
+  clickCnt.update((cnt) => (cnt < callback.length ? cnt + 1 : cnt));
+  if (callback.length === 0) {
+    return;
+  }
+
+  if (callback.length > 1 && clickCnt() >= callback.length) {
+    return;
+  }
+
+  setTimeout(() => {
+    callback[clickCnt() - 1]();
+    clickCnt.set(0);
+  }, clickTime);
 };

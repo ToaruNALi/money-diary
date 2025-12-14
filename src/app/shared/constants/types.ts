@@ -20,34 +20,37 @@ export type Stg = (typeof Const.SAVE_STG)[keyof typeof Const.SAVE_STG];
  * Row Datas Event Type
  ************************/
 
+/** 行データ編集共通 */
+type RowEdtCmn = {
+  tbl: Tbl;
+  rk: string;
+};
 /** 行データ編集 */
-export type RowEdt =
-  | {
-      /** 行データ追加時 */
-      type: typeof Const.TBL_EDIT_TYPE.ADD;
-      tbl: Tbl;
-      rows: Row[];
-      addIds: ValType[]; // ※nullの場合最終行に追加
-    }
-  | {
-      /** 行データ更新時 */
-      type: typeof Const.TBL_EDIT_TYPE.UPD;
-      tbl: Tbl;
-      rows: Row[];
-    }
-  | {
-      /** 行データ削除時 */
-      type: typeof Const.TBL_EDIT_TYPE.DEL;
-      tbl: Tbl;
-      delIds: ValType[];
-    }
-  | {
-      /** 行データ移動時 */
-      type: typeof Const.TBL_EDIT_TYPE.DRG;
-      tbl: Tbl;
-      delIds: ValType[];
-      addIds: ValType[]; // ※nullの場合最終行に移動
-    };
+export type RowEdt = RowEdtCmn &
+  (
+    | {
+        /** 行データ追加時 */
+        type: typeof Const.TBL_EDIT_TYPE.ADD;
+        rows: Row[];
+        addIds: ValType[]; // ※nullの場合最終行に追加
+      }
+    | {
+        /** 行データ更新時 */
+        type: typeof Const.TBL_EDIT_TYPE.UPD;
+        rows: Row[];
+      }
+    | {
+        /** 行データ削除時 */
+        type: typeof Const.TBL_EDIT_TYPE.DEL;
+        delIds: ValType[];
+      }
+    | {
+        /** 行データ移動時 */
+        type: typeof Const.TBL_EDIT_TYPE.DRG;
+        delIds: ValType[];
+        addIds: ValType[]; // ※nullの場合最終行に移動
+      }
+  );
 
 /********************
  * Other Type
@@ -77,13 +80,28 @@ export type MenuListData = {
   ab?: string;
   ic: string;
 };
-/** フィルター編集 */
+/** フィルターモデル */
+export type FilterInputModel = FilterModel | null | 'none';
+/** フィルターモデル編集 */
 export type FilterEdt = {
   tbl: Tbl;
   filter: FilterInputModel;
 };
-/** フィルターモデル */
-export type FilterInputModel = FilterModel | null | 'none';
+/** データKey更新 */
+export type RowsKeyEdt = {
+  tbl: Tbl;
+  key: string;
+};
+/** 列データ更新 */
+export type ColEdt = {
+  tbl: Tbl;
+  cols: Row[];
+};
+/** 入力制限 */
+export type InputRestrictions = {
+  searchVal: string | RegExp;
+  replaceVal: string;
+};
 
 /********************
  * Form Type

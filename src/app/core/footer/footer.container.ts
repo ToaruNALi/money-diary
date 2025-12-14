@@ -9,7 +9,7 @@ import { StoreUsecase } from 'src/app/usecase/store.usecase';
     <app-footer
       [mapDsp]="usecase.mapDsp()"
       [nextScrId]="usecase.storeTmp.nextScrId()"
-      [tblMap]="usecase.storeTblInf.tblMap()"
+      [tblMap]="usecase.storeTblInf.tblInf.rd()"
       [scrInf]="usecase.storeScr.scrInf()"
       [hist]="usecase.storeHist.hist()"
       (mapDspChange)="usecase.changeMapDsp($event)"

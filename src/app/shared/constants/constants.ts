@@ -1,4 +1,5 @@
 import {
+  InputRestrictions,
   InputType,
   Scr,
   ScrDspData,
@@ -15,15 +16,17 @@ export const HIST_MAX_LEN = 30;
 
 /** 文字色 */
 export const FONT_CLR = {
-  DEF: '#BBBEC9', // #BBBEC9
-  AMT_NEGA: '#FF7E79', // #FF7E79
-  AMT_POSI: '#76D6FF', // #76D6FF
+  DEF: '#BBBEC9',
+  AMT_NEGA: '#FF7E79',
+  AMT_POSI: '#76D6FF',
 } as const;
 
 /** テーブル行背景色 */
 export const ROW_CLR = {
-  NONE: '#CCCC0030', // #CCCC0030
-  ERROR: '#CC000030', // #CC000030
+  NONE: '#CCCC0030',
+  ERROR: '#CC000030',
+  SEARCH: '#00CCFF30',
+  SEARCH_FOCUS: '#006eff30',
 } as const;
 
 /** ルートパス */
@@ -74,6 +77,8 @@ export const INPUT_TYPE = {
   SELECT: 'select',
   TOGGLE: 'toggle',
   COLOR: 'color',
+  TEL: 'tel',
+  LABEL: 'label',
 } as const;
 
 /** 入力フォーム */
@@ -87,14 +92,25 @@ export const INPUT_FORM = {
   [INPUT_TYPE.SELECT]: { initVal: '' },
   [INPUT_TYPE.TOGGLE]: { initVal: false },
   [INPUT_TYPE.COLOR]: { initVal: '#00000000' },
+  [INPUT_TYPE.TEL]: { initVal: '' },
+  [INPUT_TYPE.LABEL]: { initVal: '' },
 } as const satisfies Record<InputType, Record<string, ValType>>;
 
 /** 禁止文字 */
 export const INPUT_CHARS = {
   /** 数値と符号以外禁止 */
-  FORMULA_FORBIDDEN: /[^0-9+\-*/()]+/g,
+  // FORMULA_FORBIDDEN: /[^0-9+\-*/()]+/g,
   AUTOCOMP_REPLACE: /[.*+?^${}()|[\]\\]/g,
 } as const;
+
+/** 入力制限 */
+export const INPUT_RESTRICTIONS = {
+  AMT: [
+    { searchVal: /[^0-9+\-*/()]+/g, replaceVal: '' }, // 数値と符号以外禁止
+    { searchVal: /((?<=[+\-*/])[+\-*/])/g, replaceVal: '' }, // 符号の連続は禁止
+    { searchVal: /(^|(?<=[^0-9]))0(?=[0-9])/g, replaceVal: '' }, // 0始まりの数字は禁止
+  ],
+} as const satisfies Record<string, InputRestrictions[]>;
 
 /** ファイル名 */
 export const FILE_NAME = {
@@ -116,6 +132,8 @@ export const TIME = {
   DISP_MAP_LONG_CLICK: 500,
   /** UNDO・REDOが行われるまでの時間 */
   UNDO_REDO_BEF: 300,
+  /** ダブルクリック受付時間 */
+  DOUBLE_CLICK: 180,
 } as const;
 
 /** テーブルデータ編集タイプ */
@@ -372,6 +390,40 @@ export const TBL_BASIC_INF = {
   [TBL.SCHEDULE]: { name: 'Schedule', scrId: SCR.SCHEDULE },
 } as const satisfies Record<Tbl, Record<string, string>>;
 
+/** 列データ設定項目 */
+export const EDT_COL_ID = {
+  /** 列ID */
+  ID: 'id',
+  /** 列名 */
+  LABEL: 'lb',
+  /** 値 */
+  VALUE: 'vl',
+  /** 列表示フラグ */
+  DISP: 'dp',
+  /** 表示順 */
+  DISP_ORDER: 'do',
+  /** 入力子画面表示フラグ */
+  DIALOG: 'dl',
+  /** デフォルト値 */
+  DEF_VAL: 'dv',
+  /** 保存フラグ */
+  SAVE: 'sv',
+  /** 保存時デフォルト値 (保存を省略する値) */
+  SAVE_DEF_VAL: 'sd',
+} as const;
+type EdtColId = (typeof EDT_COL_ID)[keyof typeof EDT_COL_ID];
+type EdtColType = {
+  [EDT_COL_ID.ID]: string;
+  [EDT_COL_ID.LABEL]: string;
+  [EDT_COL_ID.VALUE]: ValType;
+  [EDT_COL_ID.DISP]: boolean;
+  [EDT_COL_ID.DISP_ORDER]: number;
+  [EDT_COL_ID.DIALOG]: boolean;
+  [EDT_COL_ID.DEF_VAL]: ValType;
+  [EDT_COL_ID.SAVE]: boolean;
+  [EDT_COL_ID.SAVE_DEF_VAL]: ValType;
+};
+
 /** Main カラム */
 export const MAIN_COL = {
   ...CMN_COL,
@@ -387,6 +439,7 @@ export const MAIN_COL = {
   PAY_DATE: 'pd',
   COLOR: 'cl',
 } as const;
+type MainCol = (typeof MAIN_COL)[keyof typeof MAIN_COL];
 
 /** Storage カラム */
 export const STG_COL = {
@@ -397,6 +450,7 @@ export const STG_COL = {
   SAVINGS: 'sv',
   LAST_SAVINGS: 'ls',
 } as const;
+type StgCol = (typeof STG_COL)[keyof typeof STG_COL];
 
 /** Credit カラム */
 export const CRD_COL = {
@@ -412,18 +466,21 @@ export const CRD_COL = {
   EXPENSES_NEXT_MONTH: 'en',
   EXPENSES_CUSTOM_MONTH: 'ec',
 } as const;
+type CrdCol = (typeof CRD_COL)[keyof typeof CRD_COL];
 
 /** Item カラム */
 export const ITM_COL = { ...CMN_COL, SUMMARY_COUNT_FLG: 'sc' } as const;
+type ItmCol = (typeof ITM_COL)[keyof typeof ITM_COL];
 
 /** Remark カラム */
 export const RMK_COL = {
   ...CMN_COL,
   MEMO: 'mm',
+  INC_AND_EXP: 'ie',
   INCOME: 'in',
   EXPENSES: 'ex',
-  INC_AND_EXP: 'ie',
 } as const;
+type RmkCol = (typeof RMK_COL)[keyof typeof RMK_COL];
 
 /** Summary カラム */
 export const SMR_COL = {
@@ -436,6 +493,7 @@ export const SMR_COL = {
   INC_AND_EXP_HIDDEN: 'sh',
   ITEM: 'it',
 } as const;
+type SmrCol = (typeof SMR_COL)[keyof typeof SMR_COL];
 
 /** Memo カラム */
 export const MEM_COL = {
@@ -451,6 +509,7 @@ export const MEM_COL = {
   STATUS: 'st',
   COMPLETE_DATE: 'cd',
 } as const;
+type MemCol = (typeof MEM_COL)[keyof typeof MEM_COL];
 
 /** Schedule カラム */
 export const SCD_COL = {
@@ -458,6 +517,1029 @@ export const SCD_COL = {
   SEARCH_MEMO: 'sm',
   MEMO_PLUS_A: 'mp',
 } as const;
+type ScdCol = (typeof SCD_COL)[keyof typeof SCD_COL];
+
+export const EDIT_COL_DATA_DEF_VAL = {
+  [TBL.MAIN]: {
+    [MAIN_COL.ID]: {
+      [EDT_COL_ID.ID]: MAIN_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MAIN_COL.LABEL]: {
+      [EDT_COL_ID.ID]: MAIN_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MAIN_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [MAIN_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: MAIN_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MAIN_COL.VALID]: {
+      [EDT_COL_ID.ID]: MAIN_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [MAIN_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [MAIN_COL.DATE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.DATE,
+      [EDT_COL_ID.LABEL]: 'Date',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: null,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: null,
+    },
+    [MAIN_COL.AMOUNT]: {
+      [EDT_COL_ID.ID]: MAIN_COL.AMOUNT,
+      [EDT_COL_ID.LABEL]: 'Amount',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MAIN_COL.AMOUNT_NUM]: {
+      [EDT_COL_ID.ID]: MAIN_COL.AMOUNT_NUM,
+      [EDT_COL_ID.LABEL]: 'Amount Num',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 8,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: Number.NaN,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: Number.NaN,
+    },
+    [MAIN_COL.MEMO]: {
+      [EDT_COL_ID.ID]: MAIN_COL.MEMO,
+      [EDT_COL_ID.LABEL]: 'Memo',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 9,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MAIN_COL.STORAGE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.STORAGE,
+      [EDT_COL_ID.LABEL]: 'Storage',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 10,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: MARK.NO_SELECT.id,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: MARK.NO_SELECT.id,
+    },
+    [MAIN_COL.CREDIT]: {
+      [EDT_COL_ID.ID]: MAIN_COL.CREDIT,
+      [EDT_COL_ID.LABEL]: 'Credit',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 11,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: MARK.NO_SELECT.id,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: MARK.NO_SELECT.id,
+    },
+    [MAIN_COL.ITEM]: {
+      [EDT_COL_ID.ID]: MAIN_COL.ITEM,
+      [EDT_COL_ID.LABEL]: 'Item',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 12,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: MARK.NO_SELECT.id,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: MARK.NO_SELECT.id,
+    },
+    [MAIN_COL.REMARK]: {
+      [EDT_COL_ID.ID]: MAIN_COL.REMARK,
+      [EDT_COL_ID.LABEL]: 'Remark',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 13,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: MARK.NO_SELECT.id,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: MARK.NO_SELECT.id,
+    },
+    [MAIN_COL.USE_DATE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.USE_DATE,
+      [EDT_COL_ID.LABEL]: 'Use Date',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 14,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: null,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: null,
+    },
+    [MAIN_COL.PAY_DATE]: {
+      [EDT_COL_ID.ID]: MAIN_COL.PAY_DATE,
+      [EDT_COL_ID.LABEL]: 'Pay Date',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 15,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: null,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: null,
+    },
+    [MAIN_COL.COLOR]: {
+      [EDT_COL_ID.ID]: MAIN_COL.COLOR,
+      [EDT_COL_ID.LABEL]: 'Color',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 16,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '#000000',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '#000000',
+    },
+  } as const satisfies Record<MainCol, EdtColType>,
+  [TBL.STORAGE]: {
+    [STG_COL.ID]: {
+      [EDT_COL_ID.ID]: STG_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.LABEL]: {
+      [EDT_COL_ID.ID]: STG_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: STG_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [STG_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: STG_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.VALID]: {
+      [EDT_COL_ID.ID]: STG_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [STG_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: STG_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [STG_COL.BANK]: {
+      [EDT_COL_ID.ID]: STG_COL.BANK,
+      [EDT_COL_ID.LABEL]: 'Bank',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.BRANCH]: {
+      [EDT_COL_ID.ID]: STG_COL.BRANCH,
+      [EDT_COL_ID.LABEL]: 'Branch',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.SUBJECT]: {
+      [EDT_COL_ID.ID]: STG_COL.SUBJECT,
+      [EDT_COL_ID.LABEL]: 'Subject',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 8,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [STG_COL.SAVINGS]: {
+      [EDT_COL_ID.ID]: STG_COL.SAVINGS,
+      [EDT_COL_ID.LABEL]: 'Savings',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 9,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [STG_COL.LAST_SAVINGS]: {
+      [EDT_COL_ID.ID]: STG_COL.LAST_SAVINGS,
+      [EDT_COL_ID.LABEL]: 'Last Savings',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 10,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+  } as const satisfies Record<StgCol, EdtColType>,
+  [TBL.CREDIT]: {
+    [CRD_COL.ID]: {
+      [EDT_COL_ID.ID]: CRD_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [CRD_COL.LABEL]: {
+      [EDT_COL_ID.ID]: CRD_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [CRD_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: CRD_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [CRD_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: CRD_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [CRD_COL.VALID]: {
+      [EDT_COL_ID.ID]: CRD_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [CRD_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: CRD_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [CRD_COL.CLOSE_DAY]: {
+      [EDT_COL_ID.ID]: CRD_COL.CLOSE_DAY,
+      [EDT_COL_ID.LABEL]: 'Close Day',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 1,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 1,
+    },
+    [CRD_COL.PAY_DAY]: {
+      [EDT_COL_ID.ID]: CRD_COL.PAY_DAY,
+      [EDT_COL_ID.LABEL]: 'Pay Day',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 1,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 1,
+    },
+    [CRD_COL.PAY_MONTH]: {
+      [EDT_COL_ID.ID]: CRD_COL.PAY_MONTH,
+      [EDT_COL_ID.LABEL]: 'Pay Month',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 8,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 1,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 1,
+    },
+    [CRD_COL.BUSINESS_DAYS]: {
+      [EDT_COL_ID.ID]: CRD_COL.BUSINESS_DAYS,
+      [EDT_COL_ID.LABEL]: 'Business Days',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 9,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: BIZ_DAYS.NXT,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: BIZ_DAYS.NXT,
+    },
+    [CRD_COL.CARD]: {
+      [EDT_COL_ID.ID]: CRD_COL.CARD,
+      [EDT_COL_ID.LABEL]: 'Card',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 10,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [CRD_COL.EXPENSES_TWO_MONTHS_AGO]: {
+      [EDT_COL_ID.ID]: CRD_COL.EXPENSES_TWO_MONTHS_AGO,
+      [EDT_COL_ID.LABEL]: '',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 11,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [CRD_COL.EXPENSES_LAST_MONTH]: {
+      [EDT_COL_ID.ID]: CRD_COL.EXPENSES_LAST_MONTH,
+      [EDT_COL_ID.LABEL]: '',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 12,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [CRD_COL.EXPENSES_THIS_MONTH]: {
+      [EDT_COL_ID.ID]: CRD_COL.EXPENSES_THIS_MONTH,
+      [EDT_COL_ID.LABEL]: '',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 13,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [CRD_COL.EXPENSES_NEXT_MONTH]: {
+      [EDT_COL_ID.ID]: CRD_COL.EXPENSES_NEXT_MONTH,
+      [EDT_COL_ID.LABEL]: '',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 14,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [CRD_COL.EXPENSES_CUSTOM_MONTH]: {
+      [EDT_COL_ID.ID]: CRD_COL.EXPENSES_CUSTOM_MONTH,
+      [EDT_COL_ID.LABEL]: '',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 15,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+  } as const satisfies Record<CrdCol, EdtColType>,
+  [TBL.ITEM]: {
+    [ITM_COL.ID]: {
+      [EDT_COL_ID.ID]: ITM_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [ITM_COL.LABEL]: {
+      [EDT_COL_ID.ID]: ITM_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [ITM_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: ITM_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [ITM_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: ITM_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [ITM_COL.VALID]: {
+      [EDT_COL_ID.ID]: ITM_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [ITM_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: ITM_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [ITM_COL.SUMMARY_COUNT_FLG]: {
+      [EDT_COL_ID.ID]: ITM_COL.SUMMARY_COUNT_FLG,
+      [EDT_COL_ID.LABEL]: 'Summary Count',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+  } as const satisfies Record<ItmCol, EdtColType>,
+  [TBL.REMARK]: {
+    [RMK_COL.ID]: {
+      [EDT_COL_ID.ID]: RMK_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [RMK_COL.LABEL]: {
+      [EDT_COL_ID.ID]: RMK_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [RMK_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: RMK_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [RMK_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: RMK_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [RMK_COL.VALID]: {
+      [EDT_COL_ID.ID]: RMK_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [RMK_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: RMK_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [RMK_COL.MEMO]: {
+      [EDT_COL_ID.ID]: RMK_COL.MEMO,
+      [EDT_COL_ID.LABEL]: 'Memo',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [RMK_COL.INC_AND_EXP]: {
+      [EDT_COL_ID.ID]: RMK_COL.INC_AND_EXP,
+      [EDT_COL_ID.LABEL]: 'Inc And Exp',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [RMK_COL.INCOME]: {
+      [EDT_COL_ID.ID]: RMK_COL.INCOME,
+      [EDT_COL_ID.LABEL]: 'Income',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 8,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [RMK_COL.EXPENSES]: {
+      [EDT_COL_ID.ID]: RMK_COL.EXPENSES,
+      [EDT_COL_ID.LABEL]: 'Expenses',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 9,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+  } as const satisfies Record<RmkCol, EdtColType>,
+  [TBL.SUMMARY]: {
+    [SMR_COL.ID]: {
+      [EDT_COL_ID.ID]: SMR_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SMR_COL.LABEL]: {
+      [EDT_COL_ID.ID]: SMR_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SMR_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: SMR_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [SMR_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: SMR_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SMR_COL.VALID]: {
+      [EDT_COL_ID.ID]: SMR_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [SMR_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: SMR_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    // TODO: 集計画面の列は日付にする予定。可変になる列はここに定義しない。
+  } as const satisfies Record<string, EdtColType>,
+  [TBL.MEMO]: {
+    [MEM_COL.ID]: {
+      [EDT_COL_ID.ID]: MEM_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MEM_COL.LABEL]: {
+      [EDT_COL_ID.ID]: MEM_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MEM_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: MEM_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [MEM_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: MEM_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MEM_COL.VALID]: {
+      [EDT_COL_ID.ID]: MEM_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [MEM_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: MEM_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [MEM_COL.DISPLAY_COLUMNS]: {
+      [EDT_COL_ID.ID]: MEM_COL.DISPLAY_COLUMNS,
+      [EDT_COL_ID.LABEL]: 'Display Columns',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: [],
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: [],
+    },
+    [MEM_COL.VALID_COLUMNS]: {
+      [EDT_COL_ID.ID]: MEM_COL.VALID_COLUMNS,
+      [EDT_COL_ID.LABEL]: 'Valid Columns',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: [],
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: [],
+    },
+    [MEM_COL.DETAIL_COUNT]: {
+      [EDT_COL_ID.ID]: MEM_COL.DETAIL_COUNT,
+      [EDT_COL_ID.LABEL]: 'Detail Count',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 8,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: 0,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: 0,
+    },
+    [MEM_COL.MODE]: {
+      [EDT_COL_ID.ID]: MEM_COL.MODE,
+      [EDT_COL_ID.LABEL]: 'Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 9,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: MEMO_MODE.DETAIL,
+    },
+    [MEM_COL.DATE]: {
+      [EDT_COL_ID.ID]: MEM_COL.DATE,
+      [EDT_COL_ID.LABEL]: 'Date',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 10,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: null,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: null,
+    },
+    [MEM_COL.AMOUNT]: {
+      [EDT_COL_ID.ID]: MEM_COL.AMOUNT,
+      [EDT_COL_ID.LABEL]: 'Amount',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 11,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MEM_COL.AMOUNT_NUM]: {
+      [EDT_COL_ID.ID]: MEM_COL.AMOUNT_NUM,
+      [EDT_COL_ID.LABEL]: 'Amount Num',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 12,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: Number.NaN,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: Number.NaN,
+    },
+    [MEM_COL.DETAIL]: {
+      [EDT_COL_ID.ID]: MEM_COL.DETAIL,
+      [EDT_COL_ID.LABEL]: 'Detail',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 13,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [MEM_COL.STATUS]: {
+      [EDT_COL_ID.ID]: MEM_COL.STATUS,
+      [EDT_COL_ID.LABEL]: 'Status',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 14,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: COMP_STATUS.OPEN,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: COMP_STATUS.CLOSE,
+    },
+    [MEM_COL.COMPLETE_DATE]: {
+      [EDT_COL_ID.ID]: MEM_COL.COMPLETE_DATE,
+      [EDT_COL_ID.LABEL]: 'Complete Date',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 15,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: null,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: null,
+    },
+  } as const satisfies Record<MemCol, EdtColType>,
+  [TBL.SCHEDULE]: {
+    [SCD_COL.ID]: {
+      [EDT_COL_ID.ID]: SCD_COL.ID,
+      [EDT_COL_ID.LABEL]: 'ID',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 0,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SCD_COL.LABEL]: {
+      [EDT_COL_ID.ID]: SCD_COL.LABEL,
+      [EDT_COL_ID.LABEL]: 'Label',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: true,
+      [EDT_COL_ID.DISP_ORDER]: 1,
+      [EDT_COL_ID.DIALOG]: true,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SCD_COL.UPDATE]: {
+      [EDT_COL_ID.ID]: SCD_COL.UPDATE,
+      [EDT_COL_ID.LABEL]: 'Upd Flg',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 2,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: false,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: false,
+    },
+    [SCD_COL.UPD_DATE_TIME]: {
+      [EDT_COL_ID.ID]: SCD_COL.UPD_DATE_TIME,
+      [EDT_COL_ID.LABEL]: 'Upd Date Time',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 3,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SCD_COL.VALID]: {
+      [EDT_COL_ID.ID]: SCD_COL.VALID,
+      [EDT_COL_ID.LABEL]: 'Valid',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 4,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: true,
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: true,
+    },
+    [SCD_COL.INPUT_MODE]: {
+      [EDT_COL_ID.ID]: SCD_COL.INPUT_MODE,
+      [EDT_COL_ID.LABEL]: 'Input Mode',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 5,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: INPUT_MODE.NONE,
+      [EDT_COL_ID.SAVE]: false,
+      [EDT_COL_ID.SAVE_DEF_VAL]: INPUT_MODE.ALL_REQ,
+    },
+    [SCD_COL.SEARCH_MEMO]: {
+      [EDT_COL_ID.ID]: SCD_COL.SEARCH_MEMO,
+      [EDT_COL_ID.LABEL]: 'Search Memo',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 6,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: '',
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: '',
+    },
+    [SCD_COL.MEMO_PLUS_A]: {
+      [EDT_COL_ID.ID]: SCD_COL.MEMO_PLUS_A,
+      [EDT_COL_ID.LABEL]: 'Memo Plus A',
+      [EDT_COL_ID.VALUE]: '',
+      [EDT_COL_ID.DISP]: false,
+      [EDT_COL_ID.DISP_ORDER]: 7,
+      [EDT_COL_ID.DIALOG]: false,
+      [EDT_COL_ID.DEF_VAL]: [],
+      [EDT_COL_ID.SAVE]: true,
+      [EDT_COL_ID.SAVE_DEF_VAL]: [],
+    },
+    // TODO: 制作中
+  } as const satisfies Record<ScdCol, EdtColType>,
+};
 
 /** カラム */
 export const COL = {
@@ -471,7 +1553,7 @@ export const COL = {
   [TBL.SCHEDULE]: SCD_COL,
 } as const satisfies Record<Tbl, Record<string, string>>;
 
-/** 共通保存カラムID */
+/** 共通保存カラムID */ // TODO: 廃止
 const CMN_SAVE_COL = [
   CMN_COL.ID,
   CMN_COL.LABEL,
@@ -480,7 +1562,7 @@ const CMN_SAVE_COL = [
   CMN_COL.VALID,
 ] as const satisfies string[];
 
-/** 保存カラムID */
+/** 保存カラムID */ // TODO: 廃止
 export const SAVE_COL = {
   [TBL.MAIN]: [
     CMN_COL.ID,
@@ -527,7 +1609,7 @@ export const SAVE_COL = {
   [TBL.SCHEDULE]: [...CMN_SAVE_COL, SCD_COL.SEARCH_MEMO, SCD_COL.MEMO_PLUS_A],
 } as const satisfies Record<Tbl, string[]>;
 
-/** 共通デフォルト値 */
+/** 共通デフォルト値 */ // TODO: 廃止
 const CMN_DEF_VAL = {
   [CMN_COL.ID]: '',
   [CMN_COL.LABEL]: '',
@@ -537,7 +1619,7 @@ const CMN_DEF_VAL = {
   [CMN_COL.VALID]: true,
 } as const satisfies Record<CmnCol, ValType>;
 
-/** デフォルト値 */
+/** デフォルト値 */ // TODO: 廃止
 export const TBL_DEF_VAL = {
   [TBL.MAIN]: {
     ...CMN_DEF_VAL,
@@ -614,7 +1696,7 @@ export const TBL_DEF_VAL = {
   },
 } as const satisfies Record<Tbl, Record<string, ValType>>;
 
-/** 保存時デフォルト値 */
+/** 保存時デフォルト値 */ // TODO: 廃止
 export const SAVE_DEF_VAL = {
   [TBL.MAIN]: {
     ...TBL_DEF_VAL[TBL.MAIN],
@@ -659,16 +1741,17 @@ export const TBL_INF = {
   /** カラムID */
   col: COL,
   /** デフォルト値 */
-  defVal: TBL_DEF_VAL,
+  defVal: TBL_DEF_VAL, // TODO: 廃止
   /** 保存カラムID */
-  saveCol: SAVE_COL,
+  saveCol: SAVE_COL, // TODO: 廃止
   /** 保存時デフォルト値 */
-  saveDefVal: SAVE_DEF_VAL,
+  saveDefVal: SAVE_DEF_VAL, // TODO: 廃止
 } as const;
 
 /** ローカルストレージ キーリスト */
 export const SAVE_STG = {
   ...TBL,
+  TBL_INF: 'tblInf',
   SCR_INF: 'scrInf',
   HIST_INF: 'histInf',
 } as const;
