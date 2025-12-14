@@ -87,7 +87,7 @@ export class CreditComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterEdt.emit({
+    this.filterModelChange.emit({
       tbl: Const.TBL.MAIN,
       filter: {
         [Const.MAIN_COL.CREDIT]: filterCredit,

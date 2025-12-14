@@ -21,7 +21,13 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
    * @param credit
    */
   readonly getRows = (rows: Row[], _inputDatas: Row[], _credit: Row[]) =>
-    structuredClone(rows);
+    this.getRowsCmn(rows);
+
+  protected readonly getRowsCmn = (rows: Row[]): Row[] => {
+    return structuredClone(rows).filter(
+      (data) => data[Const.CMN_COL.ID] !== Const.MARK.NO_SELECT.id,
+    );
+  };
 
   /**
    * ダイアログ入力データ作成

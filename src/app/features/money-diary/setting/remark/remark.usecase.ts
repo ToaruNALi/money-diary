@@ -78,7 +78,7 @@ export class RemarkUsecase extends SettingUsecase {
   };
 
   override readonly getRows = (rows: Row[], inputDatas: Row[]): Row[] => {
-    const datas = structuredClone(rows);
+    const datas = this.getRowsCmn(rows);
 
     for (const data of datas) {
       [

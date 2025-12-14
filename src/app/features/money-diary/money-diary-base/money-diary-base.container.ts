@@ -5,7 +5,7 @@ import {
   inject,
 } from '@angular/core';
 import * as Animation from 'src/app/shared/constants/animations';
-import { FilterEdt, RowEdt, Scr, Tbl } from 'src/app/shared/constants/types';
+import { Scr, Tbl } from 'src/app/shared/constants/types';
 import { StoreUsecase } from 'src/app/usecase/store.usecase';
 
 @Component({
@@ -18,30 +18,6 @@ export abstract class MoneyDiaryBaseContainerComponent {
 
   protected abstract readonly scrId: Scr;
   protected abstract readonly tbl: Tbl;
-
-  /**
-   * 行データ編集時
-   * @param event
-   */
-  protected readonly onEdtRows = (event: RowEdt[]): void => {
-    this.usecase.edtRows(event);
-  };
-
-  /**
-   * フィルター設定
-   * @param event
-   */
-  protected readonly onEdtFilter = (event: FilterEdt): void => {
-    this.usecase.edtFilter(event);
-  };
-
-  /**
-   * 画面遷移先設定
-   * @param event
-   */
-  protected readonly onSetScrId = (event: Scr): void => {
-    this.usecase.changeScr(event);
-  };
 
   /** 画面表示オプション */
   protected readonly displayOpt = computed(() => {

@@ -75,7 +75,7 @@ export class RemarkComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterEdt.emit({
+    this.filterModelChange.emit({
       tbl: Const.TBL.MAIN,
       filter: {
         [Const.MAIN_COL.REMARK]: filterRemark,

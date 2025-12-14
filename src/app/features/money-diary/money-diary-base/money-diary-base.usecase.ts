@@ -12,8 +12,11 @@ import * as Const from 'src/app/shared/constants/constants';
 import { RowEdt, Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
 import {
+  DIALOG_BUTTON,
   DialogInput,
+  DialogInputButtonOption,
   DialogInputComponent,
+  DialogInputDatas,
   DialogOutput,
   DialogOutputData,
 } from 'src/app/shared/dialog-input/dialog-input.component';
@@ -192,6 +195,13 @@ export abstract class MoneyDiaryBaseUsecase {
     tblMap: TblMap,
     option?: any,
   ): Promise<RowEdt[] | false> => {
+    // 新規データ作成フラグ
+    let newDataFlg = false;
+    // 行データが存在しない場合、デフォルトデータを設定する
+    if (edtRows.length === 0) {
+      newDataFlg = true;
+      edtRows = [Util.getTblDefRow(tbl)];
+    }
     // 入力チェック
     if (!this.chkInputRows(edtRows)) {
       return false;
@@ -199,7 +209,7 @@ export abstract class MoneyDiaryBaseUsecase {
     // ダイアログ入力データ作成
     const input = this.createInputData(edtRows, tbl, tblMap, option);
     // ダイアログオープン
-    const output = await this.openDialog(input);
+    const output = await this.openDialog(input, newDataFlg);
     if (!output) {
       return false;
     }
@@ -239,11 +249,27 @@ export abstract class MoneyDiaryBaseUsecase {
   /**
    * ダイアログオープン
    * @param input
+   * @param newDataFlg
    * @returns 出力データ
    */
   private readonly openDialog = async (
     input: DialogInput,
+    newDataFlg: boolean = false,
   ): Promise<DialogOutput | undefined> => {
+    // 新規データの場合、追加・削除ボタンを非表示にする
+    if (newDataFlg) {
+      input.buttonOptions ??= [];
+
+      for (const btnId of [DIALOG_BUTTON.ADD, DIALOG_BUTTON.DEL]) {
+        const btn = input.buttonOptions.find((opt) => opt.id === btnId);
+        if (!!btn) {
+          btn.hide = true;
+        } else {
+          input.buttonOptions.push({ id: btnId, hide: true });
+        }
+      }
+    }
+
     // config
     const config: MatDialogConfig<DialogInput> = {
       data: input,
@@ -285,7 +311,7 @@ export abstract class MoneyDiaryBaseUsecase {
     switch (output.status) {
       // 更新
       case DIALOG_STATUS.UPD:
-        rowEdt.push(Util.getRowEdtUpd(tbl, edtRows));
+        rowEdt.push(Util.getRowEdtUpd(tbl, edtRows, rowIds));
         break;
       // 追加
       case DIALOG_STATUS.ADD:
@@ -377,5 +403,74 @@ export abstract class MoneyDiaryBaseUsecase {
    */
   protected readonly checkNoSelData = (rows: Row[]): boolean => {
     return true;
+  };
+
+  /**
+   * 行データ編集処理
+   * @param cols
+   * @returns 正常: ColEdt, 異常: false
+   */
+  readonly procEditCol = async (cols: Row[] = []): Promise<Row[] | false> => {
+    // ダイアログ入力データ作成
+
+    /*************************
+     * ボタンオプションの設定
+     *************************/
+    const buttonOptions: DialogInputButtonOption[] = [
+      {
+        id: DIALOG_BUTTON.DEL,
+        hide: true,
+      },
+      {
+        id: DIALOG_BUTTON.ADD,
+        hide: true,
+      },
+    ];
+
+    /*************************
+     * 入力データの設定
+     *************************/
+    // 列名 text
+    // 表示・非表示 toggle
+    // 入力子画面開く列 check
+    const datas: DialogInputDatas = [];
+    for (const col of cols) {
+      datas.push([
+        {
+          id: 'lb',
+          label: 'Label',
+          value: col['lb'],
+          initValue: '',
+        },
+        {
+          id: 'dp',
+          label: 'Display',
+          value: col['dp'],
+          type: Const.INPUT_TYPE.TOGGLE,
+          initValue: false,
+        },
+        {
+          id: 'do',
+          label: 'Dialog Open',
+          value: col['do'],
+          type: Const.INPUT_TYPE.CHECK,
+          options: [{ id: '1', lb: '' }],
+        },
+      ]);
+    }
+
+    const input: DialogInput = {
+      title: 'Edit Columns',
+      datas,
+      buttonOptions,
+    };
+
+    // ダイアログオープン
+    const output = await this.openDialog(input);
+    if (!output) {
+      return false;
+    }
+    // 行編集Emitterデータ作成
+    return this.reflectRows(cols, output.datas);
   };
 }

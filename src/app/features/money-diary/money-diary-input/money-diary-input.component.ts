@@ -2,8 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  inject,
-  input,
   signal,
 } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
@@ -11,7 +9,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   CellClickedEvent,
   CellContextMenuEvent,
-  GridReadyEvent,
+  RowClassParams,
+  RowStyle,
 } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
@@ -25,11 +24,11 @@ import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
 import { SelectOption } from 'src/app/shared/forms/forms.component';
 import {
-  GridBtmOptKey,
+  GridBtm,
   GridComponent,
   GridInput,
   GridOptInput,
-  GridTopOptKey,
+  GridTop,
 } from 'src/app/shared/grid/grid.component';
 import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
@@ -51,10 +50,10 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 })
 export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** usecase */
-  private readonly usecase = inject(MoneyDiaryInputUsecase);
-
-  /** 過去データ編集可能フラグ */
-  readonly edtPastData = input.required<boolean>();
+  // private readonly usecase = inject(MoneyDiaryInputUsecase);
+  constructor(protected override readonly usecase: MoneyDiaryInputUsecase) {
+    super(usecase);
+  }
 
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
@@ -65,6 +64,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     topOpt: this.gridTopOpt,
     btmOpt: this.gridBtmOpt,
     cellClickForbCols: this.cellClickForbCols,
+    rowStyle: this.rowStyle,
   }));
 
   /** スタイル */
@@ -72,6 +72,10 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     width: '100vw',
     height: 'calc(100vh - 200px - 25px - 25px)',
   });
+  /** 行スタイル */
+  private readonly rowStyle = signal(
+    (_params: RowClassParams<Row>, rowStyle: RowStyle) => rowStyle,
+  );
   /** 列定義 */
   private readonly colDefs = computed(() =>
     this.usecase.getColDefs(
@@ -82,21 +86,15 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     ),
   );
   /** 行データ */
-  private readonly rows = computed(() => {
-    const filter = this.filter();
-    if (filter !== 'none') {
-      this.gridApi?.setFilterModel(null);
-      this.gridApi?.setFilterModel(filter);
-    }
-    return this.usecase.getRows(this.mainRows(), this.crdRows());
-  });
+  private readonly rows = computed(() =>
+    this.usecase.getRows(this.mainRows(), this.crdRows()),
+  );
   /** グリッド上ボタンオプション */
-  private readonly gridTopOpt = signal<GridOptInput<GridTopOptKey>[]>([
-    {
-      key: 'selSts',
+  private readonly gridTopOpt = signal<GridOptInput<GridTop>>({
+    selSts: {
       func: this.usecase.calcSelStatus,
     },
-  ]);
+  });
 
   /**
    * 削除時(コンテキストメニュー)
@@ -119,7 +117,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.gridApi.getSelectedRows(),
       this.tbl(),
       this.tblMap(),
-      { type: INPUT_OPTION_TYPE.REPLACE, edtPastData: this.edtPastData() },
+      { type: INPUT_OPTION_TYPE.REPLACE },
     );
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
@@ -135,7 +133,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.gridApi.getSelectedRows(),
       this.tbl(),
       this.tblMap(),
-      { type: INPUT_OPTION_TYPE.SERIAL_NUM, edtPastData: this.edtPastData() },
+      { type: INPUT_OPTION_TYPE.SERIAL_NUM },
     );
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
@@ -151,7 +149,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       this.gridApi.getSelectedRows(),
       this.tbl(),
       this.tblMap(),
-      { type: INPUT_OPTION_TYPE.UPDATE, edtPastData: this.edtPastData() },
+      { type: INPUT_OPTION_TYPE.UPDATE },
     );
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
@@ -173,10 +171,10 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   };
 
   /** グリッド下ボタンオプション */
-  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
-    {
-      key: 'menuList',
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtm>>({
+    menuList: {
       valid: true,
+      dspOdr: 0,
       detail: [
         {
           id: 'replace',
@@ -211,21 +209,21 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       ] as (MenuListData & { func: () => {} })[],
       iconList: ['menu'],
     },
-    {
-      key: 'addRow',
+    addRow: {
       valid: true,
+      dspOdr: 1,
     },
-    {
-      key: 'chgFlt',
+    chgSel: {
       valid: true,
+      dspOdr: 2,
     },
-    {
-      key: 'fltOff',
+    fltOff: {
       valid: true,
+      dspOdr: 4,
     },
-    {
-      key: 'quickFlt',
+    quickFlt: {
       valid: true,
+      dspOdr: 5,
       detail: () => {
         // オートコンプリートデータの設定
         const autocompData: SelectOption[] = [];
@@ -249,30 +247,30 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         return autocompData;
       },
     },
-    {
-      key: 'chgSel',
+    search: {
       valid: true,
+      dspOdr: 6,
     },
-    {
-      key: 'sort',
+    jmpFirstRow: {
       valid: true,
+      dspOdr: 7,
+    },
+    jmpLastRow: {
+      valid: true,
+      dspOdr: 8,
+    },
+    sort: {
+      valid: true,
+      dspOdr: 9,
       detail: [
         { col: Const.MAIN_COL.INPUT_MODE, asc: false },
         { col: Const.MAIN_COL.DATE },
       ],
     },
-    {
-      key: 'jmpFirstRow',
-      valid: true,
-    },
-    {
-      key: 'jmpLastRow',
-      valid: true,
-    },
-  ]);
+  });
 
   /** セルクリック禁止列 */
-  private readonly cellClickForbCols = signal([Const.MAIN_COL.DATE]);
+  private readonly cellClickForbCols = signal([Const.MAIN_COL.AMOUNT]);
 
   /** ステータスリスト */
   protected readonly statusList = computed(() =>
@@ -280,31 +278,30 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   );
 
   /**
-   * グリッド初期化処理
-   * @param event
-   */
-  protected readonly onReadyGrid = (event: GridReadyEvent): void => {
-    this.gridApi = event.api;
-  };
-
-  /**
    * セルクリック時
    * @param event
    */
-  protected readonly onClickCell = async (
-    event: CellClickedEvent<Row, ValType>,
-  ): Promise<void> => {
-    // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      [event.data],
-      this.tbl(),
-      this.tblMap(),
-      { edtPastData: this.edtPastData() },
-    );
+  protected readonly onClickCell = (
+    event?: CellClickedEvent<Row, ValType>,
+  ): void => {
+    Util.procClick(
+      Const.TIME.DOUBLE_CLICK,
+      // 1回クリック時
+      async () => {
+        // 行データ編集処理
+        const edtInf = await this.usecase.procEditRows(
+          !!event ? [event.data] : [],
+          this.tbl(),
+          this.tblMap(),
+        );
 
-    if (!!edtInf) {
-      this.rowEdt.emit(edtInf);
-    }
+        if (!!edtInf) {
+          this.rowEdt.emit(edtInf);
+        }
+      },
+      // 2回クリック時
+      () => {},
+    );
   };
 
   /**

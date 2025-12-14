@@ -1,13 +1,26 @@
 import { Injectable } from '@angular/core';
 import { ColDef } from 'ag-grid-community';
 import { addMonths, differenceInCalendarMonths, startOfMonth } from 'date-fns';
-import { Row } from 'src/app/domain/row-data';
+import { Row, TblMap } from 'src/app/domain/row-data';
+import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
 import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
+import { Tbl, ValType } from 'src/app/shared/constants/types';
 import * as Util from 'src/app/shared/constants/utils';
+import { DialogInput } from 'src/app/shared/dialog-input/dialog-input.component';
 
 @Injectable()
-export class SummaryUsecase {
+export class SummaryUsecase extends MoneyDiaryBaseUsecase {
+  protected override readonly createInputData = (
+    _edtRows: Row[],
+    _tbl: Tbl,
+    _tblMap: TblMap,
+  ): DialogInput => {
+    return {
+      title: '',
+      datas: [],
+    };
+  };
+
   /**
    * 列定義を返却する
    * @param inputDatas

@@ -73,7 +73,7 @@ export class StorageComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterEdt.emit({
+    this.filterModelChange.emit({
       tbl: Const.TBL.MAIN,
       filter: {
         [Const.MAIN_COL.STORAGE]: filterStorage,

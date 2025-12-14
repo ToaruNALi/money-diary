@@ -11,11 +11,11 @@ import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.use
 import * as Const from 'src/app/shared/constants/constants';
 import { MainCol, ValType } from 'src/app/shared/constants/types';
 import {
-  GridBtmOptKey,
+  GridBtm,
   GridComponent,
   GridInput,
   GridOptInput,
-  GridTopOptKey,
+  GridTop,
 } from 'src/app/shared/grid/grid.component';
 
 @Component({
@@ -48,39 +48,38 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
     this.usecase.getRows(this.mainRows(), this.inputRows(), this.crdRows()),
   );
   /** グリッド上ボタンオプション */
-  private readonly gridTopOpt = signal<GridOptInput<GridTopOptKey>[]>([
-    {
-      key: 'selSts',
+  private readonly gridTopOpt = signal<GridOptInput<GridTop>>({
+    selSts: {
       func: this.usecase.calcSelStatus,
     },
-  ]);
+  });
   /** グリッド下ボタンオプション */
-  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
-    {
-      key: 'addRow',
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtm>>({
+    addRow: {
       valid: true,
+      dspOdr: 0,
     },
-    {
-      key: 'chgSel',
+    chgSel: {
       valid: true,
+      dspOdr: 1,
     },
-    {
-      key: 'jmpFirstRow',
+    jmpFirstRow: {
       valid: true,
+      dspOdr: 2,
     },
-    {
-      key: 'jmpLastRow',
+    jmpLastRow: {
       valid: true,
+      dspOdr: 3,
     },
-  ]);
+  });
   /** セルクリック禁止列 */
   private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
 
   /** 入力データ関連列ID */
   protected abstract readonly inputColId: MainCol;
 
-  constructor(protected readonly usecase: SettingUsecase) {
-    super();
+  constructor(protected override readonly usecase: SettingUsecase) {
+    super(usecase);
   }
 
   /**
@@ -88,11 +87,11 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
    * @param event
    */
   protected readonly onClickCell = async (
-    event: CellClickedEvent<Row, ValType>,
+    event?: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 行データ編集処理
     const edtInf = await this.usecase.procEditRows(
-      [event.data!],
+      !!event ? [event.data] : [],
       this.tbl(),
       this.tblMap(),
       this.inputColId,

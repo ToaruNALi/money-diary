@@ -43,7 +43,6 @@ export type InputOptionType =
   (typeof INPUT_OPTION_TYPE)[keyof typeof INPUT_OPTION_TYPE];
 export type InputOption = {
   type?: InputOptionType;
-  edtPastData: boolean;
 };
 
 const DIALOG_BUTTON = {
@@ -101,9 +100,9 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         field: Const.MAIN_COL.DATE,
         type: 'dateCol',
         pinned: 'left',
-        rowDrag: true,
-        width: 120,
+        width: 85,
         lockPosition: 'left',
+        spanRows: true,
         valueSetter: (params) => this.dateSetter(params, crdRows),
         valueFormatter: this.dateFormatter,
         comparator: (_a, _b, nodeA, nodeB) =>
@@ -119,7 +118,8 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
         type: 'amountCol',
         cellEditor: 'agTextCellEditor',
         filterValueGetter: `data.${Const.MAIN_COL.AMOUNT_NUM}`,
-        width: 110,
+        rowDrag: true,
+        width: 120,
         valueFormatter: this.amountFormatter,
         comparator: (_a, _b, nodeA, nodeB) =>
           Util.compAmt(
@@ -377,7 +377,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     tblMap: TblMap,
     option: InputOption,
   ): DialogInput => {
-    switch (option.type) {
+    switch (option?.type) {
       // 置換
       case INPUT_OPTION_TYPE.REPLACE:
         return this.createInputDataRep(edtRows, tbl);
@@ -636,9 +636,10 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           id: Const.MAIN_COL.AMOUNT,
           label: 'Amount',
           value: edtRows[0][Const.MAIN_COL.AMOUNT],
+          type: Const.INPUT_TYPE.TEL,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
-          forbiddenChars: [Const.INPUT_CHARS.FORMULA_FORBIDDEN],
+          forbiddenChars: Const.INPUT_RESTRICTIONS.AMT,
           setter: calcResultSetter,
         },
         {
@@ -718,86 +719,10 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
       },
     ];
 
-    /*************************
-     * バリデーションチェック用コールバックの設定
-     *************************/
-    let validatorFn:
-      | ((
-          control: AbstractControl,
-          datas: DialogInputDatas,
-        ) => ValidationErrors)
-      | null;
-    if (option.edtPastData) {
-      // 過去データが編集可能である場合
-      validatorFn = null;
-    } else {
-      // 過去データが編集可能でない場合
-      const initPayDate = edtRows[0][Const.MAIN_COL.PAY_DATE];
-      if (!!initPayDate && initPayDate < Util.getDate()) {
-        // 支払日が過去の場合
-        validatorFn = (control: AbstractControl): ValidationErrors => {
-          const errors: ValidationErrors = {};
-          const payDate = control.get(Const.MAIN_COL.PAY_DATE)?.value;
-          const today = Util.getDate();
-
-          // 削除/更新/移動ボタン押下不可
-          errors[DIALOG_BUTTON.DEL] = true;
-          errors[DIALOG_BUTTON.OK] = true;
-          errors[DIALOG_BUTTON.MOVE] = true;
-
-          if (payDate === initPayDate) {
-            // 初期表示 or 支払日以外が更新されている場合
-            errors[DIALOG_BUTTON.ADD] = true;
-          } else {
-            // 支払日が更新されている場合
-            if (!!payDate && payDate < today) {
-              // 支払日が過去
-              errors[DIALOG_BUTTON.ADD] = true;
-            }
-          }
-
-          return errors;
-        };
-      } else {
-        // 支払日が本日以降もしくはnullの場合
-        validatorFn = (
-          control: AbstractControl,
-          datas: DialogInputDatas,
-        ): ValidationErrors => {
-          const errors: ValidationErrors = {};
-          const payDate = control.get(Const.MAIN_COL.PAY_DATE)?.value;
-          const today = Util.getDate();
-          const checkInvalid = (data: DialogInputData) =>
-            !data.hide && control.get(data.id)?.invalid;
-
-          if (
-            datas.some((data) =>
-              Array.isArray(data)
-                ? data.some(checkInvalid)
-                : checkInvalid(data),
-            )
-          ) {
-            // 表示状態 かつ 入力誤り の項目が１つ以上ある場合
-            errors[DIALOG_BUTTON.MOVE] = true;
-          }
-
-          if (payDate !== initPayDate && !!payDate && payDate < today) {
-            // 支払日が更新されている かつ 過去の場合
-            errors[DIALOG_BUTTON.ADD] = true;
-            errors[DIALOG_BUTTON.OK] = true;
-            errors[DIALOG_BUTTON.MOVE] = true;
-          }
-
-          return errors;
-        };
-      }
-    }
-
     return {
       title: Util.getTblName(tbl),
       datas,
       buttonOptions,
-      validatorFn,
     };
   };
 
@@ -844,19 +769,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     // 入力データ
     const datas: DialogInputDatas = [
       {
-        id: DIALOG_INPUT_ID.TARGET_STRING,
-        label: 'Target String',
-        value: '',
-        required: true,
-        setter: previewSetter,
-      },
-      {
-        id: DIALOG_INPUT_ID.REPLACE_CHAR,
-        label: 'Replace Char',
-        value: '',
-        setter: previewSetter,
-      },
-      {
         id: DIALOG_INPUT_ID.BEFORE_REPLACE,
         label: 'Before Memo',
         type: Const.INPUT_TYPE.TEXTAREA,
@@ -879,6 +791,19 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           height: `${24 * 3}px`,
           'text-wrap-mode': 'nowrap',
         },
+      },
+      {
+        id: DIALOG_INPUT_ID.TARGET_STRING,
+        label: 'Target String',
+        value: '',
+        required: true,
+        setter: previewSetter,
+      },
+      {
+        id: DIALOG_INPUT_ID.REPLACE_CHAR,
+        label: 'Replace Char',
+        value: '',
+        setter: previewSetter,
       },
     ];
     return {
@@ -1007,12 +932,42 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     // 入力データ
     const datas: DialogInputDatas = [
       {
+        id: DIALOG_INPUT_ID.BEFORE_REPLACE,
+        label: 'Before Memo',
+        type: Const.INPUT_TYPE.TEXTAREA,
+        disabled: true,
+        value: previewValue,
+        notReturn: true,
+        style: {
+          height: `${24 * 3}px`,
+          'text-wrap-mode': 'nowrap',
+        },
+      },
+      {
+        id: DIALOG_INPUT_ID.AFTER_REPLACE,
+        label: 'After Memo',
+        type: Const.INPUT_TYPE.TEXTAREA,
+        disabled: true,
+        value: previewValue,
+        notReturn: true,
+        style: {
+          height: `${24 * 3}px`,
+          'text-wrap-mode': 'nowrap',
+        },
+      },
+      {
+        id: 'label',
+        value: '@o:以前の文字を使用, @c:連番付与, @d:日付連番付与',
+        type: Const.INPUT_TYPE.LABEL,
+        disabled: true,
+        notReturn: true,
+      },
+      {
         id: Const.MAIN_COL.MEMO,
         label: 'Memo',
         value: Const.RESERVED_STR.ORG,
         initValue: '',
         type: Const.INPUT_TYPE.TEXTAREA,
-        placeholder: '@o:以前の文字を使用, @c:連番付与, @d:日付連番付与',
         setter: previewSetter,
       },
       {
@@ -1066,30 +1021,6 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           setter: previewSetter,
         },
       ],
-      {
-        id: DIALOG_INPUT_ID.BEFORE_REPLACE,
-        label: 'Before Memo',
-        type: Const.INPUT_TYPE.TEXTAREA,
-        disabled: true,
-        value: previewValue,
-        notReturn: true,
-        style: {
-          height: `${24 * 3}px`,
-          'text-wrap-mode': 'nowrap',
-        },
-      },
-      {
-        id: DIALOG_INPUT_ID.AFTER_REPLACE,
-        label: 'After Memo',
-        type: Const.INPUT_TYPE.TEXTAREA,
-        disabled: true,
-        value: previewValue,
-        notReturn: true,
-        style: {
-          height: `${24 * 3}px`,
-          'text-wrap-mode': 'nowrap',
-        },
-      },
     ];
     return {
       title: Util.getTblName(tbl) + ' Serial Number',
@@ -1386,9 +1317,10 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
           id: Const.MAIN_COL.AMOUNT,
           label: 'Amount',
           value: matchInfRec[Const.MAIN_COL.AMOUNT].val,
+          type: Const.INPUT_TYPE.TEL,
           initValue: initValues[Const.MAIN_COL.AMOUNT],
           placeholder: 'Ex. -(200+500)',
-          forbiddenChars: [Const.INPUT_CHARS.FORMULA_FORBIDDEN],
+          forbiddenChars: Const.INPUT_RESTRICTIONS.AMT,
           setter: calcResultSetter,
           formStyle: { width: 'calc((100% - 45px) / 2)' },
         },
@@ -1515,7 +1447,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     outDatas: DialogOutputData[],
     option: InputOption,
   ): Row[] => {
-    switch (option.type) {
+    switch (option?.type) {
       // 置換時
       case INPUT_OPTION_TYPE.REPLACE:
         const [target, replace] = [
@@ -1626,7 +1558,7 @@ export class MoneyDiaryInputUsecase extends MoneyDiaryBaseUsecase {
     const rowEdt: RowEdt[] = [];
     if (status === DIALOG_STATUS.MOVE) {
       // moveデータを更新
-      rowEdt.push(Util.getRowEdtUpd(tbl, edtRows));
+      rowEdt.push(Util.getRowEdtUpd(tbl, edtRows, rowIds));
 
       // moveの相方を探す
       const memo = edtRows[0][Const.MAIN_COL.MEMO] as string;

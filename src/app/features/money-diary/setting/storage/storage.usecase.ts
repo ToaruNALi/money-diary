@@ -95,7 +95,7 @@ export class StorageUsecase extends SettingUsecase {
     inputDatas: Row[],
     credit: Row[],
   ): Row[] => {
-    const datas = structuredClone(rows);
+    const datas = this.getRowsCmn(rows);
     for (const data of datas) {
       [data[Const.STG_COL.SAVINGS], data[Const.STG_COL.LAST_SAVINGS]] =
         this.getIncAndExp(inputDatas, credit, data[Const.CMN_COL.ID]);

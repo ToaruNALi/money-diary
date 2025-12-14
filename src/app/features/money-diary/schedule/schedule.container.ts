@@ -11,8 +11,8 @@ import * as Const from 'src/app/shared/constants/constants';
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
       [tbl]="tbl"
-      [tblMap]="usecase.storeTblInf.tblMap()"
-      (rowEdt)="onEdtRows($event)"
+      [tblMap]="usecase.storeTblInf.tblInf.rd()"
+      (rowEdt)="usecase.edtRows($event)"
     ></app-schedule>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  inject,
   signal,
 } from '@angular/core';
 import { CellClickedEvent } from 'ag-grid-community';
@@ -24,7 +23,9 @@ import { SharedCommonModule } from '../../../shared/shared-common.module';
 })
 export class ScheduleComponent extends MoneyDiaryBaseComponent {
   /** usecase */
-  private readonly usecase = inject(ScheduleUsecase);
+  constructor(protected override readonly usecase: ScheduleUsecase) {
+    super(usecase);
+  }
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
     style: this.style,

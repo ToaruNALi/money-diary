@@ -160,7 +160,7 @@ export class CreditUsecase extends SettingUsecase {
     inputDatas: Row[],
     credit: Row[],
   ): Row[] => {
-    const datas = structuredClone(rows);
+    const datas = this.getRowsCmn(rows);
 
     for (const data of datas) {
       [

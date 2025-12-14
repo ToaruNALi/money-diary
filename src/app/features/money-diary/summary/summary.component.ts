@@ -2,13 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  inject,
   signal,
 } from '@angular/core';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { SummaryUsecase } from 'src/app/features/money-diary/summary/summary.usecase';
 import {
-  GridBtmOptKey,
+  GridBtm,
   GridComponent,
   GridInput,
   GridOptInput,
@@ -24,7 +23,9 @@ import {
 })
 export class SummaryComponent extends MoneyDiaryBaseComponent {
   /** usecase */
-  private readonly usecase = inject(SummaryUsecase);
+  constructor(protected override readonly usecase: SummaryUsecase) {
+    super(usecase);
+  }
   /** Grid入力データ */
   protected readonly gridInput = computed<GridInput>(() => ({
     style: this.style,
@@ -47,22 +48,22 @@ export class SummaryComponent extends MoneyDiaryBaseComponent {
     this.usecase.getRows(this.inputRows(), this.itmRows()),
   );
   /** グリッド下ボタンオプション */
-  private readonly gridBtmOpt = signal<GridOptInput<GridBtmOptKey>[]>([
-    {
-      key: 'jmpFirstCol',
+  private readonly gridBtmOpt = signal<GridOptInput<GridBtm>>({
+    jmpFirstCol: {
       valid: true,
+      dspOdr: 0,
     },
-    {
-      key: 'jmpLastCol',
+    jmpLastCol: {
       valid: true,
+      dspOdr: 1,
     },
-    {
-      key: 'jmpFirstRow',
+    jmpFirstRow: {
       valid: true,
+      dspOdr: 2,
     },
-    {
-      key: 'jmpLastRow',
+    jmpLastRow: {
       valid: true,
+      dspOdr: 3,
     },
-  ]);
+  });
 }

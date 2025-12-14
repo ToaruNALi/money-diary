@@ -55,7 +55,7 @@ export class ItemComponent extends SettingComponent {
     })();
 
     // フィルターモデル設定
-    this.filterEdt.emit({
+    this.filterModelChange.emit({
       tbl: Const.TBL.MAIN,
       filter: {
         [Const.MAIN_COL.ITEM]: filterItem,

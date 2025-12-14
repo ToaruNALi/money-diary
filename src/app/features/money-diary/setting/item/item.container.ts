@@ -11,10 +11,13 @@ import * as Const from 'src/app/shared/constants/constants';
       [style]="displayOpt().beforeStyle"
       [@display]="displayOpt().afterClass"
       [tbl]="tbl"
-      [tblMap]="usecase.storeTblInf.tblMap()"
-      (rowEdt)="onEdtRows($event)"
-      (filterEdt)="onEdtFilter($event)"
-      (scrIdSet)="onSetScrId($event)"
+      [tblMap]="usecase.storeTblInf.tblInf.rd()"
+      [colData]="usecase.storeTblInf.tblInf.cd()"
+      [filterModel]="usecase.storeTblInf.tblInf.fm()"
+      (rowEdt)="usecase.edtRows($event)"
+      (colChange)="usecase.updCol($event)"
+      (filterModelChange)="usecase.updFilterModel($event)"
+      (scrIdSet)="usecase.changeScr($event)"
     ></app-item>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
