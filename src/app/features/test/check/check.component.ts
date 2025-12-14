@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import Fuse from 'fuse.js';
 import moji from 'moji';
 
 @Component({
-    selector: 'app-check',
-    imports: [],
-    templateUrl: './check.component.html',
-    styleUrl: './check.component.scss'
+  selector: 'app-check',
+  imports: [],
+  templateUrl: './check.component.html',
+  styleUrl: './check.component.scss',
 })
 export class CheckComponent {
   ngOnInit() {
@@ -66,9 +65,9 @@ export class CheckComponent {
       threshold: 0.5,
       shouldSort: true,
     };
-    const fuse = new Fuse(targetList, options);
-    const resultList = fuse.search(word);
-    console.log(resultList);
+    // const fuse = new Fuse(targetList, options);
+    // const resultList = fuse.search(word);
+    console.log('');
     console.log(`--------------- ${label} End ---------------`);
   };
   /** 半角全角変換 */
