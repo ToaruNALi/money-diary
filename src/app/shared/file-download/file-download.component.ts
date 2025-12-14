@@ -26,7 +26,7 @@ export class FileDownloadComponent {
     // URL生成
     const saveData = structuredClone(this.data());
     for (const key of Object.values(Const.TBL)) {
-      saveData.rm[key] = Util.getSaveRows(key, saveData.rm[key]);
+      saveData.ti.rd[key] = Util.getSaveRows(key, saveData.ti.rd[key]);
     }
 
     const downloadData = JSON.stringify(saveData);
