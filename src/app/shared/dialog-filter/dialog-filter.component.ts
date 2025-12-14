@@ -4,7 +4,6 @@ import {
   inject,
   Inject,
   output,
-  Signal,
 } from '@angular/core';
 import { AbstractControl, FormBuilder } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -16,41 +15,34 @@ import {
 } from 'src/app/shared/forms/forms.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
-export type DialogSearchInput = {
+export type DialogFilterInput = {
   val: string;
-  searchInf: Signal<{ rowIdx: number; cnt: number; max: number }>;
   opts: SelectOption[];
 };
 
 @Component({
   imports: [SharedCommonModule, DialogCommonModule, FormTextComponent],
-  templateUrl: './dialog-search.component.html',
-  styleUrl: './dialog-search.component.scss',
+  templateUrl: './dialog-filter.component.html',
+  styleUrl: './dialog-filter.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DialogSearchComponent {
+export class DialogFilterComponent {
   private readonly fb = inject(FormBuilder);
-  protected readonly dialogRef = inject(MatDialogRef<DialogSearchComponent>);
+  protected readonly dialogRef = inject(MatDialogRef<DialogFilterComponent>);
   readonly emitter = output<string>();
-  readonly clickEmitter = output<boolean>();
 
   protected readonly txtData: FormInputData = {
     autocomp: this.data.opts.length > 0,
     options: this.data.opts,
   };
   protected readonly txtForm: AbstractControl = this.fb.control(this.data.val);
-  protected readonly searchInf = this.data.searchInf;
 
   constructor(
     @Inject(MAT_DIALOG_DATA)
-    private readonly data: DialogSearchInput,
+    private readonly data: DialogFilterInput,
   ) {}
 
   ngOnInit() {
     this.txtForm.valueChanges.subscribe((res) => this.emitter.emit(res ?? ''));
   }
-
-  protected readonly onClick = (dir: boolean): void => {
-    this.clickEmitter.emit(dir);
-  };
 }

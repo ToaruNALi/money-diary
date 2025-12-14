@@ -24,6 +24,7 @@ import { FormDateComponent } from 'src/app/shared/forms/form-date/form-date.comp
 import { FormNumberComponent } from 'src/app/shared/forms/form-number/form-number.component';
 import { FormRadioComponent } from 'src/app/shared/forms/form-radio/form-radio.component';
 import { FormSelectComponent } from 'src/app/shared/forms/form-select/form-select.component';
+import { FormTelComponent } from 'src/app/shared/forms/form-tel/form-tel.component';
 import { FormTextComponent } from 'src/app/shared/forms/form-text/form-text.component';
 import { FormTextareaComponent } from 'src/app/shared/forms/form-textarea/form-textarea.component';
 import { FormToggleComponent } from 'src/app/shared/forms/form-toggle/form-toggle.component';
@@ -140,6 +141,7 @@ export type DialogOutputData = {
     FormTextComponent,
     FormTextareaComponent,
     FormToggleComponent,
+    FormTelComponent,
   ],
   templateUrl: './dialog-input.component.html',
   styleUrl: './dialog-input.component.scss',

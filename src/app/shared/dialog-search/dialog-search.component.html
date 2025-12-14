@@ -1,4 +1,15 @@
-<h2 mat-dialog-title>Quick Filter</h2>
-<mat-dialog-content class="dialog-content" style="width: 80vw">
-  <app-form-text [data]="txtData" [form]="txtForm" />
+<h2 mat-dialog-title>Search</h2>
+<div class="dialog-count">
+  Cnt:　{{ searchInf().cnt }} / {{ searchInf().max }}
+</div>
+<mat-dialog-content class="dialog-content" style="width: 60vw">
+  <app-form-text [data]="txtData" [form]="txtForm" cdkTrapFocus />
 </mat-dialog-content>
+<mat-dialog-actions class="dialog-actions">
+  <button mat-icon-button (click)="onClick(false)">
+    <mat-icon>arrow_upward</mat-icon>
+  </button>
+  <button mat-icon-button (click)="onClick(true)">
+    <mat-icon>arrow_downward</mat-icon>
+  </button>
+</mat-dialog-actions>
