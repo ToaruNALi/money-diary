@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { RemarkComponent } from 'src/app/features/money-diary/setting/remark/remark.component';
 import { SettingContainerComponent } from 'src/app/features/money-diary/setting/setting.container';
-import * as Const from 'src/app/shared/constants/constants';
+import { TBL } from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-remark-container',
@@ -20,9 +21,8 @@ import * as Const from 'src/app/shared/constants/constants';
       (scrIdSet)="usecase.changeScr($event)"
     ></app-remark>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemarkContainerComponent extends SettingContainerComponent {
-  protected override readonly scrId = Const.SCR.REMARK;
-  protected override readonly tbl = Const.TBL.REMARK;
+  protected override readonly scrId = SCR.REMARK;
+  protected override readonly tbl = TBL.REMARK;
 }

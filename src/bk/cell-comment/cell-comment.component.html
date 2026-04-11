@@ -1,0 +1,37 @@
+<div mat-dialog-content class="dialog">
+  <div>
+    <mat-form-field class="form-field-left">
+      <mat-label>{{ label }}</mat-label>
+      <textarea
+        #textareaComment
+        matInput
+        [value]="comment"
+        cdkFocusInitial
+      ></textarea>
+    </mat-form-field>
+    <mat-form-field class="form-field-right">
+      <mat-label>{{ 'Color' }}</mat-label>
+      <input #inputColor matInput type="color" [value]="color" />
+    </mat-form-field>
+  </div>
+  <div>{{ updDate }}</div>
+</div>
+<div mat-dialog-actions class="buttons">
+  <div class="button-left">
+    <button
+      mat-raised-button
+      (click)="onBtnClearClick(textareaComment, inputColor)"
+    >
+      {{ buttonName.clear }}
+    </button>
+  </div>
+  <div class="button-right">
+    <button
+      mat-raised-button
+      (click)="onBtnOKClick(textareaComment, inputColor)"
+    >
+      {{ buttonName.ok }}
+    </button>
+    <button mat-raised-button [mat-dialog-close]="">Cancel</button>
+  </div>
+</div>

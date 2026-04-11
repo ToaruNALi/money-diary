@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { MemoComponent } from 'src/app/features/money-diary/memo/memo.component';
 import { MoneyDiaryBaseContainerComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.container';
-import * as Const from 'src/app/shared/constants/constants';
+import { TBL } from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-memo-container',
@@ -19,9 +20,8 @@ import * as Const from 'src/app/shared/constants/constants';
       (rowsKeyChange)="usecase.updRowsKey($event)"
     ></app-memo>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MemoContainerComponent extends MoneyDiaryBaseContainerComponent {
-  protected override readonly scrId = Const.SCR.MEMO;
-  protected override readonly tbl = Const.TBL.MEMO;
+  protected override readonly scrId = SCR.MEMO;
+  protected override readonly tbl = TBL.MEMO;
 }

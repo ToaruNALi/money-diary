@@ -1,0 +1,10 @@
+<section>
+  <div>{{ item().label }}</div>
+  <div class="checkbox-group">
+    @for (opt of item().options; track $index) {
+      <mat-checkbox [field]="field(opt.value)" [style]="item().style"
+        >{{ opt.label }}
+      </mat-checkbox>
+    }
+  </div>
+</section>

@@ -1,0 +1,17 @@
+.dialog {
+  width: 380px;
+}
+.form-field-left {
+  width: 250px;
+  margin-right: 10px;
+}
+.form-field-right {
+  width: 60px;
+}
+textarea {
+  resize: none;
+}
+.buttons {
+  display: flex;
+  justify-content: space-around;
+}

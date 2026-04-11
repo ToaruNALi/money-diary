@@ -1,0 +1,70 @@
+<div style="margin: 2px">
+  @switch (dispItem().type) {
+    @case ('text') {
+      <app-form-text
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('tel') {
+      <app-form-text
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('number') {
+      <app-form-text
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('date') {
+      <app-form-date
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('textarea') {
+      <app-form-textarea
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('select') {
+      <app-form-select
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('toggle') {
+      <app-form-toggle
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('radio') {
+      <app-form-radio
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('checkbox') {
+      <app-form-checkbox
+        [data]="data()"
+        [item]="dispItem()"
+        [(formEvent)]="formEvent"
+      />
+    }
+    @case ('label') {
+      <label>{{ data()().value() }}</label>
+    }
+  }
+</div>

@@ -1,20 +1,27 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CellContextMenuEvent } from 'ag-grid-community';
 import { CreditUsecase } from 'src/app/features/money-diary/setting/credit/credit.usecase';
 import { SettingComponent } from 'src/app/features/money-diary/setting/setting.component';
-import * as Const from 'src/app/shared/constants/constants';
-import * as Util from 'src/app/shared/constants/utils';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
+import { NO_SELECT_VAL } from 'src/app/shared/signal-form/signal-form.component';
+import {
+  calcPayDateConsiderHoliday,
+  CMN_COL,
+  CRD_COL,
+  INPUT_MODE,
+  MAIN_COL,
+  STG_COL,
+  TBL,
+} from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-credit',
   imports: [GridComponent],
   providers: [CreditUsecase],
   templateUrl: '../setting.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreditComponent extends SettingComponent {
-  protected override readonly inputColId = Const.MAIN_COL.CREDIT;
   constructor(protected override readonly usecase: CreditUsecase) {
     super(usecase);
   }
@@ -25,10 +32,10 @@ export class CreditComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    const id = event.data[Const.CMN_COL.ID];
-    const label = event.data[Const.CMN_COL.LABEL];
+    const id = event.data[CMN_COL.ID];
+    const label = event.data[CMN_COL.LABEL];
 
-    if (id === Const.MARK.NO_SELECT.id || !label) {
+    if (id === NO_SELECT_VAL.ID || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -37,10 +44,10 @@ export class CreditComponent extends SettingComponent {
     const [filterCredit, filterPayDate] = (() => {
       if (selectDatas.length === 0) {
         // 未選択
-        const payDay = event.data[Const.CRD_COL.PAY_DAY];
+        const payDay = event.data[CRD_COL.PAY_DAY];
         const date = `${event.colDef.headerName}-${payDay}`;
-        const businessDays = event.data[Const.CRD_COL.BUSINESS_DAYS];
-        const payDate = Util.calcPayDateConsiderHoliday(date, businessDays);
+        const businessDays = event.data[CRD_COL.BUSINESS_DAYS];
+        const payDate = calcPayDateConsiderHoliday(date, businessDays);
 
         return [
           {
@@ -60,7 +67,7 @@ export class CreditComponent extends SettingComponent {
       return [
         {
           conditions: selectDatas.map((dt) => ({
-            filter: dt[Const.STG_COL.LABEL],
+            filter: dt[STG_COL.LABEL],
             filterType: 'text',
             type: 'equals',
           })),
@@ -69,10 +76,10 @@ export class CreditComponent extends SettingComponent {
         },
         {
           conditions: selectDatas.map((dt) => {
-            const payDay = dt[Const.CRD_COL.PAY_DAY];
+            const payDay = dt[CRD_COL.PAY_DAY];
             const date = `${event.colDef.headerName}-${payDay}`;
-            const businessDays = dt[Const.CRD_COL.BUSINESS_DAYS];
-            const payDate = Util.calcPayDateConsiderHoliday(date, businessDays);
+            const businessDays = dt[CRD_COL.BUSINESS_DAYS];
+            const payDate = calcPayDateConsiderHoliday(date, businessDays);
             return {
               dateFrom: payDate,
               dateTo: null,
@@ -88,18 +95,18 @@ export class CreditComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterModelChange.emit({
-      tbl: Const.TBL.MAIN,
+      tbl: TBL.MAIN,
       filter: {
-        [Const.MAIN_COL.CREDIT]: filterCredit,
-        [Const.MAIN_COL.PAY_DATE]: filterPayDate,
-        [Const.MAIN_COL.INPUT_MODE]: {
-          filter: Const.INPUT_MODE.ALL_REQ,
+        [MAIN_COL.CREDIT]: filterCredit,
+        [MAIN_COL.PAY_DATE]: filterPayDate,
+        [MAIN_COL.INPUT_MODE]: {
+          filter: INPUT_MODE.ALL_REQ,
           filterType: 'number',
           type: 'equal',
         },
       },
     });
     // 入力画面に遷移
-    this.scrIdSet.emit(Const.SCR.MAIN);
+    this.scrIdSet.emit(SCR.MAIN);
   };
 }

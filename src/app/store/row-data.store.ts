@@ -12,16 +12,20 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
 import { Row, TblInf, TblMap } from 'src/app/domain/row-data';
-import * as Const from 'src/app/shared/constants/constants';
+import { ApiService } from 'src/app/shared/services/api.service';
+import { calcResult } from 'src/app/shared/utils/util-formula';
 import {
+  CMN_COL,
   ColEdt,
+  FilterEdt,
   FilterInputModel,
+  getInputMode,
+  getSaveDefRow,
+  MAIN_COL,
   RowsKeyEdt,
   Tbl,
-} from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
-import { ApiService } from 'src/app/shared/services/api.service';
-import { FilterEdt } from './../shared/constants/types';
+  TBL,
+} from 'src/app/shared/utils/util-row';
 
 /** State */
 type TblInfState = {
@@ -32,7 +36,7 @@ type TblInfState = {
 
 const initFn = <T>(initVal: T): Record<Tbl, T> => {
   const rec = {} as Record<Tbl, T>;
-  for (const key of Object.values(Const.TBL)) {
+  for (const key of Object.values(TBL)) {
     const tbl = key as Tbl;
     rec[tbl] = initVal;
   }
@@ -110,7 +114,7 @@ const setTblInf =
     const tblMap = {} as TblMap;
     for (const [key, rows] of Object.entries(tblInf.rd)) {
       const tbl = key as Tbl;
-      tblMap[tbl] = Util.getLoadRows(tbl, rows);
+      tblMap[tbl] = getLoadRows(tbl, rows);
     }
     tblInf.rd = tblMap;
 
@@ -121,6 +125,35 @@ const setTblInf =
       },
     };
   };
+
+/** 読込用データを返却する */
+const getLoadRows = (tbl: Tbl, rows: Row[] = []): Row[] => {
+  const editInputMode = (row: Row) => ({
+    ...row,
+    [CMN_COL.INPUT_MODE]: getInputMode(row, tbl),
+  });
+  const editRow = (() => {
+    if (tbl === TBL.MAIN) {
+      // 家計簿データの場合
+      return (row: Row) =>
+        editInputMode({
+          ...row,
+          // 計算後数値データ
+          [MAIN_COL.AMOUNT_NUM]: calcResult(row[MAIN_COL.AMOUNT]),
+          // 日付データ
+          [MAIN_COL.DATE]: row[MAIN_COL.DATE] || row[MAIN_COL.USE_DATE],
+        });
+    }
+    // 上記以外
+    return editInputMode;
+  })();
+  return structuredClone(rows).map((row) =>
+    editRow({
+      ...getSaveDefRow(tbl),
+      ...row,
+    }),
+  );
+};
 
 /** 行データ更新 Updater */
 const updRows =

@@ -1,24 +1,20 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  model,
-  output,
-} from '@angular/core';
+import { Component, computed, input, model, output } from '@angular/core';
 import { ScrData } from 'src/app/domain/screen-info';
-import * as Const from 'src/app/shared/constants/constants';
-import { Scr } from 'src/app/shared/constants/types';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 import { SwipeComponent } from 'src/app/shared/swipe/swipe.component';
+import { Scr } from 'src/app/shared/utils/util-screen';
 import { SwipeOutput } from './../swipe/swipe.component';
+
+/** 最大値 */
+const MAX_LEN = {
+  SCR_TRANS_MAP: 5,
+} as const;
 
 @Component({
   selector: 'app-screen-transition',
   imports: [SharedCommonModule, SwipeComponent],
   templateUrl: './screen-transition.component.html',
   styleUrl: './screen-transition.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScreenTransitionComponent {
   readonly mapDsp = model.required<boolean>();
@@ -105,8 +101,8 @@ export class ScreenTransitionComponent {
    */
   private readonly movedPos = (posNow: number, direction: number): number => {
     if (direction < 0 && posNow === 0) {
-      return Const.MAX_LEN.SCR_TRANS_MAP - 1;
-    } else if (direction > 0 && posNow === Const.MAX_LEN.SCR_TRANS_MAP - 1) {
+      return MAX_LEN.SCR_TRANS_MAP - 1;
+    } else if (direction > 0 && posNow === MAX_LEN.SCR_TRANS_MAP - 1) {
       return 0;
     }
     return posNow + direction;

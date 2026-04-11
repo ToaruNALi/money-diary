@@ -1,4 +1,5 @@
-import { FilterInputModel, Tbl, ValType } from 'src/app/shared/constants/types';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { FilterInputModel, Tbl } from 'src/app/shared/utils/util-row';
 
 /** 行データ */
 export type Row = Record<string, ValType>;

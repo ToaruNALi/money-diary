@@ -1,20 +1,38 @@
 import { computed, inject, Injectable } from '@angular/core';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { Row } from 'src/app/domain/row-data';
-import * as Const from 'src/app/shared/constants/constants';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
 import {
+  checkInputMode,
+  CMN_COL,
   ColEdt,
   FilterEdt,
+  getTblScrId,
+  INPUT_MODE,
   RowEdt,
   RowsKeyEdt,
-  Scr,
-  ValType,
-} from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
+  TBL_ADD_POS,
+  TBL_EDIT_TYPE,
+} from 'src/app/shared/utils/util-row';
+import { Scr, SCR_INF } from 'src/app/shared/utils/util-screen';
 import { HistStore } from 'src/app/store/row-data-edit-history.store';
 import { TblInfStore } from 'src/app/store/row-data.store';
 import { ScrInfStore } from 'src/app/store/screen-info.store';
 import { TmpStore } from 'src/app/store/temp-data.store';
+
+/** 時間[ms] */
+const TIME = {
+  /** マップ表示 → 画面遷移 時間 */
+  DISP_MAP_BEF_TRAN: 50,
+  /** 画面遷移 → マップ非表示 時間 */
+  DISP_MAP_AFT_TRAN: 250,
+  /** 長押し時のマップ表示時間 */
+  DISP_MAP_LONG_CLICK: 500,
+  /** UNDO・REDOが行われるまでの時間 */
+  UNDO_REDO_BEF: 300,
+  /** ダブルクリック受付時間 */
+  DOUBLE_CLICK: 180,
+} as const;
 
 @Injectable({
   providedIn: 'root',
@@ -38,7 +56,7 @@ export class StoreUsecase {
   readonly scrDatas = computed(() => {
     const scrId = this.storeScr.scrInf.si();
     const scrData = this.storeScr.scrInf.sd();
-    return { ...Const.SCR_INF[scrId], ...scrData[scrId] };
+    return { ...SCR_INF[scrId], ...scrData[scrId] };
   });
 
   /** 画面遷移マップ表示フラグ */
@@ -160,7 +178,8 @@ export class StoreUsecase {
     if (!tbl) {
       return;
     }
-    const scrId = Util.getTblScrId(tbl);
+    // TODO: 履歴情報に画面情報を残すようにする
+    const scrId = getTblScrId(tbl);
     if (!scrId) {
       return;
     }
@@ -177,7 +196,7 @@ export class StoreUsecase {
     setTimeout(() => {
       // 画面遷移後に行データ編集
       this.setRowEdt(histData);
-    }, Const.TIME.UNDO_REDO_BEF);
+    }, TIME.UNDO_REDO_BEF);
   };
 
   /**
@@ -204,7 +223,7 @@ export class StoreUsecase {
   ): void => {
     for (const edt of rowEdt) {
       const rows = this.storeTblInf.tblInf.rd()[edt.tbl];
-      if (edt.type === Const.TBL_EDIT_TYPE.ADD) {
+      if (edt.type === TBL_EDIT_TYPE.ADD) {
         // 追加
         if (addHistFlg) {
           this.storeHist.updRowEdt(this.getRowEdtAddUndo(edt, edt.rows), edt);
@@ -213,7 +232,7 @@ export class StoreUsecase {
           edt.tbl,
           this.getRowAdd(edt.rows, edt.addIds, rows),
         );
-      } else if (edt.type === Const.TBL_EDIT_TYPE.UPD) {
+      } else if (edt.type === TBL_EDIT_TYPE.UPD) {
         // 更新
         if (addHistFlg) {
           this.storeHist.updRowEdt(
@@ -222,7 +241,7 @@ export class StoreUsecase {
           );
         }
         this.storeTblInf.updRows(edt.tbl, this.getRowUpd(edt.rows, rows));
-      } else if (edt.type === Const.TBL_EDIT_TYPE.DEL) {
+      } else if (edt.type === TBL_EDIT_TYPE.DEL) {
         // 削除
         if (addHistFlg) {
           this.storeHist.updRowEdt(
@@ -231,7 +250,7 @@ export class StoreUsecase {
           );
         }
         this.storeTblInf.updRows(edt.tbl, this.getRowDel(edt.delIds, rows));
-      } else if (edt.type === Const.TBL_EDIT_TYPE.DRG) {
+      } else if (edt.type === TBL_EDIT_TYPE.DRG) {
         // 移動
         if (addHistFlg) {
           this.storeHist.updRowEdt(
@@ -256,12 +275,12 @@ export class StoreUsecase {
 
     //     tblSet.add(edt.tbl);
     //     const rows = this.storeTblInf.tblInf.rd()[edt.tbl];
-    //     if (Util.checkNoneData(rows)) {
+    //     if (checkNoneData(rows)) {
     //       continue;
     //     }
 
-    //     const addEdt = Util.getRowEdtAddNew(edt.tbl, rows);
-    //     if (addEdt.type !== Const.TBL_EDIT_TYPE.ADD) {
+    //     const addEdt = getRowEdtAddNew(edt.tbl, rows);
+    //     if (addEdt.type !== TBL_EDIT_TYPE.ADD) {
     //       continue;
     //     }
 
@@ -280,8 +299,8 @@ export class StoreUsecase {
   private readonly getRowEdtAddUndo = (edt: RowEdt, edtRows: Row[]): RowEdt => {
     return {
       ...edt,
-      type: Const.TBL_EDIT_TYPE.DEL,
-      delIds: edtRows.map((row) => row[Const.CMN_COL.ID]),
+      type: TBL_EDIT_TYPE.DEL,
+      delIds: edtRows.map((row) => row[CMN_COL.ID]),
     };
   };
 
@@ -293,7 +312,7 @@ export class StoreUsecase {
     const updRows: Row[] = [];
     for (const evtRow of edtRows) {
       const updRow = stateRows.find(
-        (row) => row[Const.CMN_COL.ID] === evtRow[Const.CMN_COL.ID],
+        (row) => row[CMN_COL.ID] === evtRow[CMN_COL.ID],
       );
       if (!!updRow) {
         updRows.push(updRow);
@@ -302,7 +321,7 @@ export class StoreUsecase {
     // undo用更新データ作成
     return {
       ...edt,
-      type: Const.TBL_EDIT_TYPE.UPD,
+      type: TBL_EDIT_TYPE.UPD,
       rows: updRows,
     };
   };
@@ -316,7 +335,7 @@ export class StoreUsecase {
     const addRows: Row[] = [];
     const addIds: ValType[] = [];
     for (const [rowIdx, row] of stateRows.entries()) {
-      const delIdx = delIds.findIndex((id) => id === row[Const.CMN_COL.ID]);
+      const delIdx = delIds.findIndex((id) => id === row[CMN_COL.ID]);
       if (delIdx === -1) {
         continue;
       }
@@ -327,13 +346,13 @@ export class StoreUsecase {
       for (let idx = rowIdx + 1; ; idx++) {
         if (!stateRows[idx]) {
           // 最下行に追加する必要がある場合nullを設定
-          addIds.push(Const.TBL_ADD_POS.MAX);
+          addIds.push(TBL_ADD_POS.MAX);
           break;
         }
 
-        if (!delIds.includes(stateRows[idx][Const.CMN_COL.ID])) {
+        if (!delIds.includes(stateRows[idx][CMN_COL.ID])) {
           // 行追加するIDを設定
-          addIds.push(stateRows[idx][Const.CMN_COL.ID]!.toString());
+          addIds.push(stateRows[idx][CMN_COL.ID]!.toString());
           break;
         }
       }
@@ -345,7 +364,7 @@ export class StoreUsecase {
     // undo用追加データ作成
     return {
       ...edt,
-      type: Const.TBL_EDIT_TYPE.ADD,
+      type: TBL_EDIT_TYPE.ADD,
       rows: addRows,
       addIds,
     };
@@ -360,13 +379,13 @@ export class StoreUsecase {
     const delIds: ValType[] = [];
     const addIds: ValType[] = [];
     for (const [rowIdx, row] of stateRows.entries()) {
-      const delIdx = evtDelIds.findIndex((id) => id === row[Const.CMN_COL.ID]);
+      const delIdx = evtDelIds.findIndex((id) => id === row[CMN_COL.ID]);
       if (delIdx === -1) {
         continue;
       }
       evtDelIds.splice(delIdx, 1);
 
-      delIds.push(row[Const.CMN_COL.ID]);
+      delIds.push(row[CMN_COL.ID]);
       // 行追加するIDを算出
       for (let idx = rowIdx + 1; ; idx++) {
         if (!stateRows[idx]) {
@@ -375,9 +394,9 @@ export class StoreUsecase {
           break;
         }
 
-        if (!evtDelIds.includes(stateRows[idx][Const.CMN_COL.ID])) {
+        if (!evtDelIds.includes(stateRows[idx][CMN_COL.ID])) {
           // 行追加するIDを設定
-          addIds.push(stateRows[idx][Const.CMN_COL.ID]!.toString());
+          addIds.push(stateRows[idx][CMN_COL.ID]!.toString());
           break;
         }
       }
@@ -389,7 +408,7 @@ export class StoreUsecase {
     // undo用移動データ作成
     return {
       ...edt,
-      type: Const.TBL_EDIT_TYPE.DRG,
+      type: TBL_EDIT_TYPE.DRG,
       delIds,
       addIds,
     };
@@ -403,7 +422,7 @@ export class StoreUsecase {
     const newRows = structuredClone(stateRows);
     for (const [idx, data] of edtRows.entries()) {
       const addIdx = newRows.findIndex(
-        (row) => row[Const.CMN_COL.ID] === edtAddIds[idx],
+        (row) => row[CMN_COL.ID] === edtAddIds[idx],
       );
 
       if (addIdx >= 0) {
@@ -411,16 +430,13 @@ export class StoreUsecase {
         newRows.splice(addIdx, 0, data);
       } else {
         // 指定された追加行がない場合
-        if (edtAddIds[idx] === Const.TBL_ADD_POS.MIN) {
+        if (edtAddIds[idx] === TBL_ADD_POS.MIN) {
           // 最上行に追加の場合
           newRows.splice(0, 0, data);
-        } else if (edtAddIds[idx] === Const.TBL_ADD_POS.MAX) {
+        } else if (edtAddIds[idx] === TBL_ADD_POS.MAX) {
           // 最下行に追加の場合
           const lastRow = newRows.at(-1);
-          if (
-            !!lastRow &&
-            Util.checkInputMode(lastRow, Const.INPUT_MODE.NONE)
-          ) {
+          if (!!lastRow && checkInputMode(lastRow, INPUT_MODE.NONE)) {
             // 最下行データがある、かつ空データの場合
             newRows.splice(newRows.length - 1, 0, data);
           } else {
@@ -437,7 +453,7 @@ export class StoreUsecase {
     const newRows = structuredClone(stateRows);
     for (const row of edtRows) {
       for (let idx = 0; idx < newRows.length; idx++) {
-        if (newRows[idx][Const.CMN_COL.ID] === row[Const.CMN_COL.ID]) {
+        if (newRows[idx][CMN_COL.ID] === row[CMN_COL.ID]) {
           newRows[idx] = row;
           break;
         }
@@ -451,7 +467,7 @@ export class StoreUsecase {
     stateRows: Row[],
   ): Row[] => {
     const rows = structuredClone(stateRows);
-    return rows.filter((row) => !edtDelIds.includes(row[Const.CMN_COL.ID]));
+    return rows.filter((row) => !edtDelIds.includes(row[CMN_COL.ID]));
   };
 
   private readonly getRowDrg = (
@@ -462,13 +478,13 @@ export class StoreUsecase {
     const rows = structuredClone(stateRows);
     const markDel = '_delete';
     for (const [idx, delId] of edtDelIds.entries()) {
-      const drgRow = rows.find((row) => row[Const.CMN_COL.ID] === delId);
+      const drgRow = rows.find((row) => row[CMN_COL.ID] === delId);
       if (!drgRow) {
         continue;
       }
 
       const addIdx = rows.findIndex(
-        (row) => row[Const.CMN_COL.ID] === edtAddIds[idx],
+        (row) => row[CMN_COL.ID] === edtAddIds[idx],
       );
 
       if (addIdx >= 0) {
@@ -476,16 +492,13 @@ export class StoreUsecase {
         rows.splice(addIdx, 0, structuredClone(drgRow));
       } else {
         // 指定された追加行がない場合
-        if (edtAddIds[idx] === Const.TBL_ADD_POS.MIN) {
+        if (edtAddIds[idx] === TBL_ADD_POS.MIN) {
           // 最上行に追加の場合
           rows.splice(0, 0, structuredClone(drgRow));
-        } else if (edtAddIds[idx] === Const.TBL_ADD_POS.MAX) {
+        } else if (edtAddIds[idx] === TBL_ADD_POS.MAX) {
           // 最下行に追加の場合
           const lastRow = rows.at(-1);
-          if (
-            !!lastRow &&
-            Util.checkInputMode(lastRow, Const.INPUT_MODE.NONE)
-          ) {
+          if (!!lastRow && checkInputMode(lastRow, INPUT_MODE.NONE)) {
             // 最下行データがある、かつ空データの場合
             rows.splice(rows.length - 1, 0, structuredClone(drgRow));
           } else {
@@ -494,10 +507,10 @@ export class StoreUsecase {
           }
         }
       }
-      drgRow[Const.CMN_COL.ID] += markDel;
+      drgRow[CMN_COL.ID] += markDel;
     }
     return rows.filter(
-      (data) => !(data[Const.CMN_COL.ID]?.toString() ?? '').endsWith(markDel),
+      (data) => !(data[CMN_COL.ID]?.toString() ?? '').endsWith(markDel),
     );
   };
 
@@ -537,9 +550,9 @@ export class StoreUsecase {
             this.storeTmp.resetMapDspTimers();
             // マップ非表示
             this.storeTmp.setMapDsp(false);
-          }, Const.TIME.DISP_MAP_AFT_TRAN),
+          }, TIME.DISP_MAP_AFT_TRAN),
         );
-      }, Const.TIME.DISP_MAP_BEF_TRAN),
+      }, TIME.DISP_MAP_BEF_TRAN),
     );
   };
 
@@ -561,7 +574,7 @@ export class StoreUsecase {
           this.storeTmp.resetMapDspTimers();
           // マップ非表示
           this.storeTmp.setMapDsp(mapDsp);
-        }, Const.TIME.DISP_MAP_LONG_CLICK),
+        }, TIME.DISP_MAP_LONG_CLICK),
       );
     }
   };

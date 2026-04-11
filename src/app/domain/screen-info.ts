@@ -1,4 +1,4 @@
-import { Scr } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/utils/util-screen';
 
 /** 画面遷移データ */
 export type ScrData = {

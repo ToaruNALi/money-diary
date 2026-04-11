@@ -6,7 +6,7 @@ import {
   withMethods,
   withState,
 } from '@ngrx/signals';
-import { Scr } from 'src/app/shared/constants/types';
+import { Scr } from 'src/app/shared/utils/util-screen';
 
 /** State */
 type TmpState = {

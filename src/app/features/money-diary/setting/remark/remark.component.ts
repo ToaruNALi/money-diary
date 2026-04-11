@@ -1,19 +1,26 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CellContextMenuEvent } from 'ag-grid-community';
 import { RemarkUsecase } from 'src/app/features/money-diary/setting/remark/remark.usecase';
 import { SettingComponent } from 'src/app/features/money-diary/setting/setting.component';
-import * as Const from 'src/app/shared/constants/constants';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
+import { NO_SELECT_VAL } from 'src/app/shared/signal-form/signal-form.component';
+import {
+  CMN_COL,
+  INPUT_MODE,
+  MAIN_COL,
+  RMK_COL,
+  STG_COL,
+  TBL,
+} from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-remark',
   imports: [GridComponent],
   providers: [RemarkUsecase],
   templateUrl: '../setting.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RemarkComponent extends SettingComponent {
-  protected override readonly inputColId = Const.MAIN_COL.REMARK;
   constructor(protected override readonly usecase: RemarkUsecase) {
     super(usecase);
   }
@@ -24,10 +31,10 @@ export class RemarkComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent,
   ): void => {
-    const id = event.data[Const.CMN_COL.ID];
-    const label = event.data[Const.CMN_COL.LABEL];
+    const id = event.data[CMN_COL.ID];
+    const label = event.data[CMN_COL.LABEL];
 
-    if (id === Const.MARK.NO_SELECT.id || !label) {
+    if (id === NO_SELECT_VAL.ID || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -45,7 +52,7 @@ export class RemarkComponent extends SettingComponent {
       // 選択あり
       return {
         conditions: selectDatas.map((dt) => ({
-          filter: dt[Const.STG_COL.LABEL],
+          filter: dt[STG_COL.LABEL],
           filterType: 'text',
           type: 'equals',
         })),
@@ -56,14 +63,14 @@ export class RemarkComponent extends SettingComponent {
 
     const colId = event.column.getId();
     const filterAmount = (() => {
-      if (colId === Const.RMK_COL.INCOME) {
+      if (colId === RMK_COL.INCOME) {
         // 収入
         return {
           filter: 0,
           filterType: 'number',
           type: 'greaterThanOrEqual',
         };
-      } else if (colId === Const.RMK_COL.EXPENSES) {
+      } else if (colId === RMK_COL.EXPENSES) {
         // 支出
         return {
           filter: 0,
@@ -76,18 +83,18 @@ export class RemarkComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterModelChange.emit({
-      tbl: Const.TBL.MAIN,
+      tbl: TBL.MAIN,
       filter: {
-        [Const.MAIN_COL.REMARK]: filterRemark,
-        [Const.MAIN_COL.AMOUNT_NUM]: filterAmount,
-        [Const.MAIN_COL.INPUT_MODE]: {
-          filter: Const.INPUT_MODE.ALL_REQ,
+        [MAIN_COL.REMARK]: filterRemark,
+        [MAIN_COL.AMOUNT_NUM]: filterAmount,
+        [MAIN_COL.INPUT_MODE]: {
+          filter: INPUT_MODE.ALL_REQ,
           filterType: 'number',
           type: 'equal',
         },
       },
     });
     // 入力画面に遷移
-    this.scrIdSet.emit(Const.SCR.MAIN);
+    this.scrIdSet.emit(SCR.MAIN);
   };
 }

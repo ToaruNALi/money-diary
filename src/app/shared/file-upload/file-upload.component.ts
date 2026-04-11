@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  output,
-  viewChild,
-} from '@angular/core';
+import { Component, ElementRef, output, viewChild } from '@angular/core';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
@@ -13,7 +7,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   imports: [SharedCommonModule],
   templateUrl: './file-upload.component.html',
   styleUrl: './file-upload.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FileUploadComponent {
   protected readonly fileOutput = output<MoneyDiaryData>();

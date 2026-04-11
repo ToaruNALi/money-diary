@@ -1,23 +1,21 @@
-import { ChangeDetectionStrategy, Component, model } from '@angular/core';
-import { Scr } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
+import { Component, model } from '@angular/core';
 import {
   MenuListComponent,
   MenuListInput,
 } from 'src/app/shared/menu-list/menu-list.component';
+import { Scr, getMenuList } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-menu',
   imports: [MenuListComponent],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MenuComponent {
   readonly scrId = model.required<Scr>();
 
   protected readonly menuInput: MenuListInput = {
-    menuList: Util.getMenuList(),
+    menuList: getMenuList(),
   };
 
   protected readonly onClickMenu = (id: string): void => {

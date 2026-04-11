@@ -1,20 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-  model,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, inject, input, model, output, signal } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { MoneyDiaryData } from 'src/app/domain/money-diary-data';
 import { Hist } from 'src/app/domain/row-data-edit-history';
 import { MESSAGE } from 'src/app/shared/constants/messages';
-import { ScrDspData } from 'src/app/shared/constants/types';
-import { DialogInputData } from 'src/app/shared/dialog-input/dialog-input.component';
 import { FileDownloadComponent } from 'src/app/shared/file-download/file-download.component';
 import { FileUploadComponent } from 'src/app/shared/file-upload/file-upload.component';
+import { ScrDspData } from 'src/app/shared/utils/util-screen';
 import { PageReloadComponent } from './../../shared/page-reload/page-reload.component';
 import { SharedCommonModule } from './../../shared/shared-common.module';
 
@@ -28,7 +19,6 @@ import { SharedCommonModule } from './../../shared/shared-common.module';
   ],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
   private readonly fb = inject(FormBuilder);
@@ -39,9 +29,10 @@ export class HeaderComponent {
   readonly edtPastData = model<boolean>(false);
   protected readonly histReset = output<void>();
 
-  protected readonly formData = signal<Partial<DialogInputData>>({
-    label: 'Past Edit',
-  });
+  // TODO: 後で確認
+  // protected readonly formData = signal<Partial<DialogInputData>>({
+  //   label: 'Past Edit',
+  // });
   protected readonly form = signal(
     this.fb.control<boolean>(this.edtPastData()),
   );

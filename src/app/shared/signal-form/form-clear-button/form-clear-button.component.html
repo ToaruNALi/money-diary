@@ -1,0 +1,10 @@
+@let valid = !disabled() && !readonly() && !!value();
+<button
+  mat-icon-button
+  aria-label="Clear"
+  [style.opacity]="valid ? 1 : 0"
+  [style.pointer-events]="valid ? 'all' : 'none'"
+  (click)="value.set(defVal())"
+>
+  <mat-icon>close</mat-icon>
+</button>

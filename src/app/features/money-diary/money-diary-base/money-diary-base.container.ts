@@ -1,17 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import * as Animation from 'src/app/shared/constants/animations';
-import { Scr, Tbl } from 'src/app/shared/constants/types';
+import { Tbl } from 'src/app/shared/utils/util-row';
+import { Scr } from 'src/app/shared/utils/util-screen';
 import { StoreUsecase } from 'src/app/usecase/store.usecase';
 
 @Component({
   template: ``,
   animations: [Animation.Transform],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export abstract class MoneyDiaryBaseContainerComponent {
   protected readonly usecase = inject(StoreUsecase);

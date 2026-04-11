@@ -1,0 +1,24 @@
+<mat-form-field class="form-field" appearance="outline">
+  <mat-label>{{ item().label }}</mat-label>
+  <textarea
+    matInput
+    appSignalFormValue
+    [matAutocomplete]="auto"
+    [field]="data()"
+    [maxLength]="maxLen()"
+    [placeholder]="item().placeholder"
+    [style]="item().style"
+    [forbiddenChars]="item().forbiddenChars"
+    [invalidReservedWord]="item().invalidReservedWord"
+    (input)="handleInputTextarea($event)"
+  ></textarea>
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    (optionSelected)="handleAutocomp($event)"
+  >
+    @for (option of dispOptions(); track $index) {
+      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+    }
+  </mat-autocomplete>
+  <app-form-clear-button matSuffix [field]="data()" [defVal]="item().defVal" />
+</mat-form-field>

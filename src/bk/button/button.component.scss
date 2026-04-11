@@ -1,0 +1,39 @@
+.btn {
+  // 通常時
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #606060;
+  color: #ffffff;
+  min-width: 65px;
+  height: 25px;
+  padding: 15px 10px;
+  border: 0px;
+  cursor: pointer;
+
+  // 非活性時
+  &:disabled {
+    color: #909090;
+    cursor: default;
+  }
+
+  &:enabled {
+    // ホバー時
+    &:hover {
+      background-color: #909090;
+    }
+
+    // 押下時
+    &:active {
+      background-color: #b0b0b0;
+    }
+  }
+}
+
+.label {
+  display: flex;
+}
+
+.margin {
+  margin-right: 5px;
+}

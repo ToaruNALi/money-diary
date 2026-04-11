@@ -31,13 +31,13 @@
 //   providers: [MemoUsecase],
 //   templateUrl: './dialog-memo.component.html',
 //   styleUrl: './dialog-memo.component.scss',
-//   changeDetection: ChangeDetectionStrategy.OnPush,
+//
 // })
 // export class DialogMemoComponent extends MoneyDiaryBaseComponent {
 //   /** usecase */
 //   private readonly usecase = inject(MemoUsecase);
 //   /** 行データKey */
-//   protected readonly tbl = Const.ROW_DATA_KEY.MEMO;
+//   protected readonly tbl = ROW_DATA_KEY.MEMO;
 //   /** 列定義 */
 //   protected readonly columnDefs = computed(() => this.usecase.getColumnDefs());
 //   /** 行データ */
@@ -63,9 +63,9 @@
 
 //     // 更新情報
 //     edtInf.push({
-//       type: Const.ROW_DATA_EDIT_TYPE.UPD,
+//       type: ROW_DATA_EDIT_TYPE.UPD,
 //       event: {
-//         key: Const.ROW_DATA_KEY.MEMO,
+//         key: ROW_DATA_KEY.MEMO,
 //         datas: [event.data],
 //       } as RowDataUpd,
 //     });
@@ -73,12 +73,12 @@
 //     if (!event.oldValue && !!event.newValue) {
 //       // 追加情報
 //       edtInf.push({
-//         type: Const.ROW_DATA_EDIT_TYPE.ADD,
+//         type: ROW_DATA_EDIT_TYPE.ADD,
 //         event: {
-//           key: Const.ROW_DATA_KEY.MEMO,
+//           key: ROW_DATA_KEY.MEMO,
 //           datas: [
 //             Usecase.getDefRowData(
-//               Const.ROW_DATA_KEY.MEMO,
+//               ROW_DATA_KEY.MEMO,
 //               this.data.datas(),
 //             ),
 //           ],
@@ -88,9 +88,9 @@
 //     } else if (!!event.oldValue && !event.newValue) {
 //       // 削除情報
 //       edtInf.push({
-//         type: Const.ROW_DATA_EDIT_TYPE.DEL,
+//         type: ROW_DATA_EDIT_TYPE.DEL,
 //         event: {
-//           key: Const.ROW_DATA_KEY.MEMO,
+//           key: ROW_DATA_KEY.MEMO,
 //           datas: [event.data],
 //         } as RowDataDel,
 //       });

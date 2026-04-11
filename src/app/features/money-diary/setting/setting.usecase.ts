@@ -1,16 +1,32 @@
-import { Injectable } from '@angular/core';
-import { AbstractControl, ValidationErrors } from '@angular/forms';
-import { Row, TblMap } from 'src/app/domain/row-data';
-import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { Tbl } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
+import { Injectable, signal } from '@angular/core';
 import {
-  DIALOG_BUTTON,
-  DialogInput,
-  DialogInputDatas,
-} from 'src/app/shared/dialog-input/dialog-input.component';
-import { DialogInputButtonOption } from '../../../shared/dialog-input/dialog-input.component';
+  disabled,
+  required,
+  validate,
+  ValidationError,
+} from '@angular/forms/signals';
+import { Row } from 'src/app/domain/row-data';
+import {
+  DialogCustomInputExt,
+  MoneyDiaryBaseUsecase,
+  OpenDialogProcInput,
+} from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
+import {
+  BodyParamSchema,
+  DIALOG_BUTTON_ID,
+  DialogButton,
+  DialogCustomInputData,
+  InputItems,
+} from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
+import {
+  FormValType,
+  NO_SELECT_VAL,
+} from 'src/app/shared/signal-form/signal-form.component';
+import {
+  CMN_COL,
+  getColValsByTblAndCustomId,
+  TBL,
+} from 'src/app/shared/utils/util-row';
 
 @Injectable()
 export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
@@ -19,123 +35,169 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
    * @param rows
    * @param inputDatas
    * @param credit
+   * @return 行データ
    */
   readonly getRows = (rows: Row[], _inputDatas: Row[], _credit: Row[]) =>
     this.getRowsCmn(rows);
 
   protected readonly getRowsCmn = (rows: Row[]): Row[] => {
     return structuredClone(rows).filter(
-      (data) => data[Const.CMN_COL.ID] !== Const.MARK.NO_SELECT.id,
+      (data) => data[CMN_COL.ID] !== NO_SELECT_VAL.ID,
     );
   };
 
   /**
    * ダイアログ入力データ作成
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param inputColId
-   * @returns 入力データ
+   * @param procInput
+   * @return 入力データ
    */
-  override readonly createInputData = <MoneyDiaryColId>(
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    inputColId: MoneyDiaryColId,
-  ): DialogInput => {
-    // 初期データ
-    const edtRow = structuredClone(edtRows[0]);
-    const tblDefRow = Util.getTblDefRow(tbl);
-    const datas: DialogInputDatas = this.getDialogInputData(edtRow, tblDefRow);
+  override readonly createDialogInputData = (
+    procInput: OpenDialogProcInput,
+  ): DialogCustomInputExt => {
+    const { tbl, selectedRows } = procInput;
+    const [selectedRow] = selectedRows;
 
-    // MoneyDiary で使用中の場合、Delボタン非活性
-    const id = edtRow[Const.CMN_COL.ID];
-    const inUseFlg = tblMap[Const.TBL.MAIN].some(
-      (row) => row[inputColId as string] === id,
-    );
-    const buttonOptions: DialogInputButtonOption[] = [
-      {
-        id: DIALOG_BUTTON.DEL,
-        disabled: inUseFlg,
+    const defRow = getColValsByTblAndCustomId(tbl);
+    // 入力データ
+    const data = this.getDialogInputData(selectedRow);
+    // 表示項目
+    const items = this.getDialogInputItems(defRow);
+    // スキーマ
+    const schema = this.getDialogSchema(procInput);
+    // ボタン
+    const buttons = this.getDialogButtons(procInput);
+    // ダイアログパラメータ
+    const input: DialogCustomInputExt = {
+      data,
+      param: {
+        header: {
+          title: 'Money Diary',
+        },
+        body: {
+          items,
+          schema,
+        },
+        footer: {
+          buttons,
+        },
       },
-    ];
-
-    // 非選択行、かつ有効なデータを取得
-    const labelList = tblMap[tbl]
-      .filter(
-        (row) => row[Const.CMN_COL.ID] !== id && !!row[Const.CMN_COL.LABEL],
-      )
-      .map((row) => row[Const.CMN_COL.LABEL]);
-
-    // バリデーションチェック用コールバック関数
-    const validatorFn = (control: AbstractControl): ValidationErrors => {
-      const errors: ValidationErrors = {};
-      const label = control.get(Const.CMN_COL.LABEL)?.value;
-
-      // 他データのラベルと重複している場合、OK/Addボタン非活性
-      if (labelList.includes(label)) {
-        errors[DIALOG_BUTTON.OK] = true;
-        errors[DIALOG_BUTTON.ADD] = true;
-      }
-
-      // 選択行のラベルと同じ場合、Addボタン非活性
-      if (label === edtRow[Const.CMN_COL.LABEL]) {
-        errors[DIALOG_BUTTON.ADD] = true;
-      }
-
-      return errors;
     };
-
-    return {
-      title: Util.getTblName(tbl),
-      datas,
-      buttonOptions,
-      validatorFn,
-    };
+    return input;
   };
 
   /**
    * ダイアログ入力データ返却
    * @param row
-   * @param initValues
+   * @returns 入力データ
    */
-  protected readonly getDialogInputData = (
-    row: Row,
-    initValues: Row,
-  ): DialogInputDatas => [
+  private readonly getDialogInputData = (row: Row): DialogCustomInputData => {
+    return signal(
+      Object.entries(row).reduce(
+        (rec, [key, value]) => {
+          return { ...rec, [key]: value };
+        },
+        {} as Record<string, FormValType>,
+      ),
+    );
+  };
+
+  /**
+   * ダイアログ表示項目返却
+   * @param defRow
+   * @returns 表示項目
+   */
+  private readonly getDialogInputItems = (defRow: Row): InputItems => [
     {
-      id: Const.CMN_COL.LABEL,
+      id: CMN_COL.LABEL,
       label: 'Label',
-      value: row[Const.CMN_COL.LABEL],
-      required: true,
-      initValue: initValues[Const.CMN_COL.LABEL],
     },
-    ...this.getDialogInputDataCustom(row, initValues),
+    ...this.getDialogInputItemsCustom(defRow),
     {
-      id: Const.CMN_COL.VALID,
+      id: CMN_COL.VALID,
       label: 'Valid',
-      value: row[Const.CMN_COL.VALID],
-      type: Const.INPUT_TYPE.TOGGLE,
-      initValue: initValues[Const.CMN_COL.VALID],
+      type: 'toggle',
     },
     {
-      id: Const.CMN_COL.UPD_DATE_TIME,
+      id: CMN_COL.UPD_DATE_TIME,
       label: 'Upd Date',
-      value: row[Const.CMN_COL.UPD_DATE_TIME],
-      disabled: true,
-      initValue: initValues[Const.CMN_COL.UPD_DATE_TIME],
     },
   ];
 
   /**
-   * ダイアログ入力データ返却(custom)
-   * @param row
-   * @param initValues
+   * ダイアログ表示項目返却(custom)
+   * @param defRow
+   * @returns 表示項目
    */
-  protected abstract readonly getDialogInputDataCustom: (
-    row: Row,
-    initValues: Row,
-  ) => DialogInputDatas;
+  protected abstract readonly getDialogInputItemsCustom: (
+    defRow: Row,
+  ) => InputItems;
+
+  /**
+   * ダイアログスキーマ返却
+   * @param tree
+   */
+  private readonly getDialogSchema = (
+    procInput: OpenDialogProcInput,
+  ): BodyParamSchema => {
+    const { tbl, allTblRows, selectedRows } = procInput;
+    const [selectedRow] = selectedRows;
+    const labelList = allTblRows[tbl]
+      .filter(
+        (row) =>
+          row[CMN_COL.ID] !== selectedRow[CMN_COL.ID] && !!row[CMN_COL.LABEL],
+      )
+      .map((row) => row[CMN_COL.LABEL]?.toString() ?? '');
+
+    return (tree) => {
+      required(tree[CMN_COL.LABEL]);
+      disabled(tree[CMN_COL.UPD_DATE_TIME]);
+      validate(tree, ({ value }) => {
+        const label = value()[CMN_COL.LABEL]?.toString() ?? '';
+        let errors: ValidationError[] = [];
+        if (labelList.includes(label)) {
+          errors = [
+            ...errors,
+            { kind: DIALOG_BUTTON_ID.OK },
+            { kind: DIALOG_BUTTON_ID.ADD },
+          ];
+        }
+
+        if (label === selectedRow[CMN_COL.LABEL]) {
+          errors = [...errors, { kind: DIALOG_BUTTON_ID.ADD }];
+        }
+        return errors;
+      });
+      this.getDialogSchemaCustom?.(tree);
+    };
+  };
+
+  /**
+   * ダイアログスキーマ返却(custom)
+   * @param tree
+   * @returns ダイアログスキーマ
+   */
+  protected abstract readonly getDialogSchemaCustom?: BodyParamSchema;
+
+  /**
+   * ダイアログボタン設定返却
+   * @param procInput
+   * @returns ボタン設定
+   */
+  private readonly getDialogButtons = (
+    procInput: OpenDialogProcInput,
+  ): DialogButton => {
+    const { tbl, allTblRows, selectedRows } = procInput;
+    const [selectedRow] = selectedRows;
+
+    // MoneyDiary で使用中の場合、Delボタン非活性
+    return {
+      [DIALOG_BUTTON_ID.DEL]: {
+        disabled: allTblRows[TBL.MAIN].some(
+          (row) => row[tbl] === selectedRow[CMN_COL.ID],
+        ),
+      },
+    };
+  };
 
   /**
    * 未選択用データがあるかどうか(行編集Emitterデータ作成)
@@ -143,8 +205,6 @@ export abstract class SettingUsecase extends MoneyDiaryBaseUsecase {
    * @returns チェック結果
    */
   protected override readonly checkNoSelData = (rows: Row[]): boolean => {
-    return rows.some(
-      (row) => row[Const.CMN_COL.ID] === Const.MARK.NO_SELECT.id,
-    );
+    return rows.some((row) => row[CMN_COL.ID] === NO_SELECT_VAL.ID);
   };
 }

@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { Row } from 'src/app/domain/row-data';
 import {
@@ -17,7 +12,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   imports: [SharedCommonModule],
   templateUrl: './chart.component.html',
   styleUrl: './chart.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChartComponent {
   private readonly dialog = inject(MatDialog);

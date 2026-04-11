@@ -4,20 +4,19 @@ import { PageNotFoundComponent } from 'src/app/core/page-not-found/page-not-foun
 import { MoneyDiaryPageComponent } from 'src/app/features/money-diary/money-diary.page';
 import { CheckComponent } from 'src/app/features/test/check/check.component';
 import { TestComponent } from 'src/app/features/test/test/test.component';
-import * as Const from 'src/app/shared/constants/constants';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: Const.ROUTE_PATH.MAIN,
+    redirectTo: 'money-diary',
   },
   {
-    path: Const.ROUTE_PATH.MAIN,
+    path: 'money-diary',
     component: MoneyDiaryPageComponent,
   },
   {
-    path: Const.ROUTE_PATH.ERR,
+    path: 'error',
     component: InternalServerErrorComponent,
   },
   {

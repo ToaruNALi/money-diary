@@ -12,9 +12,8 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
 import { ScrData, ScrInf } from 'src/app/domain/screen-info';
-import * as Const from 'src/app/shared/constants/constants';
-import { Scr } from 'src/app/shared/constants/types';
 import { ApiService } from 'src/app/shared/services/api.service';
+import { SCR, Scr, SCR_INF } from 'src/app/shared/utils/util-screen';
 
 /** State */
 type ScrInfState = {
@@ -27,13 +26,13 @@ type ScrInfState = {
 const initState: ScrInfState = {
   loading: false,
   scrInf: {
-    si: Const.SCR.MAIN,
-    oi: Const.SCR.SUMMARY,
-    fi: Const.SCR.MAIN,
+    si: SCR.MAIN,
+    oi: SCR.SUMMARY,
+    fi: SCR.MAIN,
     md: true,
     sd: (() => {
       const rec = {} as Record<Scr, ScrData>;
-      for (const [key, inf] of Object.entries(Const.SCR_INF)) {
+      for (const [key, inf] of Object.entries(SCR_INF)) {
         const scr = key as Scr;
         rec[scr] = {
           od: inf.od,

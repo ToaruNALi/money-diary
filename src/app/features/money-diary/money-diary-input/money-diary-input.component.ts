@@ -1,9 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import {
@@ -18,11 +13,7 @@ import {
   INPUT_OPTION_TYPE,
   MoneyDiaryInputUsecase,
 } from 'src/app/features/money-diary/money-diary-input/money-diary-input.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { MenuListData, ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
 import { FormsCommonModule } from 'src/app/shared/forms-common.module';
-import { SelectOption } from 'src/app/shared/forms/forms.component';
 import {
   GridBtm,
   GridComponent,
@@ -32,6 +23,20 @@ import {
 } from 'src/app/shared/grid/grid.component';
 import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import {
+  SelectOption,
+  ValType,
+} from 'src/app/shared/signal-form/signal-form.component';
+import {
+  CMN_COL,
+  cvtDateToStr,
+  getRowEdtAdd,
+  getRowEdtDel,
+  getRowIds,
+  getRowIdsSet,
+  MAIN_COL,
+} from 'src/app/shared/utils/util-row';
+import { MenuListData, SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-money-diary-input',
@@ -46,11 +51,9 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   providers: [MoneyDiaryInputUsecase],
   templateUrl: './money-diary-input.component.html',
   styleUrl: './money-diary-input.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
   /** usecase */
-  // private readonly usecase = inject(MoneyDiaryInputUsecase);
   constructor(protected override readonly usecase: MoneyDiaryInputUsecase) {
     super(usecase);
   }
@@ -101,10 +104,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   private readonly onDelete = (): void => {
     this.rowEdt.emit([
-      Util.getRowEdtDel(
-        this.tbl(),
-        Util.getRowIds(this.gridApi.getSelectedRows()),
-      ),
+      getRowEdtDel(this.tbl(), getRowIds(this.gridApi.getSelectedRows())),
     ]);
   };
 
@@ -113,12 +113,13 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   private readonly onReplace = async (): Promise<void> => {
     // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      this.tblMap(),
-      { type: INPUT_OPTION_TYPE.REPLACE },
-    );
+    const edtInf = await this.usecase.openDialog({
+      selectedRows: this.gridApi.getSelectedRows(),
+      tbl: this.tbl(),
+      allTblRows: this.tblMap(),
+      option: { type: INPUT_OPTION_TYPE.REPLACE },
+    });
+
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
     }
@@ -129,12 +130,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   private readonly onSerialNumber = async (): Promise<void> => {
     // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      this.tblMap(),
-      { type: INPUT_OPTION_TYPE.SERIAL_NUM },
-    );
+    const edtInf = await this.usecase.openDialog({
+      selectedRows: this.gridApi.getSelectedRows(),
+      tbl: this.tbl(),
+      allTblRows: this.tblMap(),
+      option: { type: INPUT_OPTION_TYPE.SERIAL_NUM },
+    });
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
     }
@@ -145,12 +146,12 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   private readonly onUpdate = async (): Promise<void> => {
     // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      this.gridApi.getSelectedRows(),
-      this.tbl(),
-      this.tblMap(),
-      { type: INPUT_OPTION_TYPE.UPDATE },
-    );
+    const edtInf = await this.usecase.openDialog({
+      selectedRows: this.gridApi.getSelectedRows(),
+      tbl: this.tbl(),
+      allTblRows: this.tblMap(),
+      option: { type: INPUT_OPTION_TYPE.UPDATE },
+    });
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
     }
@@ -161,11 +162,11 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    */
   private readonly onCopy = (): void => {
     this.rowEdt.emit([
-      Util.getRowEdtAdd(
+      getRowEdtAdd(
         this.tbl(),
         this.gridApi.getSelectedRows(),
         [],
-        Util.getRowIdsSet(this.rows()),
+        getRowIdsSet(this.rows()),
       ),
     ]);
   };
@@ -230,7 +231,7 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
         const optLabelSet: Set<string> = new Set();
         const reverseRows = this.rows().toReversed();
         for (const row of reverseRows) {
-          const label = row[Const.MAIN_COL.MEMO]?.toString() ?? '';
+          const label = row[MAIN_COL.MEMO]?.toString() ?? '';
           if (!label || optLabelSet.has(label)) {
             // メモが空欄、または既にに存在する場合、オートコンプリートに追加しない
             continue;
@@ -238,9 +239,9 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
 
           optLabelSet.add(label);
           autocompData.push({
-            id: row[Const.CMN_COL.ID]?.toString() ?? '',
+            id: row[CMN_COL.ID]?.toString() ?? '',
             value: label,
-            lb: label,
+            label: label,
           });
         }
 
@@ -263,14 +264,14 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
       valid: true,
       dspOdr: 9,
       detail: [
-        { col: Const.MAIN_COL.INPUT_MODE, asc: false },
-        { col: Const.MAIN_COL.DATE },
+        { col: MAIN_COL.INPUT_MODE, asc: false },
+        { col: MAIN_COL.DATE },
       ],
     },
   });
 
   /** セルクリック禁止列 */
-  private readonly cellClickForbCols = signal([Const.MAIN_COL.AMOUNT]);
+  private readonly cellClickForbCols = signal([MAIN_COL.AMOUNT]);
 
   /** ステータスリスト */
   protected readonly statusList = computed(() =>
@@ -281,34 +282,27 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
    * セルクリック時
    * @param event
    */
-  protected readonly onClickCell = (
+  protected readonly onClickCell = async (
     event?: CellClickedEvent<Row, ValType>,
-  ): void => {
-    Util.procClick(
-      Const.TIME.DOUBLE_CLICK,
-      // 1回クリック時
-      async () => {
-        // 行データ編集処理
-        const edtInf = await this.usecase.procEditRows(
-          !!event ? [event.data] : [],
-          this.tbl(),
-          this.tblMap(),
-        );
+  ): Promise<void> => {
+    // 行データ編集処理
+    const edtInf = await this.usecase.openDialog({
+      tbl: this.tbl(),
+      allTblRows: this.tblMap(),
+      selectedRows: event?.data,
+      option: { type: INPUT_OPTION_TYPE.DEFAULT },
+    });
 
-        if (!!edtInf) {
-          this.rowEdt.emit(edtInf);
-        }
-      },
-      // 2回クリック時
-      () => {},
-    );
+    if (!!edtInf) {
+      this.rowEdt.emit(edtInf);
+    }
   };
 
   /**
    * ステータスリスト押下時
    */
   protected readonly onClickStatusContent = (): void => {
-    this.scrIdSet.emit(Const.SCR.STORAGE);
+    this.scrIdSet.emit(SCR.STORAGE);
   };
 
   /**
@@ -321,17 +315,17 @@ export class MoneyDiaryInputComponent extends MoneyDiaryBaseComponent {
     if ((this.cellClickForbCols() as string[]).includes(event.column.getId())) {
       // セルクリック禁止列の場合
       this.rowEdt.emit([
-        Util.getRowEdtAdd(
+        getRowEdtAdd(
           this.tbl(),
           [
             {
               ...event.data,
-              [Const.MAIN_COL.DATE]: Util.getDate(),
-              [Const.MAIN_COL.USE_DATE]: Util.getDate(),
+              [MAIN_COL.DATE]: cvtDateToStr(),
+              [MAIN_COL.USE_DATE]: cvtDateToStr(),
             },
           ],
           [],
-          Util.getRowIdsSet(this.rows()),
+          getRowIdsSet(this.rows()),
         ),
       ]);
     }

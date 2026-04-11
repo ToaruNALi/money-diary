@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { MoneyDiaryBaseContainerComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.container';
 import { ScheduleComponent } from 'src/app/features/money-diary/schedule/schedule.component';
-import * as Const from 'src/app/shared/constants/constants';
+import { TBL } from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-schedule-container',
@@ -15,9 +16,8 @@ import * as Const from 'src/app/shared/constants/constants';
       (rowEdt)="usecase.edtRows($event)"
     ></app-schedule>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScheduleContainerComponent extends MoneyDiaryBaseContainerComponent {
-  protected override readonly scrId = Const.SCR.SCHEDULE;
-  protected override readonly tbl = Const.TBL.SCHEDULE;
+  protected override readonly scrId = SCR.SCHEDULE;
+  protected override readonly tbl = TBL.SCHEDULE;
 }

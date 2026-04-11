@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  linkedSignal,
-  output,
-  signal,
-} from '@angular/core';
+import { Component, input, linkedSignal, output, signal } from '@angular/core';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 export type SwipeOutput = {
@@ -27,7 +20,6 @@ export type SwipeOutput = {
   imports: [SharedCommonModule],
   templateUrl: './swipe.component.html',
   styleUrl: './swipe.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SwipeComponent {
   /** タップ時の誤動作を防ぐためのスワイプ時の処理を実行しない最小距離X */

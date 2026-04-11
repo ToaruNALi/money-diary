@@ -2,11 +2,22 @@ import { Injectable } from '@angular/core';
 import { ColDef, ValueSetterParams } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
-import { DialogInputDatas } from 'src/app/shared/dialog-input/dialog-input.component';
+import { InputItems } from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
+import {
+  NO_SELECT_VAL,
+  ValType,
+} from 'src/app/shared/signal-form/signal-form.component';
+import { cvtNumToPrice, isValidInt } from 'src/app/shared/utils/util-formula';
+import {
+  checkInputMode,
+  CMN_COL,
+  cvtDateToStr,
+  getPayDate,
+  INPUT_MODE,
+  MAIN_COL,
+  STG_COL,
+} from 'src/app/shared/utils/util-row';
 
 @Injectable()
 export class StorageUsecase extends SettingUsecase {
@@ -23,18 +34,18 @@ export class StorageUsecase extends SettingUsecase {
     ...this.addCmnColDefs([
       {
         headerName: 'Storage',
-        field: Const.CMN_COL.LABEL,
+        field: CMN_COL.LABEL,
         cellEditor: 'agTextCellEditor',
         rowDrag: true,
         pinned: 'left',
         filter: false,
         width: 140,
         valueSetter: (params) => this.amountSetter(params, inputDatas, credit),
-        cellStyle: Util.getCellCmnStyle,
+        cellStyle: this.getCellCmnStyle,
       },
       {
         headerName: 'Bank',
-        field: Const.STG_COL.BANK,
+        field: STG_COL.BANK,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -42,7 +53,7 @@ export class StorageUsecase extends SettingUsecase {
       },
       {
         headerName: 'Branch',
-        field: Const.STG_COL.BRANCH,
+        field: STG_COL.BRANCH,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -50,7 +61,7 @@ export class StorageUsecase extends SettingUsecase {
       },
       {
         headerName: 'Subject',
-        field: Const.STG_COL.SUBJECT,
+        field: STG_COL.SUBJECT,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -58,21 +69,34 @@ export class StorageUsecase extends SettingUsecase {
       },
       {
         headerName: 'Savings',
-        field: Const.STG_COL.SAVINGS,
+        field: STG_COL.SAVINGS,
         type: 'numericCol',
         filter: false,
         width: 110,
+        comparator: this.compAmt,
+        valueFormatter: (params) => cvtNumToPrice(params.value),
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
       {
         headerName: 'Last Savings',
-        field: Const.STG_COL.LAST_SAVINGS,
+        field: STG_COL.LAST_SAVINGS,
         type: 'numericCol',
         filter: false,
         width: 110,
+        comparator: this.compAmt,
+        valueFormatter: (params) => cvtNumToPrice(params.value),
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
     ]),
   ];
 
+  /**
+   * 金額Setter
+   * @param params
+   * @param rows
+   * @param credit
+   * @returns Setter
+   */
   private readonly amountSetter = (
     params: ValueSetterParams<Row, ValType>,
     rows: Row[],
@@ -82,14 +106,19 @@ export class StorageUsecase extends SettingUsecase {
       return false;
     }
 
-    [
-      params.data[Const.STG_COL.SAVINGS],
-      params.data[Const.STG_COL.LAST_SAVINGS],
-    ] = this.getIncAndExp(rows, credit, params.data[Const.CMN_COL.ID]);
+    [params.data[STG_COL.SAVINGS], params.data[STG_COL.LAST_SAVINGS]] =
+      this.getIncAndExp(rows, credit, params.data[CMN_COL.ID]);
 
     return true;
   };
 
+  /**
+   * 行データ取得
+   * @param rows
+   * @param inputDatas
+   * @param credit
+   * @returns 行データ
+   */
   override readonly getRows = (
     rows: Row[],
     inputDatas: Row[],
@@ -97,13 +126,23 @@ export class StorageUsecase extends SettingUsecase {
   ): Row[] => {
     const datas = this.getRowsCmn(rows);
     for (const data of datas) {
-      [data[Const.STG_COL.SAVINGS], data[Const.STG_COL.LAST_SAVINGS]] =
-        this.getIncAndExp(inputDatas, credit, data[Const.CMN_COL.ID]);
+      [data[STG_COL.SAVINGS], data[STG_COL.LAST_SAVINGS]] = this.getIncAndExp(
+        inputDatas,
+        credit,
+        data[CMN_COL.ID],
+      );
     }
 
     return datas;
   };
 
+  /**
+   * 収支を計算して返却する
+   * @param inputDatas
+   * @param credit
+   * @param storageId
+   * @returns 収支
+   */
   private readonly getIncAndExp = (
     inputDatas: Row[],
     credit: Row[],
@@ -111,26 +150,26 @@ export class StorageUsecase extends SettingUsecase {
   ): number[] => {
     const savingsList = [0, 0];
 
-    if (storageId === Const.MARK.NO_SELECT.id) {
+    if (storageId === NO_SELECT_VAL.ID) {
       // 未選択項目は計算対象外
       return savingsList;
     }
 
-    const today = Util.getDate();
+    const today = cvtDateToStr();
 
     for (const data of inputDatas) {
-      const num = data[Const.MAIN_COL.AMOUNT_NUM];
+      const num = data[MAIN_COL.AMOUNT_NUM];
       if (
-        !Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) ||
-        data[Const.MAIN_COL.STORAGE] !== storageId ||
-        !Util.isValidInt(num)
+        !checkInputMode(data, INPUT_MODE.ALL_REQ) ||
+        data[MAIN_COL.STORAGE] !== storageId ||
+        !isValidInt(num)
       ) {
         continue;
       }
 
-      const payDate = Util.getPayDate(
-        data[Const.MAIN_COL.USE_DATE],
-        data[Const.MAIN_COL.CREDIT],
+      const payDate = getPayDate(
+        data[MAIN_COL.USE_DATE],
+        data[MAIN_COL.CREDIT],
         credit,
       );
       if (payDate <= today) {
@@ -146,13 +185,13 @@ export class StorageUsecase extends SettingUsecase {
   /**
    * 選択行の金額を計算して返却する
    * @param rows
-   * @returns
+   * @returns 選択行のステータス
    */
   override readonly calcSelStatus = (rows: Row[]): MoneyStatus[] => {
     const statusInf = [
       { label: 'Cnt', id: '' },
-      { label: 'Savings', id: Const.STG_COL.SAVINGS },
-      { label: 'Last Savings', id: Const.STG_COL.LAST_SAVINGS },
+      { label: 'Savings', id: STG_COL.SAVINGS },
+      { label: 'Last Savings', id: STG_COL.LAST_SAVINGS },
     ];
     const status = statusInf.map((info) => ({ ...info, amount: 0 }));
     // 収支計算
@@ -162,7 +201,7 @@ export class StorageUsecase extends SettingUsecase {
           continue;
         }
         const num = Number(data[st.id]);
-        if (!Util.isValidInt(num)) {
+        if (!isValidInt(num)) {
           continue;
         }
         st.amount += num;
@@ -170,37 +209,34 @@ export class StorageUsecase extends SettingUsecase {
     }
     return status.map((st, idx) => ({
       label: st.label,
-      value: !idx ? rows.length.toString() : Util.cvtNumToPrice(st.amount),
+      value: !idx ? rows.length.toString() : cvtNumToPrice(st.amount),
     }));
   };
 
   /**
-   * データの入力を行う
-   * @param row
-   * @param initValues
-   * @returns 入力データ
+   * ダイアログ表示項目返却(custom)
+   * @param defRow
+   * @returns 表示項目
    */
-  override readonly getDialogInputDataCustom = (
-    row: Row,
-    initValues: Row,
-  ): DialogInputDatas => [
+  protected override readonly getDialogInputItemsCustom = (
+    defRow: Row,
+  ): InputItems => [
     {
-      id: Const.STG_COL.BANK,
+      id: STG_COL.BANK,
       label: 'Bank',
-      value: row[Const.STG_COL.BANK],
-      initValue: initValues[Const.STG_COL.BANK],
     },
     {
-      id: Const.STG_COL.BRANCH,
+      id: STG_COL.BRANCH,
       label: 'Branch',
-      value: row[Const.STG_COL.BRANCH],
-      initValue: initValues[Const.STG_COL.BRANCH],
     },
     {
-      id: Const.STG_COL.SUBJECT,
+      id: STG_COL.SUBJECT,
       label: 'Subject',
-      value: row[Const.STG_COL.SUBJECT],
-      initValue: initValues[Const.STG_COL.SUBJECT],
     },
   ];
+
+  /**
+   * ダイアログスキーマ返却(custom)
+   */
+  protected override readonly getDialogSchemaCustom = undefined;
 }

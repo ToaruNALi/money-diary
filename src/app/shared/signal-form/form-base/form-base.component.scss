@@ -1,0 +1,37 @@
+@use 'variables' as *;
+
+:host {
+  width: 100%;
+
+  .form-field {
+    display: flex;
+
+    // Chrome, Safari で <input type="number">のスピンボタン を非表示にする
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+      -webkit-appearance: none !important;
+      margin: 0 !important;
+    }
+  }
+}
+
+::ng-deep {
+  // フォーム同士のスペースを除去(利用する側で個別にスペースを設けるようにする)
+  .mat-mdc-form-field-bottom-align::before {
+    display: none;
+  }
+
+  // チェックボックス・トグルボタンのラベル左に隙間を設定
+  mat-slide-toggle {
+    .mdc-label {
+      margin-left: 5px;
+    }
+  }
+
+  // form内のアイコンをできるだけコンパクトにする設定
+  .mat-mdc-icon-button.mat-mdc-button-base {
+    width: 36px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+}

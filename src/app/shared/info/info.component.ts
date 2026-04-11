@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
@@ -7,7 +7,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   imports: [SharedCommonModule, MatBadgeModule],
   templateUrl: './info.component.html',
   styleUrl: './info.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InfoComponent {
   // TODO: 予定通知機能

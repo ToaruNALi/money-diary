@@ -1,0 +1,16 @@
+<button
+  class="btn"
+  type="button"
+  [disabled]="btnParam.disabled"
+  [title]="btnParam.tooltip"
+  (click)="onBtnClick()"
+>
+  <div class="label">
+    <mat-icon *ngIf="btnParam.icon !== ''">{{ btnParam.icon }}</mat-icon>
+    <div
+      *ngIf="btnParam.icon !== '' && btnParam.label !== ''"
+      class="margin"
+    ></div>
+    {{ btnParam.label }}
+  </div>
+</button>

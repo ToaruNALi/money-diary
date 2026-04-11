@@ -1,0 +1,21 @@
+<div style="display: flex; align-items: center">
+  <mat-form-field style="flex: auto" class="form-field" appearance="outline">
+    <mat-label>{{ item().label }}</mat-label>
+    <input
+      matInput
+      disabled
+      [matDatepicker]="dp"
+      [value]="data()().value()"
+      [placeholder]="item().placeholder"
+      [style]="item().style"
+      (dateInput)="setDateStr($event.target.value)"
+    />
+    <app-form-clear-button
+      matSuffix
+      [field]="data()"
+      [defVal]="item().defVal"
+    />
+    <mat-datepicker #dp [disabled]="disabled() || readonly()" />
+  </mat-form-field>
+  <mat-datepicker-toggle style="width: 35px" matIconSuffix [for]="dp" />
+</div>

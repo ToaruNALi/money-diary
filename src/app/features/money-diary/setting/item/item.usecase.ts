@@ -2,10 +2,9 @@ import { Injectable } from '@angular/core';
 import { ColDef } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
-import { DialogInputDatas } from 'src/app/shared/dialog-input/dialog-input.component';
+import { InputItems } from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { CMN_COL, ITM_COL } from 'src/app/shared/utils/util-row';
 
 @Injectable()
 export class ItemUsecase extends SettingUsecase {
@@ -17,37 +16,38 @@ export class ItemUsecase extends SettingUsecase {
     ...this.addCmnColDefs([
       {
         headerName: 'Item',
-        field: Const.CMN_COL.LABEL,
+        field: CMN_COL.LABEL,
         cellEditor: 'agTextCellEditor',
         rowDrag: true,
         filter: false,
         flex: 1,
-        cellStyle: Util.getCellCmnStyle,
+        cellStyle: this.getCellCmnStyle,
       },
       {
         headerName: 'Summary Count',
-        field: Const.ITM_COL.SUMMARY_COUNT_FLG,
+        field: ITM_COL.SUMMARY_COUNT_FLG,
         cellEditor: 'agCheckboxCellEditor',
       },
     ]),
   ];
 
   /**
-   * データの入力を行う
-   * @param row
-   * @param initValues
-   * @returns 入力データ
+   * ダイアログ表示項目返却(custom)
+   * @param defRow
+   * @returns 表示項目
    */
-  override readonly getDialogInputDataCustom = (
-    row: Row,
-    initValues: Row,
-  ): DialogInputDatas => [
+  protected override readonly getDialogInputItemsCustom = (
+    defRow: Row,
+  ): InputItems => [
     {
-      id: Const.ITM_COL.SUMMARY_COUNT_FLG,
+      id: ITM_COL.SUMMARY_COUNT_FLG,
       label: 'Summary Count',
-      value: row[Const.ITM_COL.SUMMARY_COUNT_FLG],
-      type: Const.INPUT_TYPE.TOGGLE,
-      initValue: initValues[Const.ITM_COL.SUMMARY_COUNT_FLG],
+      type: 'toggle',
     },
   ];
+
+  /**
+   * ダイアログスキーマ返却(custom)
+   */
+  protected override readonly getDialogSchemaCustom = undefined;
 }

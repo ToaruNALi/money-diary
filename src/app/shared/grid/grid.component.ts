@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -42,14 +41,6 @@ import {
   themeQuartz,
 } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
-import * as Const from 'src/app/shared/constants/constants';
-import {
-  MenuListData,
-  RowEdt,
-  Tbl,
-  ValType,
-} from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
 import {
   DialogFilterComponent,
   DialogFilterInput,
@@ -60,6 +51,20 @@ import {
 } from 'src/app/shared/dialog-search/dialog-search.component';
 import { MoneyStatusComponent } from 'src/app/shared/money-status/money-status.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import { createAutocompleteValue } from 'src/app/shared/signal-form/form-base/form-base.component';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { equalObj } from 'src/app/shared/utils/util-general';
+import {
+  CMN_COL,
+  getRowEdtDrg,
+  getRowEdtUpd,
+  getRowIds,
+  INPUT_MODE,
+  RowEdt,
+  sortRow,
+  Tbl,
+} from 'src/app/shared/utils/util-row';
+import { MenuListData } from 'src/app/shared/utils/util-screen';
 import { MenuListComponent } from '../menu-list/menu-list.component';
 
 /** 入力タイプ */
@@ -127,6 +132,13 @@ type GridOptDsp<T = GridOptType> = GridOptParam & {
   icon: string;
 };
 
+const ROW_CLR = {
+  NONE: '#CCCC0030',
+  ERROR: '#CC000030',
+  SEARCH: '#00CCFF30',
+  SEARCH_FOCUS: '#006eff30',
+} as const;
+
 @Component({
   selector: 'app-grid',
   imports: [
@@ -137,7 +149,6 @@ type GridOptDsp<T = GridOptType> = GridOptParam & {
   ],
   templateUrl: './grid.component.html',
   styleUrl: './grid.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GridComponent {
   constructor() {
@@ -222,21 +233,11 @@ export class GridComponent {
 
     if (rowInf.rowIdx === -1) {
       // 行移動
-      Util.jumpRow(this.gridApi, rowInf.rowIdx);
+      this.jumpRow(this.gridApi, rowInf.rowIdx);
     }
 
     // 行スタイル設定
-    this.rowStyleInput.set(
-      (params: RowClassParams<Row>, rowStyle: RowStyle) => {
-        if (params.rowIndex === rowInf.rowIdx) {
-          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH_FOCUS;
-        } else if (matchArr.includes(params.rowIndex)) {
-          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH;
-        }
-        return rowStyle;
-      },
-    );
-    this.gridApi.redrawRows();
+    this.applyRowStyle(matchArr, rowInf.rowIdx);
   };
 
   /**
@@ -330,21 +331,30 @@ export class GridComponent {
     );
 
     // 行移動
-    Util.jumpRow(this.gridApi, rowInf.rowIdx);
+    this.jumpRow(this.gridApi, rowInf.rowIdx);
 
     const colId =
       Object.entries(rowInf.row).find(
         ([_, row]) => !!row?.toString().includes(val),
-      )?.[0] ?? Const.CMN_COL.LABEL;
+      )?.[0] ?? CMN_COL.LABEL;
     this.gridApi.setFocusedCell(rowInf.rowIdx, colId);
 
     // 行スタイル設定
+    this.applyRowStyle(matchArr, rowInf.rowIdx);
+  };
+
+  /**
+   * 行スタイル反映
+   * @param matchArr
+   * @param rowIdx
+   */
+  private readonly applyRowStyle = (matchArr: number[], rowIdx: number) => {
     this.rowStyleInput.set(
       (params: RowClassParams<Row>, rowStyle: RowStyle) => {
-        if (params.rowIndex === rowInf.rowIdx) {
-          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH_FOCUS;
+        if (params.rowIndex === rowIdx) {
+          rowStyle['backgroundColor'] = ROW_CLR.SEARCH_FOCUS;
         } else if (matchArr.includes(params.rowIndex)) {
-          rowStyle['backgroundColor'] = Const.ROW_CLR.SEARCH;
+          rowStyle['backgroundColor'] = ROW_CLR.SEARCH;
         }
         return rowStyle;
       },
@@ -378,7 +388,7 @@ export class GridComponent {
         googleFont: 'Roboto',
       },
       fontSize: '13px',
-      foregroundColor: Const.FONT_CLR.DEF,
+      foregroundColor: '#BBBEC9',
       headerBackgroundColor: '#182226',
       headerFontFamily: {
         googleFont: 'Roboto',
@@ -417,17 +427,12 @@ export class GridComponent {
         cellClass: 'ag-right-aligned-cell',
         cellEditor: 'agDateStringCellEditor',
         filter: 'agDateColumnFilter',
-        // filterValueGetter: (params) =>
-        //   Usecase.cvtStringToDate(params.data?.[params.column.getId()]),
       },
       numericCol: {
         headerClass: 'ag-left-aligned-header',
         cellClass: 'ag-right-aligned-cell',
         cellEditor: 'agNumberCellEditor',
-        valueFormatter: (params) => Util.cvtNumToPrice(params.value),
         filter: 'agNumberColumnFilter',
-        comparator: Util.compAmt,
-        cellStyle: (params) => Util.getStylePrice(params.value),
       },
       amountCol: {
         headerClass: 'ag-left-aligned-header',
@@ -523,7 +528,7 @@ export class GridComponent {
     () =>
       this.rowIdInput() ??
       ((params: GetRowIdParams<Row>) => {
-        const id = params.data[Const.CMN_COL.ID];
+        const id = params.data[CMN_COL.ID];
         if (!id || typeof id !== 'string') {
           return '';
         }
@@ -533,14 +538,14 @@ export class GridComponent {
   protected readonly rowStyle = computed(
     () => (params: RowClassParams<Row>) => {
       const style: RowStyle = {};
-      const mode = params.data?.[Const.CMN_COL.INPUT_MODE];
+      const mode = params.data?.[CMN_COL.INPUT_MODE];
 
-      if (mode === Const.INPUT_MODE.NONE) {
+      if (mode === INPUT_MODE.NONE) {
         // 空データ
-        style['backgroundColor'] = Const.ROW_CLR.NONE;
-      } else if (mode === Const.INPUT_MODE.SOME_REQ) {
+        style['backgroundColor'] = ROW_CLR.NONE;
+      } else if (mode === INPUT_MODE.SOME_REQ) {
         // エラーデーア
-        style['backgroundColor'] = Const.ROW_CLR.ERROR;
+        style['backgroundColor'] = ROW_CLR.ERROR;
       }
       return this.rowStyleInput()?.(params, style) ?? style;
     },
@@ -709,21 +714,21 @@ export class GridComponent {
   };
   private readonly onSort = (opt: GridOptDsp<GridBtm>): void => {
     const oldRows = this.rows();
-    const newRows = Util.sortRow(oldRows, opt.detail);
-    if (Util.equalObject(oldRows, newRows)) {
+    const newRows = sortRow(oldRows, opt.detail);
+    if (equalObj(oldRows, newRows)) {
       // ソート前と順番が変わらない場合は、履歴に追加しない
       return;
     }
 
     const targetIds = oldRows
-      .filter((dt) => !!dt[Const.CMN_COL.UPDATE])
-      .map((dt) => dt[Const.CMN_COL.ID]);
+      .filter((dt) => !!dt[CMN_COL.UPDATE])
+      .map((dt) => dt[CMN_COL.ID]);
     const updRows: Row[] = [];
     const addIds: (ValType | undefined)[] = [];
     const edtInf: RowEdt[] = [];
 
     for (const newRow of newRows) {
-      const id = newRow[Const.CMN_COL.ID];
+      const id = newRow[CMN_COL.ID];
       if (targetIds.includes(id)) {
         updRows.push({ ...newRow });
         addIds.push(undefined);
@@ -737,10 +742,10 @@ export class GridComponent {
     }
 
     edtInf.push(
-      Util.getRowEdtUpd(this.tbl(), updRows, undefined, false, this.rowsKey()),
-      Util.getRowEdtDrg(
+      getRowEdtUpd(this.tbl(), updRows, undefined, false, this.rowsKey()),
+      getRowEdtDrg(
         this.tbl(),
-        Util.getRowIds(updRows),
+        getRowIds(updRows),
         addIds as ValType[],
         this.rowsKey(),
       ),
@@ -761,10 +766,10 @@ export class GridComponent {
   private readonly onChgFlt = (opt: GridOptDsp<GridBtm>): void => {
     // フィルタモデル設定
     const hardcodedFilter: FilterModel = {
-      [Const.CMN_COL.INPUT_MODE]: {
+      [CMN_COL.INPUT_MODE]: {
         filterType: 'number',
         type: opt.sts === 0 ? 'notEqual' : 'equals',
-        filter: Const.INPUT_MODE.ALL_REQ,
+        filter: INPUT_MODE.ALL_REQ,
       },
     };
     this.gridApi.setFilterModel(hardcodedFilter);
@@ -793,9 +798,7 @@ export class GridComponent {
     });
     // 出力データ
     dialogRef.componentInstance.emitter.subscribe((res) => {
-      res = res
-        .replace(Const.INPUT_CHARS.AUTOCOMP_REPLACE, ' ')
-        .replace(/\s+/g, ' ');
+      res = createAutocompleteValue(res, false).replace(/\s+/g, ' ');
       this.gridApi.setGridOption('quickFilterText', res);
     });
   };
@@ -813,9 +816,7 @@ export class GridComponent {
     });
     // 検索値変更
     dialogRef.componentInstance.emitter.subscribe((res) => {
-      res = res
-        .replace(Const.INPUT_CHARS.AUTOCOMP_REPLACE, ' ')
-        .replace(/\s+/g, ' ');
+      res = createAutocompleteValue(res, false).replace(/\s+/g, ' ');
       this.signalSearchVal.set(res);
     });
     // 検索実行
@@ -824,10 +825,10 @@ export class GridComponent {
     });
   };
   private readonly onJmpFirstCol = (_opt: GridOptDsp<GridBtm>): void => {
-    Util.jumpCol(this.gridApi, 0);
+    this.jumpCol(this.gridApi, 0);
   };
   private readonly onJmpLastCol = (_opt: GridOptDsp<GridBtm>): void => {
-    Util.jumpCol(this.gridApi);
+    this.jumpCol(this.gridApi);
   };
   private readonly onJmpFirstRow = (_opt: GridOptDsp<GridBtm>): void => {
     if (!!this.signalSearchVal()) {
@@ -835,7 +836,7 @@ export class GridComponent {
       this.procSearch(this.signalSearchVal(), false);
     } else {
       // 検索値なし
-      Util.jumpRow(this.gridApi, 0);
+      this.jumpRow(this.gridApi, 0);
     }
   };
   private readonly onJmpLastRow = (_opt: GridOptDsp<GridBtm>): void => {
@@ -844,7 +845,7 @@ export class GridComponent {
       this.procSearch(this.signalSearchVal(), true);
     } else {
       // 検索値なし
-      Util.jumpRow(this.gridApi);
+      this.jumpRow(this.gridApi);
     }
   };
   private readonly onClickMenu = (
@@ -1136,7 +1137,7 @@ export class GridComponent {
     event: RowDragEndEvent<Row, ValType>,
   ): void => {
     const rowIdxes = event.nodes.map((node) => node.rowIndex);
-    if (Util.equalObject(rowIdxes, this.beforeRowIdxes)) {
+    if (equalObj(rowIdxes, this.beforeRowIdxes)) {
       return;
     }
     const targetIds = event.nodes.map((node) => node.id);
@@ -1158,10 +1159,10 @@ export class GridComponent {
     });
 
     edtInf.push(
-      Util.getRowEdtUpd(this.tbl(), updRows, undefined, true, this.rowsKey()),
-      Util.getRowEdtDrg(
+      getRowEdtUpd(this.tbl(), updRows, undefined, true, this.rowsKey()),
+      getRowEdtDrg(
         this.tbl(),
-        Util.getRowIds(updRows),
+        getRowIds(updRows),
         addIds as ValType[],
         this.rowsKey(),
       ),
@@ -1174,7 +1175,7 @@ export class GridComponent {
    */
   protected readonly onDspFirstData = (event: FirstDataRenderedEvent): void => {
     // 最終行にスクロール
-    Util.jumpRow(event.api);
+    this.jumpRow(event.api);
   };
   /**
    * フィルタ・ソート変更時
@@ -1184,5 +1185,55 @@ export class GridComponent {
     _event: FilterChangedEvent | SortChangedEvent,
   ): void => {
     this.signalChgFilterAndSort.update((flg) => !flg);
+  };
+
+  /** 指定行にジャンプする */
+  private jumpRow = (gridApi?: GridApi<Row>, rowIdx?: number): void => {
+    if (!gridApi) {
+      return;
+    }
+    if (rowIdx === undefined) {
+      rowIdx = gridApi.getDisplayedRowCount() - 1;
+    }
+    if (rowIdx > 0) {
+      gridApi.ensureIndexVisible(rowIdx - 1);
+    }
+    gridApi.ensureIndexVisible(rowIdx);
+  };
+
+  /** 指定列にジャンプする */
+  private jumpCol = (gridApi?: GridApi<Row>, colIdx?: number): void => {
+    if (!gridApi) {
+      return;
+    }
+    const cols = gridApi.getAllDisplayedColumns();
+    if (!cols) {
+      return;
+    }
+    if (colIdx === undefined || colIdx > cols.length - 1) {
+      colIdx = cols.length - 1;
+    } else if (colIdx < 0) {
+      colIdx = 0;
+    }
+
+    for (let idx = colIdx; ; ) {
+      const col = cols.at(idx);
+      if (!!col) {
+        if (!col.isPinned()) {
+          gridApi.ensureColumnVisible(col);
+          break;
+        }
+      }
+
+      if (idx < cols.length - 1) {
+        idx++;
+      } else {
+        idx = 0;
+      }
+
+      if (idx === colIdx) {
+        break;
+      }
+    }
   };
 }

@@ -1,0 +1,10 @@
+<section>
+  <div>{{ item().label }}</div>
+  <mat-radio-group class="radio-group" [field]="data()">
+    @for (opt of item().options; track $index) {
+      <mat-radio-button [style]="item().style" [value]="opt.value">{{
+        opt.label
+      }}</mat-radio-button>
+    }
+  </mat-radio-group>
+</section>

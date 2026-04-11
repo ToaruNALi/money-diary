@@ -1,4 +1,4 @@
-import { RowEdt } from 'src/app/shared/constants/types';
+import { RowEdt } from 'src/app/shared/utils/util-row';
 
 /** 行編集保存情報 */
 export type Hist = {

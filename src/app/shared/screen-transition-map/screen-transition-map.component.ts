@@ -1,20 +1,13 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-} from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ScrData } from 'src/app/domain/screen-info';
-import * as Const from 'src/app/shared/constants/constants';
-import { Scr } from 'src/app/shared/constants/types';
+import { Scr, SCR_INF } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-screen-transition-map',
   imports: [MatIconModule],
   templateUrl: './screen-transition-map.component.html',
   styleUrl: './screen-transition-map.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScreenTransitionMapComponent {
   readonly display = input.required<boolean>();
@@ -53,7 +46,7 @@ export class ScreenTransitionMapComponent {
     );
 
     for (const [scr, data] of Object.entries(datas)) {
-      const info = Const.SCR_INF[scr as Scr];
+      const info = SCR_INF[scr as Scr];
       retMap[data.py][data.px] = {
         id: scr,
         select: scr === id,

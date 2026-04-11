@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
 @Component({
@@ -6,7 +6,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   imports: [SharedCommonModule],
   templateUrl: './page-reload.component.html',
   styleUrl: './page-reload.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageReloadComponent {
   protected readonly onBtnReload = (): void => {

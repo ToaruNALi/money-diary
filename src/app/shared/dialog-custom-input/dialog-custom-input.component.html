@@ -1,0 +1,39 @@
+<!-- タイトル -->
+<h2 mat-dialog-title>{{ inputParam().header.title }}</h2>
+<!-- 項目 -->
+<mat-dialog-content class="dialog-content">
+  @for (rowItem of dispItems(); track rowItem) {
+    <div class="row-content">
+      @for (item of rowItem; track item.id) {
+        <!-- データ -->
+        @let data = inputData[item.id];
+        @let event = formEvent[item.id];
+
+        <signal-form
+          class="col-content"
+          [class.hide]="data().hidden()"
+          [class.form-space]="!$first"
+          [style.--col-length]="$count"
+          [style]="item?.formStyle ?? {}"
+          [data]="data"
+          [item]="item"
+          [(formEvent)]="event"
+        ></signal-form>
+      }
+    </div>
+  }
+</mat-dialog-content>
+<!-- ボタン -->
+<mat-dialog-actions class="dialog-actions">
+  @for (button of dispButtons(); track button.id) {
+    <button
+      mat-icon-button
+      [class.hide]="button.hide"
+      [disabled]="button.disabled"
+      [color]="button.color"
+      (click)="button.handleClick?.(inputParam, dialogRef)"
+    >
+      <mat-icon>{{ button.icon }}</mat-icon>
+    </button>
+  }
+</mat-dialog-actions>

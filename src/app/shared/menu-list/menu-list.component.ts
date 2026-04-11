@@ -1,13 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { MenuListData } from 'src/app/shared/constants/types';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import { MenuListData } from 'src/app/shared/utils/util-screen';
 
 export type MenuListInput = {
   icon?: string;
@@ -19,7 +13,6 @@ export type MenuListInput = {
   imports: [SharedCommonModule, MatMenuModule],
   templateUrl: './menu-list.component.html',
   styleUrl: './menu-list.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MenuListComponent {
   readonly menuInput = input.required<MenuListInput>();

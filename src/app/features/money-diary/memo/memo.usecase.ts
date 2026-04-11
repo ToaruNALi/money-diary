@@ -1,48 +1,54 @@
-import { Injectable } from '@angular/core';
-import { AbstractControl, FormRecord, ValidationErrors } from '@angular/forms';
+import { Injectable, signal } from '@angular/core';
+import { disabled, hidden, required } from '@angular/forms/signals';
 import { ColDef } from 'ag-grid-community';
-import { Row, TblMap } from 'src/app/domain/row-data';
-import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { FormCtrl, RowEdt, Tbl, ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
-import * as Dialog from 'src/app/shared/dialog-input/dialog-input.component';
+import { Row } from 'src/app/domain/row-data';
 import {
-  DIALOG_BUTTON,
-  DialogInput,
-  DialogInputButtonOption,
-  DialogInputDatas,
-  DialogOutputData,
-  DialogStatus,
-} from 'src/app/shared/dialog-input/dialog-input.component';
+  DialogCustomInputExt,
+  MoneyDiaryBaseUsecase,
+  OpenDialogProcInput,
+  OpenDialogProcOutput,
+  OpenDialogProcRowEdt,
+} from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
+import {
+  BodyParamSchema,
+  DIALOG_OUTPUT_STATUS,
+  DialogButton,
+  InputItems,
+  InputItemSetter,
+} from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
+import { INPUT_RESTRICTIONS } from 'src/app/shared/signal-form/signal-form-value.derective';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { calcResult, cvtNumToPrice } from 'src/app/shared/utils/util-formula';
+import {
+  COMP_STATUS,
+  COMP_STATUS_LIST,
+  cvtDateToStr,
+  getRowEdtDel,
+  MEM_COL,
+  MEMO_MODE,
+  RowEdt,
+} from 'src/app/shared/utils/util-row';
 
 const DSP_COLS = {
   DATE: 'dt',
   AMOUNT: 'am',
   STATUS: 'st',
-  // COMPLETE_DATE: 'cd',
 } as const;
 type DspCols = (typeof DSP_COLS)[keyof typeof DSP_COLS];
 const DSP_COLS_LIST = [
-  { id: DSP_COLS.DATE, lb: 'Date' },
-  { id: DSP_COLS.AMOUNT, lb: 'Amount' },
-  { id: DSP_COLS.STATUS, lb: 'Status' },
-  // { id: DSP_COLS.COMPLETE_DATE, lb: 'Complete Date' },
-] as const satisfies { id: DspCols; lb: string }[];
+  { value: DSP_COLS.DATE, label: 'Date' },
+  { value: DSP_COLS.AMOUNT, label: 'Amount' },
+  { value: DSP_COLS.STATUS, label: 'Status' },
+] as const satisfies { value: DspCols; label: string }[];
 
-export type InputOptionType =
-  (typeof Const.MEMO_MODE)[keyof typeof Const.MEMO_MODE];
+export type InputOptionType = (typeof MEMO_MODE)[keyof typeof MEMO_MODE];
 export type InputOption = {
   type: InputOptionType;
   fltKey: string;
 };
 
-const DIALOG_INPUT_ID = {
-  CALC_RESULT: 'calcResult',
-} as const;
-
 const DIALOG_STATUS = {
-  ...Dialog.DIALOG_STATUS,
+  ...DIALOG_OUTPUT_STATUS,
   DEL_PLUS: 'plusDel',
 } as const;
 
@@ -56,16 +62,16 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
     ...this.addCmnColDefs([
       {
         headerName: 'Label',
-        field: Const.MEM_COL.LABEL,
+        field: MEM_COL.LABEL,
         cellEditor: 'agTextCellEditor',
         rowDrag: true,
         filter: false,
         flex: 2,
-        cellStyle: Util.getCellCmnStyle,
+        cellStyle: this.getCellCmnStyle,
       },
       {
         headerName: 'Display Columns',
-        field: Const.MEM_COL.DISPLAY_COLUMNS,
+        field: MEM_COL.DISPLAY_COLUMNS,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -74,12 +80,12 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
         filterValueGetter: (params) =>
           this.chkboxFormatter(
             DSP_COLS_LIST,
-            params.getValue(Const.MEM_COL.DISPLAY_COLUMNS),
+            params.getValue(MEM_COL.DISPLAY_COLUMNS),
           ),
       },
       {
         headerName: 'Valid Columns',
-        field: Const.MEM_COL.VALID_COLUMNS,
+        field: MEM_COL.VALID_COLUMNS,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -88,29 +94,31 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
         filterValueGetter: (params) =>
           this.chkboxFormatter(
             DSP_COLS_LIST,
-            params.getValue(Const.MEM_COL.VALID_COLUMNS),
+            params.getValue(MEM_COL.VALID_COLUMNS),
           ),
       },
       {
         headerName: 'Detail Count',
-        field: Const.MEM_COL.DETAIL_COUNT,
+        field: MEM_COL.DETAIL_COUNT,
         type: 'numericCol',
         filter: false,
         flex: 1,
+        comparator: this.compAmt,
         valueFormatter: (param) => {
-          const id = param.data?.[Const.MEM_COL.ID];
+          const id = param.data?.[MEM_COL.ID];
           return rows
             .filter(
               (row) =>
-                row[Const.MEM_COL.MODE] === Const.MEMO_MODE.DETAIL &&
-                row[Const.MEM_COL.LABEL] === id,
+                row[MEM_COL.MODE] === MEMO_MODE.DETAIL &&
+                row[MEM_COL.LABEL] === id,
             )
             .length.toString();
         },
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
       {
         headerName: 'Mode',
-        field: Const.MEM_COL.MODE,
+        field: MEM_COL.MODE,
         cellEditor: 'agTextCellEditor',
         hide: true,
         filter: false,
@@ -125,22 +133,21 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
     rows: Row[],
     fltKey: string,
   ): ColDef<Row, ValType>[] => {
-    const findRow = rows.find((row) => row[Const.MEM_COL.ID] === fltKey);
-    const dspChkArr = (findRow?.[Const.MEM_COL.DISPLAY_COLUMNS] ??
-      []) as ValType[];
+    const findRow = rows.find((row) => row[MEM_COL.ID] === fltKey);
+    const dspChkArr = (findRow?.[MEM_COL.DISPLAY_COLUMNS] ?? []) as ValType[];
 
     return [
       ...this.addCmnColDefs([
         {
           headerName: 'Label',
-          field: Const.MEM_COL.LABEL,
+          field: MEM_COL.LABEL,
           cellEditor: 'agTextCellEditor',
           hide: true,
           filter: false,
         },
         {
-          headerName: findRow?.[Const.MEM_COL.LABEL]?.toString() ?? '',
-          field: Const.MEM_COL.DETAIL,
+          headerName: findRow?.[MEM_COL.LABEL]?.toString() ?? '',
+          field: MEM_COL.DETAIL,
           cellEditor: 'agLargeTextCellEditor',
           rowDrag: true,
           filter: false,
@@ -148,11 +155,11 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
           minWidth: 300,
           wrapText: true,
           autoHeight: true,
-          cellStyle: Util.getCellCmnStyle,
+          cellStyle: this.getCellCmnStyle,
         },
         {
           headerName: 'Date',
-          field: Const.MEM_COL.DATE,
+          field: MEM_COL.DATE,
           type: 'dateCol',
           hide: !dspChkArr.includes(DSP_COLS.DATE),
           filter: false,
@@ -161,57 +168,48 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
         },
         {
           headerName: 'Amount',
-          field: Const.MEM_COL.AMOUNT,
+          field: MEM_COL.AMOUNT,
           type: 'amountCol',
           cellEditor: 'agTextCellEditor',
-          filterValueGetter: `data.${Const.MEM_COL.AMOUNT_NUM}`,
+          filterValueGetter: `data.${MEM_COL.AMOUNT_NUM}`,
           hide: !dspChkArr.includes(DSP_COLS.AMOUNT),
           filter: false,
           width: 110,
           valueFormatter: (params) =>
-            Util.cvtNumToPrice(params.data?.[Const.MEM_COL.AMOUNT_NUM]),
+            cvtNumToPrice(params.data?.[MEM_COL.AMOUNT_NUM]),
           comparator: (_a, _b, nodeA, nodeB) =>
-            Util.compAmt(
-              nodeA.data?.[Const.MEM_COL.AMOUNT_NUM],
-              nodeB.data?.[Const.MEM_COL.AMOUNT_NUM],
+            this.compAmt(
+              nodeA.data?.[MEM_COL.AMOUNT_NUM],
+              nodeB.data?.[MEM_COL.AMOUNT_NUM],
             ),
           cellStyle: (params) =>
-            Util.getStylePrice(params.data?.[Const.MEM_COL.AMOUNT_NUM]),
+            this.getStylePrice(params.data?.[MEM_COL.AMOUNT_NUM]),
         },
         {
           headerName: 'AmountNum',
-          field: Const.MEM_COL.AMOUNT_NUM,
+          field: MEM_COL.AMOUNT_NUM,
           cellEditor: 'agNumberCellEditor',
           hide: true,
           filter: false,
         },
         {
           headerName: 'Status',
-          field: Const.MEM_COL.STATUS,
+          field: MEM_COL.STATUS,
           cellEditor: 'agSelectCellEditor',
           hide: !dspChkArr.includes(DSP_COLS.STATUS),
           filter: false,
           width: 110,
           valueFormatter: (params) =>
-            Const.COMP_STATUS_LIST.find((data) => data.id === params.value)
-              ?.lb ?? '',
+            COMP_STATUS_LIST.find((data) => data.value === params.value)
+              ?.label ?? '',
           filterValueGetter: (params) =>
-            Const.COMP_STATUS_LIST.find(
-              (data) => data.id === params.getValue(Const.MEM_COL.STATUS),
-            )?.lb ?? '',
+            COMP_STATUS_LIST.find(
+              (data) => data.value === params.getValue(MEM_COL.STATUS),
+            )?.label ?? '',
         },
-        // {
-        //   headerName: 'Complete Date',
-        //   field: Const.MEM_COL.COMPLETE_DATE,
-        //   type: 'dateCol',
-        //   hide: !dspChkArr.includes(DSP_COLS.COMPLETE_DATE),
-        //   filter: false,
-        //   width: 110,
-        //   valueFormatter: this.dateFormatter,
-        // },
         {
           headerName: 'Mode',
-          field: Const.MEM_COL.MODE,
+          field: MEM_COL.MODE,
           cellEditor: 'agTextCellEditor',
           hide: true,
           filter: false,
@@ -231,351 +229,355 @@ export class MemoUsecase extends MoneyDiaryBaseUsecase {
 
   /**
    * ダイアログ入力データ作成
-   * @param edtRows
-   * @param tbl
-   * @param TblMap
-   * @param option
+   * @param procInput
    * @returns 入力データ
    */
-  override readonly createInputData = (
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    option: InputOption,
-  ): DialogInput => {
-    switch (option.type) {
-      // 一覧データ編集
-      case Const.MEMO_MODE.LIST:
-        return this.createInputDataList(edtRows, tbl, tblMap);
-      // 詳細データ編集
-      case Const.MEMO_MODE.DETAIL:
-        return this.createInputDataDetail(edtRows, tbl, tblMap, option);
-      // 上記以外
-      default:
-        throw new Error('No Create Function');
+  protected readonly createDialogInputData = (
+    procInput: OpenDialogProcInput,
+  ): DialogCustomInputExt => {
+    const type = procInput?.option?.type;
+    if (type in this.funcByInputOptionType) {
+      return this.funcByInputOptionType[type].input(procInput);
+    } else {
+      throw new Error('Invalid input option type');
     }
   };
 
   /**
    * ダイアログ入力データ作成(一覧データ編集時)
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
+   * @param procInput
    * @returns 入力データ
    */
-  private readonly createInputDataList = (
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-  ): DialogInput => {
-    /*************************
-     * ボタンオプションの設定
-     *************************/
-    const buttonOptions: DialogInputButtonOption[] = [
-      {
-        id: DIALOG_BUTTON.DEL,
-        status: DIALOG_STATUS.DEL_PLUS,
-      },
-    ];
+  private readonly createDialogInputDataList = (
+    procInput: OpenDialogProcInput,
+  ): DialogCustomInputExt => {
+    const { selectedRows } = procInput;
+    const [selectedRow] = selectedRows;
 
     /*************************
-     * 入力データの設定
+     * 入力データ
      *************************/
-    const edtRow = structuredClone(edtRows[0]);
-    const defRow = Util.getTblDefRow(tbl);
-    const inDatas: DialogInputDatas = [
+    const data = signal({
+      [MEM_COL.LABEL]: selectedRow[MEM_COL.LABEL],
+      [MEM_COL.DISPLAY_COLUMNS]: selectedRow[MEM_COL.DISPLAY_COLUMNS],
+      [MEM_COL.VALID_COLUMNS]: selectedRow[MEM_COL.VALID_COLUMNS],
+      [MEM_COL.VALID]: selectedRow[MEM_COL.VALID],
+      [MEM_COL.UPD_DATE_TIME]: selectedRow[MEM_COL.UPD_DATE_TIME],
+    });
+
+    /*************************
+     * 表示項目
+     *************************/
+    const items: InputItems = [
       {
-        id: Const.MEM_COL.LABEL,
+        id: MEM_COL.LABEL,
         label: 'Label',
-        value: edtRow[Const.MEM_COL.LABEL],
-        type: Const.INPUT_TYPE.TEXT,
-        initValue: defRow[Const.MEM_COL.LABEL],
-        required: true,
       },
       {
-        id: Const.MEM_COL.DISPLAY_COLUMNS,
+        id: MEM_COL.DISPLAY_COLUMNS,
         label: 'Display Columns',
-        value: edtRow[Const.MEM_COL.DISPLAY_COLUMNS],
-        type: Const.INPUT_TYPE.CHECK,
-        initValue: defRow[Const.MEM_COL.DISPLAY_COLUMNS],
+        type: 'checkbox',
         options: DSP_COLS_LIST,
       },
       {
-        id: Const.MEM_COL.VALID_COLUMNS,
+        id: MEM_COL.VALID_COLUMNS,
         label: 'Valid Columns',
-        value: edtRow[Const.MEM_COL.VALID_COLUMNS],
-        type: Const.INPUT_TYPE.CHECK,
-        initValue: defRow[Const.MEM_COL.VALID_COLUMNS],
+        type: 'checkbox',
         options: DSP_COLS_LIST,
       },
       {
-        id: Const.MEM_COL.VALID,
+        id: MEM_COL.VALID,
         label: 'Valid',
-        value: edtRow[Const.MEM_COL.VALID],
-        type: Const.INPUT_TYPE.TOGGLE,
-        initValue: defRow[Const.MEM_COL.VALID],
+        type: 'toggle',
       },
       {
-        id: Const.MEM_COL.UPD_DATE_TIME,
+        id: MEM_COL.UPD_DATE_TIME,
         label: 'Upd Date',
-        value: edtRow[Const.MEM_COL.UPD_DATE_TIME],
-        initValue: defRow[Const.MEM_COL.UPD_DATE_TIME],
-        disabled: true,
       },
       {
-        id: Const.MEM_COL.MODE,
-        label: 'Mode',
-        value: Const.MEMO_MODE.LIST,
-        initValue: Const.MEMO_MODE.LIST,
-        hide: true,
-        disabled: true,
+        id: MEM_COL.MODE,
+        defVal: MEMO_MODE.LIST,
       },
     ];
 
     /*************************
-     * バリデーションチェック用コールバックの設定
+     * スキーマ
      *************************/
-    // 非選択行、かつ有効なデータ、かつ一覧のデータを取得
-    const labelList = tblMap[tbl]
-      .filter(
-        (row) =>
-          row[Const.MEM_COL.ID] !== edtRow[Const.MEM_COL.ID] &&
-          !!row[Const.MEM_COL.LABEL] &&
-          row[Const.MEM_COL.MODE] === Const.MEMO_MODE.LIST,
-      )
-      .map((row) => row[Const.MEM_COL.LABEL]);
-
-    // バリデーションチェック用コールバック関数
-    const validatorFn = (control: AbstractControl): ValidationErrors => {
-      const errors: ValidationErrors = {};
-      const label = control.get(Const.MEM_COL.LABEL)?.value;
-
-      // 他データのラベルと重複している場合、OK/Addボタン非活性
-      if (labelList.includes(label)) {
-        errors[DIALOG_BUTTON.OK] = true;
-        errors[DIALOG_BUTTON.ADD] = true;
-      }
-
-      // 選択行のラベルと同じ場合、Addボタン非活性
-      if (label === edtRow[Const.MEM_COL.LABEL]) {
-        errors[DIALOG_BUTTON.ADD] = true;
-      }
-
-      return errors;
+    const schema: BodyParamSchema = (tree) => {
+      required(tree[MEM_COL.LABEL]);
+      disabled(tree[MEM_COL.UPD_DATE_TIME]);
+      disabled(tree[MEM_COL.MODE]);
+      hidden(tree[MEM_COL.MODE], (_) => true);
     };
 
-    return {
-      title: `${Util.getTblName(tbl)} List`,
-      datas: inDatas,
-      buttonOptions,
-      validatorFn,
+    // ダイアログパラメータ
+    const input: DialogCustomInputExt = {
+      data,
+      param: {
+        header: {
+          title: 'Memo List',
+        },
+        body: {
+          items,
+          schema,
+        },
+      },
     };
+
+    return input;
   };
 
   /**
    * ダイアログ入力データ作成(詳細データ編集時)
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param option
+   * @param procInput
    * @returns 入力データ
    */
-  private readonly createInputDataDetail = (
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    option: InputOption,
-  ): DialogInput => {
-    // 入力データ
-    const defRow = Util.getTblDefRow(tbl);
-    const edtRow = edtRows[0];
-    const findRow = tblMap[tbl].find(
-      (row) => row[Const.MEM_COL.ID] === option.fltKey,
-    );
-    const validChkArr = (findRow?.[Const.MEM_COL.VALID_COLUMNS] ??
-      []) as ValType[];
-    // 計算結果 setter
-    const calcResultSetter = (form: FormRecord): void => {
-      const amount = form.get(Const.MEM_COL.AMOUNT)?.value;
-      const val = Util.cvtNumToPrice(Util.calcResult(amount));
+  private readonly createDialogInputDataDetail = (
+    procInput: OpenDialogProcInput,
+  ): DialogCustomInputExt => {
+    const { allTblRows, tbl, selectedRows, option } = procInput;
+    const [selectedRow] = selectedRows;
 
-      form.get(DIALOG_INPUT_ID.CALC_RESULT)?.setValue(val);
+    /*************************
+     * 入力データ
+     *************************/
+    const data = signal({
+      [MEM_COL.DETAIL]: selectedRow[MEM_COL.DETAIL],
+      [MEM_COL.DATE]: selectedRow[MEM_COL.DATE] ?? cvtDateToStr(),
+      [MEM_COL.AMOUNT]: selectedRow[MEM_COL.AMOUNT],
+      [MEM_COL.STATUS]: selectedRow[MEM_COL.STATUS],
+      [MEM_COL.VALID]: selectedRow[MEM_COL.VALID],
+      [MEM_COL.UPD_DATE_TIME]: selectedRow[MEM_COL.UPD_DATE_TIME],
+    });
+
+    /*************************
+     * 各setterの設定
+     *************************/
+    // 計算結果 setter
+    const calcResultSetter = this.createCalcResultSetter();
+
+    // Valid Setter
+    const validOffStatus = [
+      COMP_STATUS.CANCELED,
+      COMP_STATUS.CLOSE,
+    ] as number[];
+    const validSetter: InputItemSetter = ({ form }) => {
+      const status = Number(form[MEM_COL.STATUS]().value());
+      form[MEM_COL.VALID]().value.set(!validOffStatus.includes(status));
     };
 
-    const inDatas: DialogInputDatas = [
+    /*************************
+     * 表示項目
+     *************************/
+    const items: InputItems = [
       {
-        id: Const.MEM_COL.LABEL,
+        id: MEM_COL.LABEL,
         label: 'Label',
-        value: option.fltKey,
-        hide: true,
-        disabled: true,
+        defVal: option.fltKey,
       },
       {
-        id: Const.MEM_COL.DETAIL,
+        id: MEM_COL.DETAIL,
         label: 'Detail',
-        value: edtRow[Const.MEM_COL.DETAIL],
-        type: Const.INPUT_TYPE.TEXTAREA,
-        initValue: defRow[Const.MEM_COL.DETAIL],
+        type: 'textarea',
         style: { height: 'calc(30vh)' },
-        required: true,
       },
       {
-        id: Const.MEM_COL.DATE,
+        id: MEM_COL.DATE,
         label: 'Date',
-        value: edtRow[Const.MEM_COL.DATE] ?? Util.getDate(),
-        type: Const.INPUT_TYPE.DATE,
-        initValue: defRow[Const.MEM_COL.DATE],
-        hide: !validChkArr.includes(DSP_COLS.DATE),
+        type: 'date',
       },
       [
         {
-          id: Const.MEM_COL.AMOUNT,
+          id: MEM_COL.AMOUNT,
           label: 'Amount',
-          value: edtRow[Const.MEM_COL.AMOUNT],
-          type: Const.INPUT_TYPE.TEL,
-          initValue: defRow[Const.MEM_COL.AMOUNT],
+          type: 'tel',
           placeholder: 'Ex. -(200+500)',
-          forbiddenChars: Const.INPUT_RESTRICTIONS.AMT,
+          forbiddenChars: INPUT_RESTRICTIONS.AMT,
           setter: calcResultSetter,
-          hide: !validChkArr.includes(DSP_COLS.AMOUNT),
         },
         {
           // 計算結果表示用
-          id: DIALOG_INPUT_ID.CALC_RESULT,
-          label: 'Calc Result',
-          value: Util.cvtNumToPrice(
-            Util.calcResult(edtRow[Const.MEM_COL.AMOUNT]),
-          ),
-          readonly: true,
-          initValue: defRow[Const.MEM_COL.AMOUNT],
+          id: 'calcResult',
           notReturn: true,
-          hide: !validChkArr.includes(DSP_COLS.AMOUNT),
         },
       ],
       {
-        id: Const.MEM_COL.STATUS,
+        id: MEM_COL.STATUS,
         label: 'Status',
-        value: edtRow[Const.MEM_COL.STATUS],
-        type: Const.INPUT_TYPE.SELECT,
-        options: Const.COMP_STATUS_LIST,
-        initValue: defRow[Const.MEM_COL.STATUS],
-        hide: !validChkArr.includes(DSP_COLS.STATUS),
-        setter: (form: FormRecord<FormCtrl>): void => {
-          const status = Number(form.get(Const.MEM_COL.STATUS)?.value);
-          const validOffSts = [
-            Const.COMP_STATUS.CANCELED,
-            Const.COMP_STATUS.CLOSE,
-          ] as number[];
-          form
-            .get(Const.MEM_COL.VALID)
-            ?.setValue(!validOffSts.includes(status), {
-              emitEvent: false,
-            });
-        },
+        type: 'select',
+        options: COMP_STATUS_LIST,
+        defVal: COMP_STATUS.OPEN,
+        setter: validSetter,
       },
-      // {
-      //   id: Const.MEM_COL.COMPLETE_DATE,
-      //   label: 'Complete Date',
-      //   value: edtRow[Const.MEM_COL.COMPLETE_DATE],
-      //   type: Const.INPUT_TYPE.DATE,
-      //   initValue: defRow[Const.MEM_COL.COMPLETE_DATE],
-      //   hide: !validChkArr.includes(DSP_COLS.COMPLETE_DATE),
-      // },
       {
-        id: Const.MEM_COL.VALID,
+        id: MEM_COL.VALID,
         label: 'Valid',
-        value: edtRow[Const.MEM_COL.VALID],
-        type: Const.INPUT_TYPE.TOGGLE,
-        initValue: defRow[Const.MEM_COL.VALID],
-        hide: true,
+        type: 'toggle',
       },
       {
-        id: Const.MEM_COL.UPD_DATE_TIME,
+        id: MEM_COL.UPD_DATE_TIME,
         label: 'Upd Date',
-        value: edtRow[Const.MEM_COL.UPD_DATE_TIME],
-        disabled: true,
-        initValue: defRow[Const.MEM_COL.UPD_DATE_TIME],
       },
       {
-        id: Const.MEM_COL.MODE,
+        id: MEM_COL.MODE,
         label: 'Mode',
-        value: Const.MEMO_MODE.DETAIL,
-        initValue: Const.MEMO_MODE.DETAIL,
-        hide: true,
-        disabled: true,
+        defVal: MEMO_MODE.DETAIL,
       },
     ];
 
-    return {
-      title: `${Util.getTblName(tbl)} Detail`,
-      datas: inDatas,
-      option: { sameDataOk: true },
+    /*************************
+     * スキーマ
+     *************************/
+    const parentRow = allTblRows[tbl].find(
+      (row) => row[MEM_COL.ID] === option.fltKey,
+    );
+    const validCols = (parentRow?.[MEM_COL.VALID_COLUMNS] ?? []) as ValType[];
+    const schema: BodyParamSchema = (tree) => {
+      required(tree[MEM_COL.DETAIL]);
+      disabled(tree[MEM_COL.LABEL]);
+      disabled(tree['calcResult']);
+      disabled(tree[MEM_COL.UPD_DATE_TIME]);
+      disabled(tree[MEM_COL.MODE]);
+      hidden(tree[MEM_COL.LABEL], (_) => true);
+      hidden(tree[MEM_COL.DATE], (_) => !validCols.includes(DSP_COLS.DATE));
+      hidden(tree[MEM_COL.AMOUNT], (_) => !validCols.includes(DSP_COLS.AMOUNT));
+      hidden(tree['calcResult'], (_) => !validCols.includes(DSP_COLS.AMOUNT));
+      hidden(tree[MEM_COL.STATUS], (_) => !validCols.includes(DSP_COLS.STATUS));
+      hidden(tree[MEM_COL.VALID], (_) => true);
+      hidden(tree[MEM_COL.MODE], (_) => true);
+    };
+
+    /*************************
+     * ボタン
+     *************************/
+    const buttons: DialogButton = {
+      del: {
+        status: DIALOG_STATUS.DEL_PLUS,
+      },
+    };
+
+    // ダイアログパラメータ
+    const input: DialogCustomInputExt = {
+      data,
+      param: {
+        header: {
+          title: 'Memo Detail',
+        },
+        body: {
+          items,
+          schema,
+        },
+        footer: {
+          buttons,
+        },
+      },
+    };
+
+    return input;
+  };
+
+  /**
+   * 計算結果 setter 作成処理
+   * @returns 計算結果 setter
+   */
+  private readonly createCalcResultSetter = (): InputItemSetter => {
+    return ({ form }) => {
+      const amount = form[MEM_COL.AMOUNT]().value();
+      const val = cvtNumToPrice(calcResult(amount as string));
+
+      form['calcResult']().value.set(val);
     };
   };
 
   /**
-   * 入力項目反映(行編集Emitterデータ作成)
-   * @param edtRows
-   * @param outDatas
-   * @param option
-   * @returns 行データ項目追加後データ
+   * 出力データ作成処理
+   * @param procInput
+   * @returns 出力データ
    */
-  protected override readonly reflectRows = (
-    edtRows: Row[],
-    outDatas: DialogOutputData[],
-    option: InputOption,
+  protected override readonly createOutputRows = (
+    procInput: OpenDialogProcOutput,
   ): Row[] => {
-    switch (option.type) {
-      // 一覧データ編集時
-      case Const.MEMO_MODE.LIST:
-        return this.reflectRowsDef(edtRows, outDatas);
-      // 詳細データ編集時
-      case Const.MEMO_MODE.DETAIL:
-        const newDatasDef = this.reflectRowsDef(edtRows, outDatas);
-        // 金額(数値)設定
-        newDatasDef[0][Const.MEM_COL.AMOUNT_NUM] = Util.calcResult(
-          newDatasDef[0][Const.MEM_COL.AMOUNT],
-        );
-        return newDatasDef;
-      // デフォルト
-      default:
-        return [];
+    const type = procInput?.option?.type;
+    if (type in this.funcByInputOptionType) {
+      return this.funcByInputOptionType[type].output(procInput);
+    } else {
+      throw new Error('Invalid input option type');
     }
+  };
+
+  /**
+   * 出力データ作成処理(一覧)
+   * @param procInput
+   * @returns 出力データ
+   */
+  private readonly createOutputRowsList = (
+    procInput: OpenDialogProcOutput,
+  ): Row[] => {
+    return this.cvtOutputDatasToRows(procInput);
+  };
+
+  /**
+   * 出力データ作成処理(詳細)
+   * @param procInput
+   * @returns 出力データ
+   */
+  private readonly createOutputRowsDetail = (
+    procInput: OpenDialogProcOutput,
+  ): Row[] => {
+    const rows = this.cvtOutputDatasToRows(procInput);
+    // 金額(数値)設定
+    rows[0][MEM_COL.AMOUNT_NUM] = calcResult(rows[0][MEM_COL.AMOUNT]);
+    return rows;
   };
 
   /**
    * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
-   * @param status
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param rowIds
-   * @returns
+   * @param procInput
+   * @returns 行編集データ
    */
-  protected override readonly getRowEdts = (
-    status: DialogStatus,
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    rowIds = new Set<ValType>(),
+  protected override readonly createCustomRowEdt = (
+    procInput: OpenDialogProcRowEdt,
   ): RowEdt[] => {
+    const { allTblRows, tbl, outputRows, rowIds, status } = procInput;
     const rowEdt: RowEdt[] = [];
     if (status === DIALOG_STATUS.DEL_PLUS) {
       // 対象データのID一覧を取得
-      const tgtIds = edtRows.map((row) => row[Const.MEM_COL.ID]);
+      const targetIds = outputRows.map((row) => row[MEM_COL.ID]);
       // 一覧データの削除
-      rowEdt.push(Util.getRowEdtDel(tbl, tgtIds, rowIds));
+      rowEdt.push(getRowEdtDel(tbl, targetIds, rowIds));
       // 関連する詳細データの取得
-      const detailIds = tblMap[tbl]
+      const detailIds = allTblRows[tbl]
         .filter(
           (row) =>
-            row[Const.MEM_COL.MODE] === Const.MEMO_MODE.DETAIL &&
-            tgtIds.includes(row[Const.MEM_COL.LABEL]),
+            row[MEM_COL.MODE] === MEMO_MODE.DETAIL &&
+            targetIds.includes(row[MEM_COL.LABEL]),
         )
-        .map((row) => row[Const.MEM_COL.ID]);
+        .map((row) => row[MEM_COL.ID]);
       // 詳細データの削除
-      rowEdt.push(Util.getRowEdtDel(tbl, detailIds, rowIds));
+      rowEdt.push(getRowEdtDel(tbl, detailIds, rowIds));
     }
     return [...rowEdt];
+  };
+
+  /**
+   * 入力オプションタイプ別の処理関数マップ
+   */
+  private readonly funcByInputOptionType: Record<
+    string,
+    {
+      input: (procInput: OpenDialogProcInput) => DialogCustomInputExt;
+      output: (procInput: OpenDialogProcOutput) => Row[];
+    }
+  > = {
+    // 一覧データ編集
+    [MEMO_MODE.LIST]: {
+      input: this.createDialogInputDataList,
+      output: this.createOutputRowsList,
+    },
+    // 詳細データ編集
+    [MEMO_MODE.DETAIL]: {
+      input: this.createDialogInputDataDetail,
+      output: this.createOutputRowsDetail,
+    },
   };
 }

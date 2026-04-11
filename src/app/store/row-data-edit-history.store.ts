@@ -12,9 +12,11 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap, tap } from 'rxjs';
 import { Hist } from 'src/app/domain/row-data-edit-history';
-import * as Const from 'src/app/shared/constants/constants';
-import { RowEdt } from 'src/app/shared/constants/types';
 import { ApiService } from 'src/app/shared/services/api.service';
+import { RowEdt } from 'src/app/shared/utils/util-row';
+
+/** 履歴保持最大件数 */
+const HIST_MAX_LEN = 30;
 
 /** State */
 type HistState = {
@@ -118,9 +120,9 @@ const delHist = (): PartialStateUpdater<{ hist: Hist }> => (state) => {
   hist.rd.length = hist.ix;
   hist.rd.push([]);
 
-  if (hist.ix >= Const.HIST_MAX_LEN) {
+  if (hist.ix >= HIST_MAX_LEN) {
     // 履歴保持最大数に達した場合
-    for (hist.ix; hist.ix > Const.HIST_MAX_LEN - 1; hist.ix--) {
+    for (hist.ix; hist.ix > HIST_MAX_LEN - 1; hist.ix--) {
       hist.ud.shift();
       hist.rd.shift();
     }

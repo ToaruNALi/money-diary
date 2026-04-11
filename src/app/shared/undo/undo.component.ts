@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  input,
-  output,
-} from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { Hist } from 'src/app/domain/row-data-edit-history';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
 
@@ -13,7 +7,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   imports: [SharedCommonModule],
   templateUrl: './undo.component.html',
   styleUrl: './undo.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UndoComponent {
   readonly hist = input.required<Hist>();

@@ -3,7 +3,15 @@ import { Observable, of } from 'rxjs';
 import { TblInf } from 'src/app/domain/row-data';
 import { Hist } from 'src/app/domain/row-data-edit-history';
 import { ScrInf } from 'src/app/domain/screen-info';
-import * as Const from 'src/app/shared/constants/constants';
+import { TBL } from 'src/app/shared/utils/util-row';
+
+/** ローカルストレージ キーリスト */
+const SAVE_STG = {
+  ...TBL,
+  TBL_INF: 'tblInf',
+  SCR_INF: 'scrInf',
+  HIST_INF: 'histInf',
+} as const;
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +22,7 @@ export class ApiService {
    * @returns Observable<TblMap>
    */
   readonly loadTblInf = (): Observable<TblInf> => {
-    const item = localStorage.getItem(Const.SAVE_STG.TBL_INF);
+    const item = localStorage.getItem(SAVE_STG.TBL_INF);
     const data = (!!item ? JSON.parse(item) : {}) as TblInf;
     return of(data);
   };
@@ -26,7 +34,7 @@ export class ApiService {
    */
   readonly saveTblInf = (inf: TblInf): Observable<boolean> => {
     const item = JSON.stringify(inf);
-    localStorage.setItem(Const.SAVE_STG.TBL_INF, item);
+    localStorage.setItem(SAVE_STG.TBL_INF, item);
     return of(true);
   };
 
@@ -35,7 +43,7 @@ export class ApiService {
    * @returns Observable<ScrInf>
    */
   readonly loadScrInf = (): Observable<ScrInf> => {
-    const item = localStorage.getItem(Const.SAVE_STG.SCR_INF);
+    const item = localStorage.getItem(SAVE_STG.SCR_INF);
     const data = (!!item ? JSON.parse(item) : {}) as ScrInf;
     return of(data);
   };
@@ -47,7 +55,7 @@ export class ApiService {
    */
   readonly saveScrInf = (inf: ScrInf): Observable<boolean> => {
     const item = JSON.stringify(inf);
-    localStorage.setItem(Const.SAVE_STG.SCR_INF, item);
+    localStorage.setItem(SAVE_STG.SCR_INF, item);
     return of(true);
   };
 
@@ -56,7 +64,7 @@ export class ApiService {
    * @returns Observable<Hist>
    */
   readonly loadHist = (): Observable<Hist> => {
-    const item = localStorage.getItem(Const.SAVE_STG.HIST_INF);
+    const item = localStorage.getItem(SAVE_STG.HIST_INF);
     const data = (!!item ? JSON.parse(item) : {}) as Hist;
     return of(data);
   };
@@ -68,7 +76,7 @@ export class ApiService {
    */
   readonly saveHist = (hist: Hist): Observable<boolean> => {
     const item = JSON.stringify(hist);
-    localStorage.setItem(Const.SAVE_STG.HIST_INF, item);
+    localStorage.setItem(SAVE_STG.HIST_INF, item);
     return of(true);
   };
 }

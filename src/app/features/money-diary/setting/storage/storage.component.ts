@@ -1,23 +1,31 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { CellContextMenuEvent } from 'ag-grid-community';
 import { addDays } from 'date-fns';
 import { Row } from 'src/app/domain/row-data';
 import { SettingComponent } from 'src/app/features/money-diary/setting/setting.component';
 import { StorageUsecase } from 'src/app/features/money-diary/setting/storage/storage.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
 import { GridComponent } from 'src/app/shared/grid/grid.component';
+import {
+  NO_SELECT_VAL,
+  ValType,
+} from 'src/app/shared/signal-form/signal-form.component';
+import {
+  CMN_COL,
+  cvtDateToStr,
+  INPUT_MODE,
+  MAIN_COL,
+  STG_COL,
+  TBL,
+} from 'src/app/shared/utils/util-row';
+import { SCR } from 'src/app/shared/utils/util-screen';
 
 @Component({
   selector: 'app-storage',
   imports: [GridComponent],
   providers: [StorageUsecase],
   templateUrl: '../setting.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StorageComponent extends SettingComponent {
-  protected override inputColId = Const.MAIN_COL.STORAGE;
   constructor(protected override readonly usecase: StorageUsecase) {
     super(usecase);
   }
@@ -28,9 +36,9 @@ export class StorageComponent extends SettingComponent {
   protected override readonly onCellContextMenu = (
     event: CellContextMenuEvent<Row, ValType>,
   ): void => {
-    const id = event.data?.[Const.CMN_COL.ID];
-    const label = event.data?.[Const.CMN_COL.LABEL];
-    if (id === Const.MARK.NO_SELECT.id || !label) {
+    const id = event.data?.[CMN_COL.ID];
+    const label = event.data?.[CMN_COL.LABEL];
+    if (id === NO_SELECT_VAL.ID || !label) {
       // 未選択項目とラベルなし項目は対象外
       return;
     }
@@ -48,7 +56,7 @@ export class StorageComponent extends SettingComponent {
       // 選択あり
       return {
         conditions: selectDatas.map((dt) => ({
-          filter: dt[Const.STG_COL.LABEL],
+          filter: dt[STG_COL.LABEL],
           filterType: 'text',
           type: 'equals',
         })),
@@ -57,10 +65,10 @@ export class StorageComponent extends SettingComponent {
       };
     })();
 
-    const today = Util.getDate(addDays(new Date(), 1));
+    const today = cvtDateToStr(addDays(new Date(), 1));
     const colId = event.column.getId();
     const filterPayDate = (() => {
-      if (colId === Const.STG_COL.SAVINGS) {
+      if (colId === STG_COL.SAVINGS) {
         // 現時点での残高
         return {
           dateFrom: today,
@@ -74,18 +82,18 @@ export class StorageComponent extends SettingComponent {
 
     // フィルターモデル設定
     this.filterModelChange.emit({
-      tbl: Const.TBL.MAIN,
+      tbl: TBL.MAIN,
       filter: {
-        [Const.MAIN_COL.STORAGE]: filterStorage,
-        [Const.MAIN_COL.PAY_DATE]: filterPayDate,
-        [Const.MAIN_COL.INPUT_MODE]: {
-          filter: Const.INPUT_MODE.ALL_REQ,
+        [MAIN_COL.STORAGE]: filterStorage,
+        [MAIN_COL.PAY_DATE]: filterPayDate,
+        [MAIN_COL.INPUT_MODE]: {
+          filter: INPUT_MODE.ALL_REQ,
           filterType: 'number',
           type: 'equal',
         },
       },
     });
     // 入力画面に遷移
-    this.scrIdSet.emit(Const.SCR.MAIN);
+    this.scrIdSet.emit(SCR.MAIN);
   };
 }

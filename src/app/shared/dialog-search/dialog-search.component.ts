@@ -1,20 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  Inject,
-  output,
-  Signal,
-} from '@angular/core';
+import { Component, inject, Inject, output, Signal } from '@angular/core';
 import { AbstractControl, FormBuilder } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DialogCommonModule } from 'src/app/shared/dialog-common.module';
-import { FormTextComponent } from 'src/app/shared/forms/form-text/form-text.component';
-import {
-  FormInputData,
-  SelectOption,
-} from 'src/app/shared/forms/forms.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import {
+  FormInputItem,
+  SelectOption,
+} from 'src/app/shared/signal-form/signal-form.component';
 
 export type DialogSearchInput = {
   val: string;
@@ -23,10 +15,9 @@ export type DialogSearchInput = {
 };
 
 @Component({
-  imports: [SharedCommonModule, DialogCommonModule, FormTextComponent],
+  imports: [SharedCommonModule, DialogCommonModule],
   templateUrl: './dialog-search.component.html',
   styleUrl: './dialog-search.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DialogSearchComponent {
   private readonly fb = inject(FormBuilder);
@@ -34,8 +25,7 @@ export class DialogSearchComponent {
   readonly emitter = output<string>();
   readonly clickEmitter = output<boolean>();
 
-  protected readonly txtData: FormInputData = {
-    autocomp: this.data.opts.length > 0,
+  protected readonly txtData: FormInputItem = {
     options: this.data.opts,
   };
   protected readonly txtForm: AbstractControl = this.fb.control(this.data.val);
@@ -46,6 +36,7 @@ export class DialogSearchComponent {
     private readonly data: DialogSearchInput,
   ) {}
 
+  // TODO: Form -> SignalForm用の入力フォームに切り替える
   ngOnInit() {
     this.txtForm.valueChanges.subscribe((res) => this.emitter.emit(res ?? ''));
   }

@@ -1,16 +1,11 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CellClickedEvent } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { ScheduleUsecase } from 'src/app/features/money-diary/schedule/schedule.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
 import { GridComponent, GridInput } from 'src/app/shared/grid/grid.component';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { CMN_COL } from 'src/app/shared/utils/util-row';
 import { SharedCommonModule } from '../../../shared/shared-common.module';
 
 @Component({
@@ -19,7 +14,6 @@ import { SharedCommonModule } from '../../../shared/shared-common.module';
   providers: [ScheduleUsecase],
   templateUrl: './schedule.component.html',
   styleUrl: './schedule.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScheduleComponent extends MoneyDiaryBaseComponent {
   /** usecase */
@@ -46,7 +40,7 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
     this.usecase.getRows(this.mainRows(), this.inputRows()),
   );
   /** セルクリック禁止列 */
-  private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
+  private readonly cellClickForbCols = signal([CMN_COL.LABEL]);
 
   /**
    * セルクリック時
@@ -55,14 +49,14 @@ export class ScheduleComponent extends MoneyDiaryBaseComponent {
   protected readonly onClickCell = async (
     event: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
-    // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      [event.data],
-      this.tbl(),
-      this.tblMap(),
-    );
-    if (!!edtInf) {
-      this.rowEdt.emit(edtInf);
-    }
+    // // 行データ編集処理
+    // const edtInf = await this.usecase.procEditRows(
+    //   [event.data],
+    //   this.tbl(),
+    //   this.tblMap(),
+    // );
+    // if (!!edtInf) {
+    //   this.rowEdt.emit(edtInf);
+    // }
   };
 }

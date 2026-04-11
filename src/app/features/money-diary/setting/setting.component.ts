@@ -1,15 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CellClickedEvent, CellContextMenuEvent } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { MainCol, ValType } from 'src/app/shared/constants/types';
 import {
   GridBtm,
   GridComponent,
@@ -17,11 +10,12 @@ import {
   GridOptInput,
   GridTop,
 } from 'src/app/shared/grid/grid.component';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import { CMN_COL } from 'src/app/shared/utils/util-row';
 
 @Component({
   imports: [GridComponent],
   templateUrl: './setting.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export abstract class SettingComponent extends MoneyDiaryBaseComponent {
   /** Grid入力データ */
@@ -73,10 +67,7 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
     },
   });
   /** セルクリック禁止列 */
-  private readonly cellClickForbCols = signal([Const.CMN_COL.LABEL]);
-
-  /** 入力データ関連列ID */
-  protected abstract readonly inputColId: MainCol;
+  private readonly cellClickForbCols = signal([CMN_COL.LABEL]);
 
   constructor(protected override readonly usecase: SettingUsecase) {
     super(usecase);
@@ -90,12 +81,11 @@ export abstract class SettingComponent extends MoneyDiaryBaseComponent {
     event?: CellClickedEvent<Row, ValType>,
   ): Promise<void> => {
     // 行データ編集処理
-    const edtInf = await this.usecase.procEditRows(
-      !!event ? [event.data] : [],
-      this.tbl(),
-      this.tblMap(),
-      this.inputColId,
-    );
+    const edtInf = await this.usecase.openDialog({
+      tbl: this.tbl(),
+      allTblRows: this.tblMap(),
+      selectedRows: event?.data,
+    });
     if (!!edtInf) {
       this.rowEdt.emit(edtInf);
     }

@@ -2,11 +2,20 @@ import { Injectable } from '@angular/core';
 import { ColDef, ValueSetterParams } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { SettingUsecase } from 'src/app/features/money-diary/setting/setting.usecase';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
-import { DialogInputDatas } from 'src/app/shared/dialog-input/dialog-input.component';
+import { InputItems } from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
 import { MoneyStatus } from 'src/app/shared/money-status/money-status.component';
+import {
+  NO_SELECT_VAL,
+  ValType,
+} from 'src/app/shared/signal-form/signal-form.component';
+import { cvtNumToPrice, isValidInt } from 'src/app/shared/utils/util-formula';
+import {
+  checkInputMode,
+  CMN_COL,
+  INPUT_MODE,
+  MAIN_COL,
+  RMK_COL,
+} from 'src/app/shared/utils/util-row';
 
 @Injectable()
 export class RemarkUsecase extends SettingUsecase {
@@ -21,46 +30,61 @@ export class RemarkUsecase extends SettingUsecase {
     ...this.addCmnColDefs([
       {
         headerName: 'Remark',
-        field: Const.CMN_COL.LABEL,
+        field: CMN_COL.LABEL,
         cellEditor: 'agTextCellEditor',
         rowDrag: true,
         pinned: 'left',
         filter: false,
         width: 140,
         valueSetter: (params) => this.amountSetter(params, inputDatas),
-        cellStyle: Util.getCellCmnStyle,
+        cellStyle: this.getCellCmnStyle,
       },
       {
         headerName: 'Memo',
-        field: Const.RMK_COL.MEMO,
+        field: RMK_COL.MEMO,
         cellEditor: 'agLargeTextCellEditor',
         filter: false,
         width: 220,
       },
       {
         headerName: 'Inc And Exp',
-        field: Const.RMK_COL.INC_AND_EXP,
+        field: RMK_COL.INC_AND_EXP,
         type: 'numericCol',
         filter: false,
         width: 110,
+        comparator: this.compAmt,
+        valueFormatter: (params) => cvtNumToPrice(params.value),
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
       {
         headerName: 'Income',
-        field: Const.RMK_COL.INCOME,
+        field: RMK_COL.INCOME,
         type: 'numericCol',
         filter: false,
         width: 110,
+        comparator: this.compAmt,
+        valueFormatter: (params) => cvtNumToPrice(params.value),
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
       {
         headerName: 'Expenses',
-        field: Const.RMK_COL.EXPENSES,
+        field: RMK_COL.EXPENSES,
         type: 'numericCol',
         filter: false,
         width: 110,
+        comparator: this.compAmt,
+        valueFormatter: (params) => cvtNumToPrice(params.value),
+        cellStyle: (params) => this.getStylePrice(params.value),
       },
     ]),
   ];
 
+  /**
+   * 金額Setter
+   * @param params
+   * @param inputDatas
+   * @returns Setter
+   */
   private readonly amountSetter = (
     params: ValueSetterParams<Row, ValType>,
     inputDatas: Row[],
@@ -70,27 +94,39 @@ export class RemarkUsecase extends SettingUsecase {
     }
 
     [
-      params.data[Const.RMK_COL.INCOME],
-      params.data[Const.RMK_COL.EXPENSES],
-      params.data[Const.RMK_COL.INC_AND_EXP],
-    ] = this.getIncAndExp(inputDatas, params.data[Const.CMN_COL.ID]);
+      params.data[RMK_COL.INCOME],
+      params.data[RMK_COL.EXPENSES],
+      params.data[RMK_COL.INC_AND_EXP],
+    ] = this.getIncAndExp(inputDatas, params.data[CMN_COL.ID]);
     return true;
   };
 
+  /**
+   * 行データ取得
+   * @param rows
+   * @param inputDatas
+   * @returns 行データ
+   */
   override readonly getRows = (rows: Row[], inputDatas: Row[]): Row[] => {
     const datas = this.getRowsCmn(rows);
 
     for (const data of datas) {
       [
-        data[Const.RMK_COL.INCOME],
-        data[Const.RMK_COL.EXPENSES],
-        data[Const.RMK_COL.INC_AND_EXP],
-      ] = this.getIncAndExp(inputDatas, data[Const.CMN_COL.ID]);
+        data[RMK_COL.INCOME],
+        data[RMK_COL.EXPENSES],
+        data[RMK_COL.INC_AND_EXP],
+      ] = this.getIncAndExp(inputDatas, data[CMN_COL.ID]);
     }
 
     return datas;
   };
 
+  /**
+   * 収支を計算して返却する
+   * @param rows
+   * @param remarkId
+   * @returns 収支
+   */
   private readonly getIncAndExp = (
     rows: Row[],
     remarkId: ValType,
@@ -98,17 +134,17 @@ export class RemarkUsecase extends SettingUsecase {
     let income = 0;
     let expenses = 0;
 
-    if (remarkId === Const.MARK.NO_SELECT.id) {
+    if (remarkId === NO_SELECT_VAL.ID) {
       // 未選択項目は計算対象外
       return [0, 0, 0];
     }
 
     for (const data of rows) {
-      const num = data[Const.MAIN_COL.AMOUNT_NUM];
+      const num = data[MAIN_COL.AMOUNT_NUM];
       if (
-        Util.checkInputMode(data, Const.INPUT_MODE.ALL_REQ) &&
-        data[Const.MAIN_COL.REMARK] === remarkId &&
-        Util.isValidInt(num)
+        checkInputMode(data, INPUT_MODE.ALL_REQ) &&
+        data[MAIN_COL.REMARK] === remarkId &&
+        isValidInt(num)
       ) {
         if (num > 0) {
           income += num;
@@ -124,14 +160,14 @@ export class RemarkUsecase extends SettingUsecase {
   /**
    * 選択行の金額を計算して返却する
    * @param rows
-   * @returns
+   * @returns 選択行のステータス
    */
   override readonly calcSelStatus = (rows: Row[]): MoneyStatus[] => {
     const statusInf = [
       { label: 'Cnt', id: '' },
-      { label: 'Sum', id: Const.RMK_COL.INC_AND_EXP },
-      { label: 'Inc', id: Const.RMK_COL.INCOME },
-      { label: 'Exp', id: Const.RMK_COL.EXPENSES },
+      { label: 'Sum', id: RMK_COL.INC_AND_EXP },
+      { label: 'Inc', id: RMK_COL.INCOME },
+      { label: 'Exp', id: RMK_COL.EXPENSES },
     ];
     const status = statusInf.map((info) => ({ ...info, amount: 0 }));
     // 収支計算
@@ -141,7 +177,7 @@ export class RemarkUsecase extends SettingUsecase {
           continue;
         }
         const num = Number(data[st.id]);
-        if (!Util.isValidInt(num)) {
+        if (!isValidInt(num)) {
           continue;
         }
         st.amount += num;
@@ -149,26 +185,27 @@ export class RemarkUsecase extends SettingUsecase {
     }
     return status.map((st, idx) => ({
       label: st.label,
-      value: !idx ? rows.length.toString() : Util.cvtNumToPrice(st.amount),
+      value: !idx ? rows.length.toString() : cvtNumToPrice(st.amount),
     }));
   };
 
   /**
-   * データの入力を行う
-   * @param row
-   * @param initValues
-   * @returns 入力データ
+   * ダイアログ表示項目返却(custom)
+   * @param defRow
+   * @returns 表示項目
    */
-  override readonly getDialogInputDataCustom = (
-    row: Row,
-    initValues: Row,
-  ): DialogInputDatas => [
+  protected override readonly getDialogInputItemsCustom = (
+    defRow: Row,
+  ): InputItems => [
     {
-      id: Const.RMK_COL.MEMO,
+      id: RMK_COL.MEMO,
       label: 'Memo',
-      value: row[Const.RMK_COL.MEMO],
-      type: Const.INPUT_TYPE.TEXTAREA,
-      initValue: initValues[Const.RMK_COL.MEMO],
+      type: 'textarea',
     },
   ];
+
+  /**
+   * ダイアログスキーマ返却(custom)
+   */
+  protected override readonly getDialogSchemaCustom = undefined;
 }

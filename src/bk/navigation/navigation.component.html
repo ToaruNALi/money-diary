@@ -1,0 +1,77 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    fixedInViewport
+    [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="false"
+  >
+    <mat-toolbar>
+      <span style="flex: 1 1 auto" (click)="drawer.close()"> Menu </span>
+      <button mat-icon-button (click)="drawer.close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-toolbar>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/money-diary/main" (click)="drawer.close()"
+        >Money Diary</a
+      >
+      <a
+        mat-list-item
+        routerLink="/money-diary/summary"
+        (click)="drawer.close()"
+        >Summary</a
+      >
+      <a
+        mat-list-item
+        routerLink="/money-diary/setting/storage"
+        (click)="drawer.close()"
+        >Storage</a
+      >
+      <a
+        mat-list-item
+        routerLink="/money-diary/setting/credit"
+        (click)="drawer.close()"
+        >Credit</a
+      >
+      <a
+        mat-list-item
+        routerLink="/money-diary/setting/item"
+        (click)="drawer.close()"
+        >Item</a
+      >
+      <a
+        mat-list-item
+        routerLink="/money-diary/setting/remark"
+        (click)="drawer.close()"
+        >Remark</a
+      >
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <!-- Add Content Here -->
+    <div class="main-container">
+      <ng-content></ng-content>
+    </div>
+    <mat-toolbar color="primary" class="mat-elevation-z8 toolbar-background">
+      <mat-toolbar-row>
+        @if (!drawer.opened) {
+          <button
+            type="button"
+            aria-label="Toggle sidenav"
+            mat-icon-button
+            (click)="drawer.toggle()"
+          >
+            <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+          </button>
+        }
+        <!-- <span>Money Diary</span> -->
+        <!-- <img src="/assets/logo.png" style="height: 1rem" /> -->
+        <!-- <span style="flex: 1 1 auto"></span> -->
+        <!-- <button mat-button class="mat-headline-4"> -->
+        <!-- <button mat-button><mat-icon>account_circle</mat-icon>test</button> -->
+      </mat-toolbar-row>
+    </mat-toolbar>
+  </mat-sidenav-content>
+</mat-sidenav-container>

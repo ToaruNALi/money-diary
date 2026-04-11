@@ -1,16 +1,8 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  signal,
-} from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CellClickedEvent, ColDef } from 'ag-grid-community';
 import { Row } from 'src/app/domain/row-data';
 import { MemoUsecase } from 'src/app/features/money-diary/memo/memo.usecase';
 import { MoneyDiaryBaseComponent } from 'src/app/features/money-diary/money-diary-base/money-diary-base.component';
-import * as Const from 'src/app/shared/constants/constants';
-import { ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
 import {
   GridBtm,
   GridComponent,
@@ -18,6 +10,14 @@ import {
   GridOptInput,
 } from 'src/app/shared/grid/grid.component';
 import { SharedCommonModule } from 'src/app/shared/shared-common.module';
+import { ValType } from 'src/app/shared/signal-form/signal-form.component';
+import {
+  checkInputMode,
+  INPUT_MODE,
+  MAIN_COL,
+  MEM_COL,
+  MEMO_MODE,
+} from 'src/app/shared/utils/util-row';
 
 @Component({
   selector: 'app-memo',
@@ -25,7 +25,6 @@ import { SharedCommonModule } from 'src/app/shared/shared-common.module';
   providers: [MemoUsecase],
   templateUrl: './memo.component.html',
   styleUrl: './memo.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MemoComponent extends MoneyDiaryBaseComponent {
   /** usecase */
@@ -63,15 +62,15 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
       if (!!this.rowsKey()) {
         // 詳細データ
         return (
-          (row[Const.MEM_COL.MODE] === Const.MEMO_MODE.DETAIL &&
-            row[Const.MEM_COL.LABEL] === this.rowsKey()) ||
-          row[Const.MEM_COL.INPUT_MODE] === Const.INPUT_MODE.NONE
+          (row[MEM_COL.MODE] === MEMO_MODE.DETAIL &&
+            row[MEM_COL.LABEL] === this.rowsKey()) ||
+          row[MEM_COL.INPUT_MODE] === INPUT_MODE.NONE
         );
       } else {
         // 一覧データ
         return (
-          row[Const.MEM_COL.MODE] === Const.MEMO_MODE.LIST ||
-          row[Const.MEM_COL.INPUT_MODE] === Const.INPUT_MODE.NONE
+          row[MEM_COL.MODE] === MEMO_MODE.LIST ||
+          row[MEM_COL.INPUT_MODE] === INPUT_MODE.NONE
         );
       }
     });
@@ -119,9 +118,9 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
       valid: true,
       dspOdr: 8,
       detail: [
-        { col: Const.MEM_COL.STATUS, asc: false },
-        { col: Const.MEM_COL.VALID },
-        { col: Const.MAIN_COL.DATE },
+        { col: MEM_COL.STATUS, asc: false },
+        { col: MEM_COL.VALID },
+        { col: MAIN_COL.DATE },
       ],
     },
     rowDrg: {
@@ -131,11 +130,11 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
   }));
   /** セルクリック禁止列 */
   private readonly cellClickForbCols = signal([
-    Const.MEM_COL.LABEL,
-    Const.MEM_COL.DETAIL_COUNT,
-    Const.MEM_COL.DISPLAY_COLUMNS,
-    Const.MEM_COL.VALID_COLUMNS,
-    Const.MEM_COL.DETAIL,
+    MEM_COL.LABEL,
+    MEM_COL.DETAIL_COUNT,
+    MEM_COL.DISPLAY_COLUMNS,
+    MEM_COL.VALID_COLUMNS,
+    MEM_COL.DETAIL,
   ]);
 
   /**
@@ -147,12 +146,12 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
   ): Promise<void> => {
     // 行データ編集処理
     const callProcEditRows = async (mode: string) => {
-      const edtInf = await this.usecase.procEditRows(
-        !!event ? [event.data] : [],
-        this.tbl(),
-        this.tblMap(),
-        { type: mode, fltKey: this.rowsKey() },
-      );
+      const edtInf = await this.usecase.openDialog({
+        tbl: this.tbl(),
+        allTblRows: this.tblMap(),
+        selectedRows: event?.data,
+        option: { type: mode, fltKey: this.rowsKey() },
+      });
       if (!!edtInf) {
         this.rowEdt.emit(edtInf.map((inf) => ({ ...inf, rk: this.rowsKey() })));
       }
@@ -160,22 +159,22 @@ export class MemoComponent extends MoneyDiaryBaseComponent {
 
     if (
       (!event && !this.rowsKey()) ||
-      (!!event && event.column.getId() === Const.MEM_COL.LABEL)
+      (!!event && event.column.getId() === MEM_COL.LABEL)
     ) {
       // 一覧データ編集
-      callProcEditRows(Const.MEMO_MODE.LIST);
+      callProcEditRows(MEMO_MODE.LIST);
     } else if (
       (!event && !!this.rowsKey()) ||
-      (!!event && event.column.getId() === Const.MEM_COL.DETAIL)
+      (!!event && event.column.getId() === MEM_COL.DETAIL)
     ) {
       // 詳細データ編集
-      callProcEditRows(Const.MEMO_MODE.DETAIL);
+      callProcEditRows(MEMO_MODE.DETAIL);
     } else if (!!event) {
-      if (Util.checkInputMode(event.data ?? {}, Const.INPUT_MODE.NONE)) {
+      if (checkInputMode(event.data ?? {}, INPUT_MODE.NONE)) {
         return;
       }
       // 詳細データに切り替える
-      this.edtRowsKey(event.data?.[Const.MEM_COL.ID]?.toString() ?? '');
+      this.edtRowsKey(event.data?.[MEM_COL.ID]?.toString() ?? '');
     }
   };
 }

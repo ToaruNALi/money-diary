@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -14,21 +13,20 @@ import {
 } from 'ag-grid-community';
 import { Row, TblMap } from 'src/app/domain/row-data';
 import { MoneyDiaryBaseUsecase } from 'src/app/features/money-diary/money-diary-base/money-diary-base.usecase';
-import * as Const from 'src/app/shared/constants/constants';
+import { GridInput } from 'src/app/shared/grid/grid.component';
 import {
   ColEdt,
   FilterEdt,
   FilterInputModel,
   RowEdt,
   RowsKeyEdt,
-  Scr,
+  TBL,
   Tbl,
-} from 'src/app/shared/constants/types';
-import { GridInput } from 'src/app/shared/grid/grid.component';
+} from 'src/app/shared/utils/util-row';
+import { Scr } from 'src/app/shared/utils/util-screen';
 
 @Component({
   template: '',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export abstract class MoneyDiaryBaseComponent {
   constructor(protected readonly usecase: MoneyDiaryBaseUsecase) {
@@ -77,16 +75,14 @@ export abstract class MoneyDiaryBaseComponent {
    ********************/
   /** 各行データ */
   protected readonly mainRows = computed(() => this.tblMap()[this.tbl()]);
-  protected readonly inputRows = computed(() => this.tblMap()[Const.TBL.MAIN]);
-  protected readonly stgRows = computed(() => this.tblMap()[Const.TBL.STORAGE]);
-  protected readonly crdRows = computed(() => this.tblMap()[Const.TBL.CREDIT]);
-  protected readonly itmRows = computed(() => this.tblMap()[Const.TBL.ITEM]);
-  protected readonly rmkRows = computed(() => this.tblMap()[Const.TBL.REMARK]);
-  protected readonly smrRows = computed(() => this.tblMap()[Const.TBL.SUMMARY]);
-  protected readonly scdRows = computed(
-    () => this.tblMap()[Const.TBL.SCHEDULE],
-  );
-  protected readonly memRows = computed(() => this.tblMap()[Const.TBL.MEMO]);
+  protected readonly inputRows = computed(() => this.tblMap()[TBL.MAIN]);
+  protected readonly stgRows = computed(() => this.tblMap()[TBL.STORAGE]);
+  protected readonly crdRows = computed(() => this.tblMap()[TBL.CREDIT]);
+  protected readonly itmRows = computed(() => this.tblMap()[TBL.ITEM]);
+  protected readonly rmkRows = computed(() => this.tblMap()[TBL.REMARK]);
+  protected readonly smrRows = computed(() => this.tblMap()[TBL.SUMMARY]);
+  protected readonly scdRows = computed(() => this.tblMap()[TBL.SCHEDULE]);
+  protected readonly memRows = computed(() => this.tblMap()[TBL.MEMO]);
   /** 列データ */
   protected readonly cols = computed(() => {
     const input = this.colData();
@@ -132,12 +128,11 @@ export abstract class MoneyDiaryBaseComponent {
   protected readonly onColumnHeaderContextMenu = async (
     _event: ColumnHeaderContextMenuEvent,
   ): Promise<void> => {
-    // 列データ編集処理
-    const edtInf = await this.usecase.procEditCol(this.cols());
-
-    if (!!edtInf) {
-      this.colChange.emit({ tbl: this.tbl(), cols: edtInf });
-    }
+    // TODO: 列データ編集処理
+    // const edtInf = await this.usecase.procEditCol(this.cols());
+    // if (!!edtInf) {
+    //   this.colChange.emit({ tbl: this.tbl(), cols: edtInf });
+    // }
   };
   /** データKey編集 */
   protected readonly edtRowsKey = (key: string, tbl = this.tbl()): void => {

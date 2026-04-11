@@ -1,6 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import {
+  CellClassParams,
+  CellStyle,
   ColDef,
   ColGroupDef,
   ValueFormatterParams,
@@ -8,29 +10,83 @@ import {
 } from 'ag-grid-community';
 import { lastValueFrom } from 'rxjs';
 import { Row, TblMap } from 'src/app/domain/row-data';
-import * as Const from 'src/app/shared/constants/constants';
-import { RowEdt, Tbl, ValType } from 'src/app/shared/constants/types';
-import * as Util from 'src/app/shared/constants/utils';
 import {
-  DIALOG_BUTTON,
-  DialogInput,
-  DialogInputButtonOption,
-  DialogInputComponent,
-  DialogInputDatas,
-  DialogOutput,
-  DialogOutputData,
-} from 'src/app/shared/dialog-input/dialog-input.component';
-import { SelectOption } from 'src/app/shared/forms/forms.component';
+  DIALOG_BUTTON_ID,
+  DIALOG_OUTPUT_STATUS,
+  DialogCustomInput,
+  DialogCustomInputComponent,
+  DialogCustomInputData,
+  DialogCustomOutput,
+} from 'src/app/shared/dialog-custom-input/dialog-custom-input.component';
+import { Overwrite } from 'src/app/shared/types/type-general';
+import { isValidInt } from 'src/app/shared/utils/util-formula';
 import {
-  DIALOG_STATUS,
-  DialogStatus,
-} from './../../../shared/dialog-input/dialog-input.component';
+  CMN_COL,
+  cvtDateToStr,
+  DATE_FMT,
+  getColValsByTblAndCustomId,
+  getRowEdtAdd,
+  getRowEdtAddNoSel,
+  getRowEdtDel,
+  getRowEdtUpd,
+  getRowIdsSet,
+  RowEdt,
+  Tbl,
+} from 'src/app/shared/utils/util-row';
 import { MoneyStatus } from './../../../shared/money-status/money-status.component';
+import {
+  FormValType,
+  NO_SELECT_VAL,
+  SelectOption,
+  ValType,
+} from './../../../shared/signal-form/signal-form.component';
+
+/** ダイアログオープン処理 初期入力パラメータ */
+export type OpenDialogInitProcInput = {
+  /** 対象TBL */
+  tbl: Tbl;
+  /** 全TBLデータ */
+  allTblRows: TblMap;
+  /** 選択行 */
+  selectedRows?: Row | Row[];
+  /** オプション */
+  option?: any;
+};
+
+/** ダイアログオープン処理 入力パラメータ */
+export type OpenDialogProcInput = Overwrite<
+  OpenDialogInitProcInput,
+  { selectedRows: Row[] }
+>;
+
+/** ダイアログオープン処理 出力パラメータ */
+export type OpenDialogProcOutput = OpenDialogProcInput & {
+  outputDatas: DialogOutputValidData[];
+};
+
+/** ダイアログオープン処理 行編集パラメータ */
+export type OpenDialogProcRowEdt = OpenDialogProcInput & {
+  status: string;
+  rowIds?: Set<ValType>;
+  outputRows: Row[];
+};
+
+/** 拡張ダイアログ入力パラメータ */
+export type DialogCustomInputExt = Overwrite<
+  DialogCustomInput,
+  { data: DialogCustomInputData }
+>;
+
+/** ダイアログ有効データ */
+type DialogOutputValidData = {
+  key: string;
+  value: ValType;
+};
 
 @Injectable()
 export abstract class MoneyDiaryBaseUsecase {
   /** ダイアログ */
-  protected readonly dialog = inject(MatDialog);
+  protected readonly customDialog = inject(MatDialog);
 
   /**
    * 列定義取得
@@ -49,32 +105,32 @@ export abstract class MoneyDiaryBaseUsecase {
   ): ColDef<Row, ValType>[] => [
     {
       headerName: 'Id',
-      field: Const.CMN_COL.ID,
+      field: CMN_COL.ID,
       cellEditor: 'agTextCellEditor',
       hide: true,
     },
     ...colDefs,
     {
       headerName: 'Valid',
-      field: Const.CMN_COL.VALID,
+      field: CMN_COL.VALID,
       cellEditor: 'agCheckboxCellEditor',
       hide: true,
     },
     {
       headerName: 'Upd Date',
-      field: Const.CMN_COL.UPD_DATE_TIME,
+      field: CMN_COL.UPD_DATE_TIME,
       cellEditor: 'agTextCellEditor',
       hide: true,
     },
     {
       headerName: 'Input Mode',
-      field: Const.CMN_COL.INPUT_MODE,
+      field: CMN_COL.INPUT_MODE,
       cellEditor: 'agNumberCellEditor',
       hide: true,
     },
     {
       headerName: 'Update',
-      field: Const.CMN_COL.UPDATE,
+      field: CMN_COL.UPDATE,
       cellEditor: 'agCheckboxCellEditor',
       hide: true,
     },
@@ -93,7 +149,7 @@ export abstract class MoneyDiaryBaseUsecase {
     }
     const colId = params.column.getId();
     params.data[colId] = params.newValue;
-    params.data[Const.CMN_COL.UPDATE] = true;
+    params.data[CMN_COL.UPDATE] = true;
     return true;
   };
 
@@ -110,7 +166,7 @@ export abstract class MoneyDiaryBaseUsecase {
       return '';
     }
 
-    return Util.getDate(new Date(val), Const.DATE_FMT.YY_MM_DD);
+    return cvtDateToStr(new Date(val), DATE_FMT.YY_MM_DD);
   };
 
   /**
@@ -125,7 +181,7 @@ export abstract class MoneyDiaryBaseUsecase {
   ): string => {
     if (Array.isArray(ids)) {
       return ids
-        .map((id) => options.find((opt) => opt.id === id)?.lb ?? '')
+        .map((id) => options.find((opt) => opt.id === id)?.label ?? '')
         .toString();
     }
     return '';
@@ -138,8 +194,8 @@ export abstract class MoneyDiaryBaseUsecase {
    */
   protected readonly getList = (rows: Row[] = []): ValType[] => {
     return structuredClone(rows)
-      .filter((row) => !!row[Const.CMN_COL.VALID] && !!row[Const.CMN_COL.LABEL])
-      .map((row) => row[Const.CMN_COL.ID]);
+      .filter((row) => !!row[CMN_COL.VALID] && !!row[CMN_COL.LABEL])
+      .map((row) => row[CMN_COL.ID]);
   };
 
   /**
@@ -152,13 +208,59 @@ export abstract class MoneyDiaryBaseUsecase {
     rows: Row[] = [],
     id?: ValType,
   ): string => {
-    const row = rows.find((row) => row[Const.CMN_COL.ID] === id);
-    const label = row?.[Const.CMN_COL.LABEL] ?? Const.MARK.NO_SELECT.label;
+    const row = rows.find((row) => row[CMN_COL.ID] === id);
+    const label = row?.[CMN_COL.LABEL] ?? NO_SELECT_VAL.LABEL;
     if (typeof label !== 'string') {
-      return Const.MARK.NO_SELECT.label;
+      return NO_SELECT_VAL.LABEL;
     }
 
     return label;
+  };
+
+  /** 金額コンパレーター */
+  protected readonly compAmt = (valueA?: ValType, valueB?: ValType): number => {
+    if (!isValidInt(valueA) && !isValidInt(valueB)) {
+      return 0;
+    } else if (!isValidInt(valueA)) {
+      return 1;
+    } else if (!isValidInt(valueB)) {
+      return -1;
+    }
+    return valueA - valueB;
+  };
+
+  /** 金額のスタイルを返却する */
+  protected readonly getStylePrice = (
+    value?: ValType,
+    cellStyle: CellStyle = {},
+  ): CellStyle => {
+    if (!isValidInt(value)) {
+      return cellStyle;
+    }
+
+    cellStyle['color'] = (() => {
+      if (value < 0) {
+        return '#FF7E79';
+      } else if (value > 0) {
+        return '#76D6FF';
+      }
+      return '#BBBEC9';
+    })();
+    return cellStyle;
+  };
+
+  /** セル共通スタイル */
+  protected readonly getCellCmnStyle = (
+    params: CellClassParams<Row, ValType>,
+    cellStyle: CellStyle = {},
+  ): CellStyle => {
+    const valid = params.data?.[CMN_COL.VALID] ?? true;
+    if (valid) {
+      cellStyle['opacity'] = 1;
+    } else {
+      cellStyle['opacity'] = 0.3;
+    }
+    return cellStyle;
   };
 
   /**
@@ -182,147 +284,232 @@ export abstract class MoneyDiaryBaseUsecase {
   };
 
   /**
-   * 行データ編集処理
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param option
-   * @returns 正常: RowEdt[], 異常: false
+   * ダイアログオープン
+   * @param procInput
+   * @returns
    */
-  readonly procEditRows = async (
-    edtRows: (Row | undefined)[] = [],
-    tbl: Tbl,
-    tblMap: TblMap,
-    option?: any,
-  ): Promise<RowEdt[] | false> => {
-    // 新規データ作成フラグ
-    let newDataFlg = false;
-    // 行データが存在しない場合、デフォルトデータを設定する
-    if (edtRows.length === 0) {
-      newDataFlg = true;
-      edtRows = [Util.getTblDefRow(tbl)];
-    }
-    // 入力チェック
-    if (!this.chkInputRows(edtRows)) {
-      return false;
-    }
-    // ダイアログ入力データ作成
-    const input = this.createInputData(edtRows, tbl, tblMap, option);
-    // ダイアログオープン
-    const output = await this.openDialog(input, newDataFlg);
-    if (!output) {
-      return false;
-    }
-    // 行編集Emitterデータ作成
-    return this.createResultData(output, edtRows, tbl, tblMap, option);
-  };
+  readonly openDialog = async (
+    procInput: OpenDialogInitProcInput,
+  ): Promise<RowEdt[] | null> => {
+    let { tbl, selectedRows = [] } = procInput;
 
-  /**
-   * 入力チェック(ダイアログオープン前)
-   * @param rows
-   * @returns チェック結果
-   */
-  private readonly chkInputRows = (
-    rows: (Row | undefined)[] = [],
-  ): rows is Row[] => {
-    // rows,row：undefinedでない、かつ未選択項目が含まれていない場合
-    return rows.every(
-      (row) => !!row && row[Const.CMN_COL.ID] !== Const.MARK.NO_SELECT.id,
-    );
+    // 行データが存在しない場合、デフォルトデータを設定する
+    let newDataFlg = false;
+    if (Array.isArray(selectedRows)) {
+      if (selectedRows.length === 0) {
+        newDataFlg = true;
+        selectedRows = [getColValsByTblAndCustomId(tbl)];
+      }
+    } else {
+      selectedRows = [selectedRows];
+    }
+
+    // ダイアログ入力データ作成
+    const inputValType = this.createDialogInputData({
+      ...procInput,
+      selectedRows,
+    });
+
+    // DialogCustomInputExt -> DialogCustomInput
+    const cvtData: Record<string, FormValType> = {};
+    const entries = Object.entries(inputValType.data());
+    for (const [key, val] of entries) {
+      if (Array.isArray(val)) {
+        const opts =
+          inputValType.param.body.items.flat().find((it) => it.id === key)
+            ?.options ?? [];
+        const check = opts.reduce(
+          (rec, opt) => {
+            rec[opt.value] = val.includes(opt.value);
+            return rec;
+          },
+          {} as Record<string | number, boolean>,
+        );
+        cvtData[key] = check;
+      } else {
+        cvtData[key] = val;
+      }
+    }
+    const input = {
+      data: signal(cvtData),
+      param: inputValType.param,
+    };
+
+    // ダイアログオープン
+    const output = await this.openDialogMain(input, newDataFlg);
+
+    // 行編集Emitterデータ作成
+    return this.createRowEdtData({
+      ...procInput,
+      selectedRows,
+      input,
+      output,
+    });
   };
 
   /**
    * ダイアログ入力データ作成
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param option
-   * @returns 入力データ
    */
-  protected abstract readonly createInputData: (
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    option?: any,
-  ) => DialogInput;
+  protected abstract readonly createDialogInputData: (
+    procInput: OpenDialogProcInput,
+  ) => DialogCustomInputExt;
 
   /**
-   * ダイアログオープン
-   * @param input
-   * @param newDataFlg
+   * ダイアログオープンメイン
+   * @param data
+   * @param newData
    * @returns 出力データ
    */
-  private readonly openDialog = async (
-    input: DialogInput,
-    newDataFlg: boolean = false,
-  ): Promise<DialogOutput | undefined> => {
+  private readonly openDialogMain = async (
+    data: DialogCustomInput,
+    newData: boolean,
+  ): Promise<DialogCustomOutput | undefined> => {
     // 新規データの場合、追加・削除ボタンを非表示にする
-    if (newDataFlg) {
-      input.buttonOptions ??= [];
-
-      for (const btnId of [DIALOG_BUTTON.ADD, DIALOG_BUTTON.DEL]) {
-        const btn = input.buttonOptions.find((opt) => opt.id === btnId);
-        if (!!btn) {
-          btn.hide = true;
-        } else {
-          input.buttonOptions.push({ id: btnId, hide: true });
-        }
+    if (newData) {
+      for (const id of [DIALOG_BUTTON_ID.ADD, DIALOG_BUTTON_ID.DEL]) {
+        (data.param.footer ??= { buttons: {} }).buttons[id] = { hide: true };
       }
     }
 
     // config
-    const config: MatDialogConfig<DialogInput> = {
-      data: input,
+    const config: MatDialogConfig<DialogCustomInput> = {
+      data,
       autoFocus: false, // 初期フォーカスなし
     };
+
     // ダイアログオープン
-    const dialogRef = this.dialog.open<
-      DialogInputComponent,
-      DialogInput,
-      DialogOutput
-    >(DialogInputComponent, config);
+    const dialogRef = this.customDialog.open<
+      DialogCustomInputComponent,
+      DialogCustomInput,
+      DialogCustomOutput
+    >(DialogCustomInputComponent, config);
+
     // 出力データ
     return await lastValueFrom(dialogRef.afterClosed());
   };
 
   /**
    * 行編集Emitterデータ作成
-   * @param output
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param option
+   * @param procInput
    * @returns 編集用データ
    */
-  private readonly createResultData = (
-    output: DialogOutput,
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    option?: any,
-  ): RowEdt[] => {
-    // 入力項目反映
-    edtRows = this.reflectRows(edtRows, output.datas, option);
+  private readonly createRowEdtData = (
+    procInput: OpenDialogProcInput & {
+      input: DialogCustomInput;
+      output?: DialogCustomOutput;
+    },
+  ): RowEdt[] | null => {
+    const { input, output } = procInput;
+    if (!output) {
+      // 何もせずに閉じた場合
+      return null;
+    }
 
-    // 行ID初期設定
-    const rowIds = Util.getRowIdsSet(tblMap[tbl]);
+    // 有効データ抽出
+    const datas = this.createValidDatas(input);
+
+    // 入力項目反映
+    const outputRows = this.createOutputRows({
+      ...procInput,
+      outputDatas: datas,
+    });
+
+    // 行編集データ作成
+    const rowEdt = this.createRowEdtDataMain({
+      ...procInput,
+      status: output.status,
+      outputRows,
+    });
+
+    return rowEdt;
+  };
+
+  /**
+   * 有効データ作成
+   * @param input
+   * @returns 有効データ
+   */
+  private readonly createValidDatas = (
+    input: DialogCustomInput,
+  ): DialogOutputValidData[] => {
+    return input.param.body.items.flat().reduce((datas, cur) => {
+      if (!cur.notReturn) {
+        const value = input.data()[cur.id];
+        if (!!value && typeof value === 'object') {
+          // チェックボックス
+          const checkOptIds = Object.entries(value).reduce(
+            (arr, [optId, check]) => (check ? [...arr, optId] : arr),
+            [] as ValType[],
+          );
+          datas = [...datas, { key: cur.id, value: checkOptIds }];
+        } else {
+          // チェックボックス以外
+          datas = [...datas, { key: cur.id, value }];
+        }
+      }
+      return datas;
+    }, [] as DialogOutputValidData[]);
+  };
+
+  /**
+   * 出力データ作成処理
+   * @param procInput
+   * @returns 出力データ
+   */
+  protected readonly createOutputRows = (
+    procInput: OpenDialogProcOutput,
+  ): Row[] => this.cvtOutputDatasToRows(procInput);
+
+  /**
+   * 出力データ作成デフォルト処理
+   * @param procInput
+   * @returns 出力データ
+   */
+  protected readonly cvtOutputDatasToRows = ({
+    selectedRows,
+    outputDatas,
+  }: OpenDialogProcOutput): Row[] => {
+    const newRows = structuredClone(selectedRows);
+    for (const row of newRows) {
+      for (const outData of outputDatas) {
+        row[outData.key] = outData.value;
+      }
+    }
+    return newRows;
+  };
+
+  /**
+   * 行編集データ作成メイン
+   * @param procInput
+   * @returns 行編集データ
+   */
+  private readonly createRowEdtDataMain = (
+    procInput: OpenDialogProcRowEdt,
+  ): RowEdt[] => {
+    const {
+      status,
+      tbl,
+      allTblRows,
+      outputRows,
+      rowIds = getRowIdsSet(allTblRows[tbl]),
+    } = procInput;
     const rowEdt: RowEdt[] = [];
 
-    switch (output.status) {
+    switch (status) {
       // 更新
-      case DIALOG_STATUS.UPD:
-        rowEdt.push(Util.getRowEdtUpd(tbl, edtRows, rowIds));
+      case DIALOG_OUTPUT_STATUS.UPD:
+        rowEdt.push(getRowEdtUpd(tbl, outputRows, rowIds));
         break;
       // 追加
-      case DIALOG_STATUS.ADD:
-        rowEdt.push(Util.getRowEdtAdd(tbl, edtRows, [], rowIds));
+      case DIALOG_OUTPUT_STATUS.ADD:
+        rowEdt.push(getRowEdtAdd(tbl, outputRows, [], rowIds));
         break;
       // 削除
-      case DIALOG_STATUS.DEL:
+      case DIALOG_OUTPUT_STATUS.DEL:
         rowEdt.push(
-          Util.getRowEdtDel(
+          getRowEdtDel(
             tbl,
-            edtRows.map((row) => row[Const.CMN_COL.ID]),
+            outputRows.map((row) => row[CMN_COL.ID]),
             rowIds,
           ),
         );
@@ -330,70 +517,18 @@ export abstract class MoneyDiaryBaseUsecase {
       // その他
       default:
         rowEdt.push(
-          ...this.getRowEdts(output.status, edtRows, tbl, tblMap, rowIds),
+          ...this.createCustomRowEdt({ ...procInput, status, rowIds }),
         );
         break;
     }
 
     // 未選択データ追加チェック
-    if (!this.checkNoSelData(tblMap[tbl])) {
+    if (!this.checkNoSelData(allTblRows[tbl])) {
       // 未選択データ追加
-      rowEdt.push(Util.getRowEdtAddNoSel(tbl));
+      rowEdt.push(getRowEdtAddNoSel(tbl));
     }
 
     return rowEdt;
-  };
-
-  /**
-   * 入力項目反映(行編集Emitterデータ作成)
-   * @param edtRows
-   * @param outDatas
-   * @param option
-   * @returns 行データ項目追加後データ
-   * @default reflectRowsDef
-   */
-  protected readonly reflectRows = (
-    edtRows: Row[],
-    outDatas: DialogOutputData[],
-    option?: any,
-  ): Row[] => this.reflectRowsDef(edtRows, outDatas);
-
-  /**
-   * 入力項目反映デフォルト処理
-   * @param edtRows
-   * @param outDatas
-   * @returns 行データ項目追加後データ
-   */
-  protected readonly reflectRowsDef = (
-    edtRows: Row[],
-    outDatas: DialogOutputData[],
-  ): Row[] => {
-    const newRows = structuredClone(edtRows);
-    for (const row of newRows) {
-      for (const outData of outDatas) {
-        row[outData.id] = outData.value;
-      }
-    }
-    return newRows;
-  };
-
-  /**
-   * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
-   * @param status
-   * @param edtRows
-   * @param tbl
-   * @param tblMap
-   * @param rowIds
-   * @returns
-   */
-  protected readonly getRowEdts = (
-    status: DialogStatus,
-    edtRows: Row[],
-    tbl: Tbl,
-    tblMap: TblMap,
-    rowIds = new Set<ValType>(),
-  ): RowEdt[] => {
-    return [];
   };
 
   /**
@@ -401,76 +536,18 @@ export abstract class MoneyDiaryBaseUsecase {
    * @param rows
    * @returns チェック結果
    */
-  protected readonly checkNoSelData = (rows: Row[]): boolean => {
+  protected readonly checkNoSelData = (_: Row[]): boolean => {
     return true;
   };
 
   /**
-   * 行データ編集処理
-   * @param cols
-   * @returns 正常: ColEdt, 異常: false
+   * 更新・追加・削除以外のステータス返却時の処理(行編集Emitterデータ作成)
+   * @param procInput
+   * @returns 行編集データ
    */
-  readonly procEditCol = async (cols: Row[] = []): Promise<Row[] | false> => {
-    // ダイアログ入力データ作成
-
-    /*************************
-     * ボタンオプションの設定
-     *************************/
-    const buttonOptions: DialogInputButtonOption[] = [
-      {
-        id: DIALOG_BUTTON.DEL,
-        hide: true,
-      },
-      {
-        id: DIALOG_BUTTON.ADD,
-        hide: true,
-      },
-    ];
-
-    /*************************
-     * 入力データの設定
-     *************************/
-    // 列名 text
-    // 表示・非表示 toggle
-    // 入力子画面開く列 check
-    const datas: DialogInputDatas = [];
-    for (const col of cols) {
-      datas.push([
-        {
-          id: 'lb',
-          label: 'Label',
-          value: col['lb'],
-          initValue: '',
-        },
-        {
-          id: 'dp',
-          label: 'Display',
-          value: col['dp'],
-          type: Const.INPUT_TYPE.TOGGLE,
-          initValue: false,
-        },
-        {
-          id: 'do',
-          label: 'Dialog Open',
-          value: col['do'],
-          type: Const.INPUT_TYPE.CHECK,
-          options: [{ id: '1', lb: '' }],
-        },
-      ]);
-    }
-
-    const input: DialogInput = {
-      title: 'Edit Columns',
-      datas,
-      buttonOptions,
-    };
-
-    // ダイアログオープン
-    const output = await this.openDialog(input);
-    if (!output) {
-      return false;
-    }
-    // 行編集Emitterデータ作成
-    return this.reflectRows(cols, output.datas);
+  protected readonly createCustomRowEdt = (
+    _procInput: OpenDialogProcRowEdt,
+  ): RowEdt[] => {
+    return [];
   };
 }
